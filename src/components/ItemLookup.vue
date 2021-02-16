@@ -4,11 +4,9 @@
             :label="this.label"
             label-for="itemSelector">
             <b-form-select 
-                size="sm"
-                variant="primary"					
-                :disabled="disabled"
+                :disabled="this.disabled"
                 name="itemSelector" 
-                class="shadow-sm"
+                class="shadow-sm"                
                 :placeholder="placeholder"
                 :value="value"
                 :options="optionsForSelect" 
@@ -18,8 +16,7 @@
             :label="this.label"
             label-for="itemInput">
             <b-form-input text
-                size="sm"
-                :disabled="disabled"
+                :disabled="this.disabled"
 				name="itemInput" 
                 class="shadow-sm" 
                 :placeholder="placeholder"
@@ -36,10 +33,12 @@
 </template>
 
 <script>
-import { computed } from "@vue/composition-api" // Vue 2 only. for Vue 3 use "from '@vue'"
-import _uniqueId from 'lodash/uniqueId'
+import _uniqueId  from 'lodash/uniqueId'
 
-export default {	
+export default {
+	name: 'ItemLookup',
+	components: { },
+	mixins: [ ],
 	props: {
         // enables/disables the composite control
         disabled: {
@@ -62,7 +61,7 @@ export default {
         value: {
             type: String
         },
-        // Adds option '(none)' to the start of the lookup options if true
+        // Adds option '(none)' to the lookup options if true
         optionNone: {
             type: Boolean,
             required: false,
@@ -82,31 +81,43 @@ export default {
 			default: () => []
 		}		
 	},
-    setup(props, context) {
-        //const optionsId = computed(() => uniqueId("datalist-"))
-        const optionsId = _uniqueId("datalist-")
-
-        const optionsForSelect = computed(() => {
-            return props.options
-                .concat(props.optionNone ? [{ value: "", text: "(none)", selected: true }] : [])                
-                .sort((a, b) => (a.text || a.value || "") > (b.text || b.value || "") ? 1 : -1)
-        })
-
-        const optionsForInput = computed(() => {
-            return props.options
+	data() {
+		return {}
+	},
+	computed: {	
+        // unique id for datalist allowing component reuse
+        optionsId() {
+            return _uniqueId("datalist-")
+        },        
+        optionsForSelect() {
+            return this.options
+                .concat(this.optionNone ? [{ value: "", text: "(none)", selected: true }] : [])                
+                .sort((a, b) => (a.text || a.label || "").localeCompare(b.text || b.label || ""))
+        },
+		optionsForInput() {
+            return this.options
                 .map(item => item.text || "")
                 .filter(item => item)
-                .sort((a,b) => a > b ? 1 : -1)              
-        })
-
-        const changed = (value) => context.emit('change', value)
-       
-        return {
-            optionsId,
-            optionsForSelect,
-            optionsForInput,
-            changed
+                .sort((a,b) => a.localeCompare(b))              
         }
-    }
+	},
+	methods: {        
+        changed(value){
+            this.$emit('change', value)
+        }
+    },
+	// lifecycle hooks
+	beforeCreate() {},
+	created() {},
+	beforeMount() {},
+	mounted() {},
+	beforeUpdate() {},
+	updated() {},
+	beforeDestroy() {},
+	destroyed() {}
 }
 </script>
+
+<style scoped>
+
+</style>

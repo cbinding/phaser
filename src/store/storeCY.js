@@ -1,13 +1,23 @@
-import Vue from 'vue'
-import Vuex from 'vuex'
-import _merge  from 'lodash/merge'
-
-import {NodeClass} from '@/mixins/constants.js'
+import Vue from "vue"
+import Vuex from "vuex"
+// import VuexPersist from 'vuex-persist'
+import createPersistedState from "vuex-persistedstate"
+import _merge  from "lodash/merge"
+import {NodeClass} from "@/mixins/constants.js"
 
 Vue.use(Vuex)
 
+/*
+const vuexLocalStorage = new VuexPersist({
+    key: 'vuex', // The key to store the state on in the storage provider.
+    storage: window.localStorage // or window.sessionStorage or localForage
+})
+*/
+
 export default new Vuex.Store({
-	Strict: true,
+	// strict: true,
+    // plugins: [vuexLocalStorage.plugin],
+    plugins: [ createPersistedState({ storage: window.localStorage }) ],
 	state: {
         selectedID: "",
         about: { // not used yet..
@@ -23,12 +33,7 @@ export default new Vuex.Store({
             nodes: [],
             edges: []
         }, 
-        types: {
-            phaseTypes: [
-                "phase type A",
-                "phase type B",
-                "phase type C",
-            ],
+        types: {            
             groupTypes: [
                 "Building", 
                 "Corn-drying oven", 
@@ -272,11 +277,11 @@ export default new Vuex.Store({
         // hierarchical querying functionality
         childrenOfIDs: (state, getters) => ids => getters.nodes.filter(n => ids.includes(n.data.parent)),
         childrenOfID: (state, getters) => id => getters.childrenOfIDs([id]),    
-            
-        descendantsOfID: (state, getters) => id => {
+        
+        descendantsOfIDs: (state, getters) => ids => {
             let descendants = []
-            let childNodes = getters.childrenOfID(id)
-            let iteration = 0 // breaks self referential loops
+            let childNodes = getters.childrenOfIDs(ids)
+            let iteration = 0 // to break self referential loops
             while(childNodes.length > 0 && iteration < 5) {
                 descendants = descendants.concat(childNodes)
                 childNodes = getters.childrenOfIDs(childNodes.map(n => n.data.id))
@@ -284,25 +289,29 @@ export default new Vuex.Store({
             }           
             return descendants
         },
+        descendantsOfID: (state, getters) => id => getters.descendantsOfIDs([id]),
         
-        datingsForID: (state, getters) => id => getters.descendantsOfID(id)
-            .filter(n => n.data.class == NodeClass.DATING && n.data.included),        
+        //datingsForID: (state, getters) => id => getters.descendantsOfID(id)
+            //.filter(n => n.data.class == NodeClass.DATING && n.data.included),        
 
+        // derive min/max years from hierarchical descendant datings
         derivedDates: (state, getters) => id => {
-            let minYear = null
-            let maxYear = null
+            let minYear = Number.MAX_VALUE
+            let maxYear = Number.MIN_VALUE
             
-            getters.datingsForID(id)
-                .map(item => ((item || {}).data || {}).dating)
-                .filter(dating => dating) 
-                .forEach(dating => {
+            getters.descendantsOfID(id)
+                .filter(n => n.data.class == NodeClass.DATING && n.data.included && n.data.dating)
+           // getters.datingsForID(id)
+                .map(n => ((n || {}).data || {}).dating)
+                //.filter(dating => dating) 
+                .forEach(d => {
                     let clean = {
-                        minYear: Number(dating.minYear),
-                        maxYear: Number(dating.maxYear),
-                        minYearTolValue: Number(dating.minYearTolValue),
-                        maxYearTolValue: Number(dating.maxYearTolValue),
-                        minYearTolUnit: dating.minYearTolUnit,
-                        maxYearTolUnit: dating.maxYearTolUnit
+                        minYear: Number(d.minYear),
+                        maxYear: Number(d.maxYear),
+                        minYearTolValue: Number(d.minYearTolValue),
+                        maxYearTolValue: Number(d.maxYearTolValue),
+                        minYearTolUnit: d.minYearTolUnit,
+                        maxYearTolUnit: d.maxYearTolUnit
                     }
                     
                     // apply minYear tolerance (if present)
@@ -318,14 +327,15 @@ export default new Vuex.Store({
                         clean.maxYear += clean.maxYearTolValue 
 
                     // less than the current minimum?
-                    if(clean.minYear < (minYear || Number.MAX_VALUE)) 
-                        minYear = clean.minYear
+                    if(minYear > clean.minYear) minYear = clean.minYear
                     // more than the current maximum?
-                    if(clean.maxYear > (maxYear || Number.MIN_VALUE)) 
-                        maxYear = clean.maxYear
+                    if(maxYear < clean.maxYear) maxYear = clean.maxYear
                 })
-            // return overall min/max year with tolerances applied
-            return { minYear: minYear, maxYear: maxYear }
+            // return overall rounded min/max year after tolerances applied
+            return { 
+                minYear: minYear < Number.MAX_VALUE ? Math.round(minYear) : null, 
+                maxYear: maxYear > Number.MIN_VALUE ? Math.round(maxYear) : null
+            }
         },
         
         // node and edge selection
@@ -346,7 +356,7 @@ export default new Vuex.Store({
                     id: id, 
                     class: nc, 
                     label: nextID.toString(), 
-                    type: "",
+                    description: "",
                     dating: {
                         label: "",
                         minYear: null,
@@ -375,8 +385,9 @@ export default new Vuex.Store({
                     id: id, 
                     class: nc, 
                     parent: "", 
+                    type: "",                    
                     label: nextID.toString(), 
-                    type: ""
+                    description: ""
                 }, 
                 position: { 
                     x: 0, 
@@ -396,8 +407,9 @@ export default new Vuex.Store({
                     id: id, 
                     class: nc, 
                     parent: "", 
+                    type: "",
                     label: nextID.toString(), 
-                    type: ""
+                    description: ""                    
                 }, 
                 position: { 
                     x: 0, 
@@ -417,8 +429,9 @@ export default new Vuex.Store({
                     id: id, 
                     class: nc, 
                     parent: "", 
-                    label: nextID.toString(), 
-                    type: ""
+                    type: "",
+                    label: nextID.toString(),
+                    description: ""                    
                 }, 
                 position: { 
                     x: 0, 
@@ -498,8 +511,9 @@ export default new Vuex.Store({
                     id: id, 
                     class: nc, 
                     parent: "",
+                    type: "",                    
                     label: nextID.toString(), 
-                    type: "",
+                    description: "",
                     included: true,
                     dating: {
                         label: "",
@@ -659,27 +673,21 @@ export default new Vuex.Store({
         insertPhase({commit, dispatch, getters}, item) {
             // ensure item being added has all required properties  
             let node = _merge({}, getters.newPhase, item)
-            //let data = Object.assign({}, getters.newPhase.data, phase.data)  
-            //let node = Object.assign({ data: data }, phase)
             dispatch('insertNode', node, commit)  
         },
         insertGroup({commit, dispatch, getters}, item) {
             // ensure item being added has all required properties        
-            //let node = Object.assign({}, getters.newGroup, group)
             let node = _merge({}, getters.newGroup, item)
             dispatch('insertNode', node, commit)  
         },
         insertSubGroup({commit, dispatch, getters}, item) {
             // ensure item being added has all required properties        
-            //let node = Object.assign({}, getters.newSubGroup, subgroup)
             let node = _merge({}, getters.newSubGroup, item)
             dispatch('insertNode', node, commit)  
         },
         
         insertContext({commit, dispatch, getters}, item) {
             // ensure item being added has all required properties        
-            //let data = Object.assign({}, getters.newPhase.data, context.data)  
-            //let node = Object.assign({ data: data }, context)
             let node = _merge({}, getters.newContext, item)
             dispatch('insertNode', node, commit)  
         }, 
@@ -720,20 +728,18 @@ export default new Vuex.Store({
             //commit('CREATE_NODE', node)  
             dispatch('insertNode', node, commit)         
         },
-        createFind({commit, dispatch, getters}) {
+        /*createFind({commit, dispatch, getters}) {
             let node = getters.newFind
             dispatch('insertNode', node, commit)
         },
         createSample({commit, dispatch, getters}) {
             let node = getters.newSample
             dispatch('insertNode', node, commit)
-        },
+        },*/
         createDating({commit, dispatch, getters}) {
             let node = getters.newDating
             dispatch('insertDating', node, commit)
-        },
-        
-        
+        },       
 		/*addContext({commit}, context){
 			commit('ADD_NODE', context)
         },

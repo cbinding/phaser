@@ -7,7 +7,7 @@
 					<b-form-input text 
 						:disabled="true"
 						class="shadow-sm" 
-						placeholder="identifier" 
+						placeholder="source" 
 						type="text"
 						name="itemID" 
 						:value="$store.getters.nodeLabel(sourceID)"/>
@@ -32,6 +32,7 @@
 						:disabled="disabled" 
 						:optionNone="false"					
 						:options="available"
+						placeholder="target"
 						v-model="selectedTargetID"
 						@change="targetChanged"/>
 				</b-form-group>	

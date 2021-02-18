@@ -124,11 +124,7 @@ export default {
                     },
                     {                       
                         selector: 'node[class="context"]:selected',
-                        style: {
-                            'background-color': 'gold'
-                            //'background-fill': 'radial-gradient',
-                            //'background-gradient-stop-colors': 'white gray'  
-                        }
+                        style: { 'background-color': 'gold' }
                     },
                     {
                         selector: 'node[class="phase"]',
@@ -136,64 +132,51 @@ export default {
                             'label':  el => `${el.data('label') ? el.data('label') : el.data('id')}`,
                             'width': '600px',
                             'text-opacity': 0.75,
+                            'text-valign': 'top',
+                            'text-halign': 'right',
                             'padding': this.gridSize / 2,
                             'color': 'gray',                            
                             'background-color': 'ivory',
                             'border-color': 'lightgray'                            
                         }
-                    },
+                    }, 
+                    {                       
+                        selector: 'node[class="phase"]:selected',
+                        style: { 'background-color': 'gold' }
+                    },                   
                     {
                         selector: 'node[class="group"]',
                         style: {
                             //'padding': 15, 
                             'label':  el => `${el.data('label') ? el.data('label') : el.data('id')}`, 
                             'text-opacity': 0.75,
+                            'text-valign': 'top',
+                            'text-halign': 'right',
                             'color': 'green',                            
                             'background-color': 'honeydew',
                             'border-color': 'green'                            
                         }
-                    },
+                    },  
+                    {                       
+                        selector: 'node[class="group"]:selected',
+                        style: { 'background-color': 'gold' }
+                    },                  
                     {
                         selector: 'node[class="subgroup"]',
                         style: {
                             'label':  el => `${el.data('label') ? el.data('label') : el.data('id')}`, 
                             'text-opacity': 0.75,
+                            'text-valign': 'center',
+                            'text-halign': 'right',
                             'color': 'blue',                            
                             'background-color': 'aliceblue',
                             'border-color': 'blue',                           
                         }
-                    },	
-                    {
-                        selector: 'node[class="find"]',
-                        style: {
-                            'label':  el => `${el.data('label') ? el.data('label') : el.data('id')}`,                             
-                            'shape': 'ellipse',
-                            'text-opacity': 1,
-                            'color': 'red',                            
-                            'background-color': 'pink',
-                            'border-color': 'red', 
-                            'border-width': '1px',
-                            'font-size': '0.5em',     
-                            'width' : 15,
-                            'height': 15                    
-                        }
-                    },	
-                    {
-                        selector: 'node[class="sample"]',
-                        style: {
-                            'color': 'purple',
-                            'shape': 'triangle',
-                            //'padding': 15,
-                            'label':  el => `${el.data('label') ? el.data('label') : el.data('id')}`, 
-                            'text-opacity': 1,
-                            'background-color': 'plum',
-                            'border-color': 'purple', 
-                            'border-width': '1px',
-                            'font-size': '0.5em',     
-                            'width' : 15,
-                            'height': 15                    
-                        }
-                    },	
+                    },
+                    {                       
+                        selector: 'node[class="subgroup"]:selected',
+                        style: { 'background-color': 'gold' }
+                    },	                    	
                     {
                         selector: 'edge',
                         style: {

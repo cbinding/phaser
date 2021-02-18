@@ -3,16 +3,11 @@
 		<b-tab v-for="nc in nodeClasses" :key="nc" class="my-2">
 			<template v-slot:title>
 				<span>{{ capitalize(nc) }}{{ nc !== "dating" ? "s" : "" }}</span>
-				<b-badge pill variant="outline" class="border secondary pb-1 m-0 ml-2">
-					<span v-if="nc === 'phase'">{{ $store.getters.phases.length }}</span>
-					<span v-else-if="nc === 'group'">{{ $store.getters.groups.length }}</span>
-					<span v-else-if="nc === 'subgroup'">{{ $store.getters.subgroups.length }}</span>
-					<span v-else-if="nc === 'context'">{{ $store.getters.contexts.length }}</span>
-					<span v-else-if="nc === 'find'">{{ $store.getters.finds.length }}</span>
-					<span v-else-if="nc === 'sample'">{{ $store.getters.samples.length }}</span>
-					<span v-else-if="nc === 'dating'">{{ $store.getters.datings.length }}</span>
-					<span v-else>0</span>
-				</b-badge> 																	
+				<b-badge pill 
+					variant="outline" 
+					class="border secondary pb-1 m-0 ml-2">
+					<span>{{ itemCount(nc) }}</span>					
+				</b-badge>
 			</template>
 			<ItemEditor :itemClass="nc"/>
 		</b-tab> 
@@ -23,7 +18,7 @@
 				<span>Problems</span>
 				<b-badge pill variant="outline" class="border secondary pb-1 m-0 ml-2">
 					<span>0</span>
-				</b-badge> 
+				</b-badge>
 			</template>
 		</b-tab>
 		-->
@@ -48,12 +43,12 @@ export default {
 		}
 	},
 	computed: {
-		selectedID(){
+		selectedID() {
 			return this.$store.getters.selectedID
 		},
 		nodeClasses() {
 			return Object.values(NodeClass)
-			.filter(nc => nc !== NodeClass.FIND && nc !== NodeClass.SAMPLE) //deprecated these
+			//.filter(nc => nc !== NodeClass.FIND && nc !== NodeClass.SAMPLE) //deprecated these
 		}		
 	},
 	watch: {
@@ -71,7 +66,18 @@ export default {
 			}
 		}
 	},
-	methods: {},
+	methods: {
+		itemCount(nc) {
+			switch(nc) {
+				case NodeClass.PHASE: return this.$store.getters.phases.length
+				case NodeClass.GROUP: return this.$store.getters.groups.length
+				case NodeClass.SUBGROUP: return this.$store.getters.subgroups.length
+				case NodeClass.CONTEXT: return this.$store.getters.contexts.length
+				case NodeClass.DATING: return this.$store.getters.datings.length
+				default: return 0
+			}
+		}
+	},
 	// lifecycle hooks
 	beforeCreate() {},
 	created() {},

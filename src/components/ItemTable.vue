@@ -36,6 +36,7 @@
 			<b-col>
 				<b-table show-empty style="height: 250px;"
 					id="datatable"
+					sort-icon-left
 					hover outlined selectable small 
 					:no-border-collapse="false"
 					sticky-header="300px" 
@@ -101,11 +102,11 @@ export default {
 					label: "id",
 					sortable: true					
 				},
-				{
+				... (this.itemClass == NodeClass.PHASE) ? [] : [{
 					key: "data.type",
 					label: "type",
 					sortable: true					
-				},
+				}],   
 				... (this.itemClass == NodeClass.PHASE) ? [] : [{
 					key: "data.parent",
 					label: "within",
@@ -150,10 +151,10 @@ export default {
 					class: "text-right"
 					}] : [],
 				... (this.itemClass == NodeClass.DATING) ? [{
-						key: "data.include",
+						key: "data.included",
 						label: "included",	
 						formatter: value => value ? "✓" : "✗",				
-						sortable: true	,
+						sortable: true,
 						class: "text-center"				
 					}] : [],     
 				/*{

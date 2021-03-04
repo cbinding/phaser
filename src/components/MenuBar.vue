@@ -55,11 +55,25 @@
 						<b-icon-arrows-fullscreen class="mr-2" />
 						<span>Zoom to fit</span>
 					</b-dropdown-item-button>
-					<b-dropdown-divider/>
-					<b-dropdown-item-button @click="redoLayout">
+					<b-dropdown-divider/>					
+					<b-dropdown-item-button @click="redoLayout('dagre')">
 						<b-icon-diagram-3 class="mr-2" />
 						<span>Redo Layout</span>
 					</b-dropdown-item-button>
+					<!--
+					<b-dropdown-item-button @click="redoLayout('elk')">
+						<b-icon-diagram-3 class="mr-2" />
+						<span>Redo Layout (ELK)</span>
+					</b-dropdown-item-button>
+					<b-dropdown-item-button @click="redoLayout('klay')">
+						<b-icon-diagram-3 class="mr-2" />
+						<span>Redo Layout (KLAY)</span>
+					</b-dropdown-item-button>
+					<b-dropdown-item-button @click="redoLayout('breadthfirst')">
+						<b-icon-diagram-3 class="mr-2" />
+						<span>Redo Layout (BreadthFirst)</span>
+					</b-dropdown-item-button>
+					-->
 				</b-nav-item-dropdown>
 				<b-nav-item-dropdown text="Help">
 					<b-dropdown-item-button v-b-modal.modalAbout>
@@ -71,7 +85,7 @@
 			</b-navbar-nav>
 		</b-collapse>
 		<!--<b-navbar-brand href="#" id="brand" tag="h1" class="mb-0 primary">The Matrix</b-navbar-brand>-->
-		<b-navbar-brand href="#">
+		<b-navbar-brand href="#" v-b-modal.modalAbout>
 			<img src="phaser-spacedout-logo.png" height="25" alt="PHASER"/>
 		</b-navbar-brand>
 	</b-navbar>	
@@ -125,10 +139,7 @@ export default {
 		},
 
 		fileSave() {
-			const data = {
-				nodes: this.$store.getters.nodes, //.map(n => n.data),
-				edges: this.$store.getters.edges //.map(e => e.data)
-			}
+			const data = { elements: this.$store.getters.elements }
 			const fileName = `phaser-${ moment().format("YYYYMMDDHHmmss") }.json`
             this.saveToFile(JSON.stringify(data), fileName)
 		},
@@ -172,9 +183,9 @@ export default {
 			// event bus - phaser diagram handles this
 			this.$root.$emit('diagramZoomFit') 
 		},
-		redoLayout() {
+		redoLayout(name="dagre") {
 			// event bus - phaser diagram handles this
-			this.$root.$emit('diagramRedoLayout') 
+			this.$root.$emit('diagramRedoLayout', name) 
 		}
 	}
 }

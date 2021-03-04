@@ -12,7 +12,11 @@ export default {
     },
     data: function() {
         return {}
-    }
+    },
+    computed: {},
+    mounted() {
+		document.title = `Phaser v${this.$store.getters.appVersion}`
+	},
 }
 </script>
 

@@ -22,6 +22,16 @@
 			</template>
 		</b-tab>
 		-->
+		<b-tab>
+			<template v-slot:title>
+				<span>Edges</span>
+				<b-badge pill variant="outline" class="border secondary pb-1 m-0 ml-2">
+					<span>{{ $store.getters.edges.length }}</span>
+				</b-badge>
+			</template>
+			<ItemEditor itemClass="edge"/>
+		</b-tab>
+		
     </b-tabs>
 </template>
 
@@ -52,18 +62,22 @@ export default {
 		}		
 	},
 	watch: {
-		selectedID(newValue) {
+		selectedID(newValue) {			
 			// display the tab containing the selected item
 			let node = this.$store.getters.nodeByID(newValue)
-			let nc = ((node || {}).data || {}).class
-			switch(nc) {
-				case NodeClass.PHASE: this.tabIndex = 0;break;
-				case NodeClass.GROUP: this.tabIndex = 1;break;
-				case NodeClass.SUBGROUP: this.tabIndex = 2;break;
-				case NodeClass.CONTEXT: this.tabIndex = 3;break;
-				case NodeClass.DATING: this.tabIndex = 4;break;
-				default: this.tabIndex = 0;break;
+			if(node) {
+				let nc = node.data?.class || NodeClass.PHASE
+				switch(nc) {
+					case NodeClass.PHASE: this.tabIndex = 0;break;
+					case NodeClass.GROUP: this.tabIndex = 1;break;
+					case NodeClass.SUBGROUP: this.tabIndex = 2;break;
+					case NodeClass.CONTEXT: this.tabIndex = 3;break;
+					case NodeClass.DATING: this.tabIndex = 4;break;					
+					default: this.tabIndex = 0;break;
+				}
 			}
+			else
+				this.tabIndex = 5
 		}
 	},
 	methods: {

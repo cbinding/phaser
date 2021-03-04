@@ -85,20 +85,20 @@ export default {
 		return {}
 	},
 	computed: {	
-        // unique id for datalist allowing component reuse
+        // unique id for datalist allows component reuse
         optionsId() {
             return _uniqueId("datalist-")
         },        
         optionsForSelect() {
             return this.options
                 .concat(this.optionNone ? [{ value: "", text: "(none)", selected: true }] : [])                
-                .sort((a, b) => (a.text || a.label || "").localeCompare(b.text || b.label || ""))
+                .sort((a, b) => (a.text || a.label || "") - (b.text || b.label || ""))
         },
 		optionsForInput() {
             return this.options
                 .map(item => item.text || "")
                 .filter(item => item)
-                .sort((a,b) => a.localeCompare(b))              
+                .sort((a,b) => a - b)              
         }
 	},
 	methods: {        

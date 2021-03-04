@@ -1,14 +1,15 @@
 <template>
     <b-container fluid class="p-0">
-		<b-row>			
+		<b-row align-h="between">			
 			<b-col>
 				<b-button pill
+					v-if="itemClass !== 'edge'"
 					size="sm"
 					variant="outline-primary"
 					class="text-left shadow" 
 					:title="`add ${itemClass}`" 
 					:alt="`add ${itemClass}`"			
-					@click.stop="createItem()">
+					@click.stop="insertItem()">
 					<b-icon-plus />Add {{ itemClass }}</b-button>
 				</b-col>
 			<b-col>
@@ -28,7 +29,8 @@
 						class="shadow-sm"
 						v-model="filter"
 						type="search"
-						:placeholder="`filter ${itemClass}s`"/>					
+						autocomplete="off"
+						:placeholder="`filter ${itemClass} records`"/>					
 				</b-form-group>
 			</b-col>
 		</b-row>
@@ -83,95 +85,15 @@ export default {
 			type: String,
 			required: false,
 			default: NodeClass.PHASE,
-			validator: value => Object.values(NodeClass).includes(value)
+			validator: value => [...Object.values(NodeClass), "edge"].includes(value)
 		}
 	},
 	data() { 
 		return {			
 			filter: "",
 			selectedID: "",
-			fields: [				
-				/*{
-					key: "data.id",
-					label: "id",
-					sortable: true					
-				},*/
-				// displaying label as if identifier
-				{
-					key: "data.label",
-					label: "id",
-					sortable: true					
-				},
-				... (this.itemClass == NodeClass.PHASE) ? [] : [{
-					key: "data.type",
-					label: "type",
-					sortable: true					
-				}],   
-				... (this.itemClass == NodeClass.PHASE) ? [] : [{
-					key: "data.parent",
-					label: "within",
-					sortByFormatted: true,
-					formatter: this.tableParentFormatter,
-					sortable: true					
-                }],                
-				... (this.itemClass == NodeClass.PHASE || this.itemClass == NodeClass.DATING) ? [{
-					// virtual column with custom formatter
-					key: 'minyear',
-					label: 'entered min year',
-					sortByFormatted: true,
-					formatter: this.tableMinYearFormatter,
-					sortable: true,
-					class: "text-right"
-					}] : [],
-				... (this.itemClass == NodeClass.PHASE || this.itemClass == NodeClass.DATING) ? [{
-					// virtual column with custom formatter
-					key: 'maxyear',
-					label: 'entered max year',
-					sortByFormatted: true,
-					formatter: this.tableMaxYearFormatter,
-					sortable: true,
-					class: "text-right"
-					}] : [],
-				... (this.itemClass != NodeClass.DATING) ? [{
-					// virtual column with custom formatter
-					key: 'derivedminyear',
-					label: 'derived min year',
-					sortByFormatted: true,
-					formatter: this.derivedMinYearFormatter,
-					sortable: true,
-					class: "text-right"
-					}] : [],
-				... (this.itemClass != NodeClass.DATING) ? [{
-					// virtual column with custom formatter
-					key: 'derivedmaxyear',
-					label: 'derived max year',
-					sortByFormatted: true,
-					formatter: this.derivedMaxYearFormatter,
-					sortable: true,
-					class: "text-right"
-					}] : [],
-				... (this.itemClass == NodeClass.DATING) ? [{
-						key: "data.included",
-						label: "included",	
-						formatter: value => value ? "✓" : "✗",				
-						sortable: true,
-						class: "text-center"				
-					}] : [],     
-				/*{
-					key: "data.dating.minYear",
-					label: "min year",
-					sortable: true
-				},
-				{
-					key: "data.dating.maxYear",
-					label: "max year",
-					sortable: true
-				},*/
-				{ 	
-					key: "actions", 
-					label: ""
-				}
-			]		
+			sortBy: "data.label",
+			sortDesc: false			
 		}
 	},
 	computed: {
@@ -191,36 +113,166 @@ export default {
 					return this.$store.getters.samples
 				case NodeClass.DATING:
 					return this.$store.getters.datings
+				case "edge":
+					return this.$store.getters.edges
 				default:
 					return []
 			}
 		},			
-		//totalRows() { return this.items.length }
+		columns() { 
+			switch(this.itemClass) {
+				case NodeClass.PHASE: return ["label", "enteredMinYear", "enteredMaxYear", "enteredDiff", "derivedMinYear", "derivedMaxYear", "duration"]
+				case NodeClass.GROUP: return ["label", "type", "parent", "derivedMinYear", "derivedMaxYear", "duration"]
+				case NodeClass.SUBGROUP: return ["label", "type", "parent", "derivedMinYear", "derivedMaxYear", "duration"]
+				case NodeClass.CONTEXT: return ["label", "type", "parent", "derivedMinYear", "derivedMaxYear", "duration"]	
+				case NodeClass.DATING: return ["label", "type", "parent", "enteredMinYear", "enteredMaxYear", "enteredDiff", "included"]
+				case "edge": return ["source", "type", "target", "derivedMinYear", "derivedMaxYear", "duration"]
+				default: return []				
+			}			
+		},
+		fields() {
+			return [				
+				/*{
+					key: "data.id",
+					label: "id",
+					sortable: true					
+				},*/
+				// displaying label as if identifier
+				... (this.columns.includes('label')) ? [{
+					key: "data.label",
+					label: "id",
+					sortable: true					
+				}] : [],
+				... (this.columns.includes('source')) ? [{
+					key: "data.source",
+					label: "source",
+					sortByFormatted: true,
+					formatter: this.tableSourceIdFormatter,
+					sortable: true					
+				}] : [],  
+				... (this.columns.includes('type')) ? [{
+					key: "data.type",
+					label: "type",
+					sortable: true					
+				}] : [],  
+				... (this.columns.includes('target')) ? [{
+					key: "data.target",
+					label: "target",
+					sortByFormatted: true,
+					formatter: this.tableTargetIdFormatter,
+					sortable: true					
+				}] : [],   
+				... (this.columns.includes('parent')) ? [{
+					key: "data.parent",
+					label: "within",
+					sortByFormatted: true,
+					formatter: this.tableParentFormatter,
+					sortable: true					
+                }] : [],                
+				... (this.columns.includes('enteredMinYear')) ? [{
+					// virtual column with custom formatter
+					key: 'minyear',
+					label: 'entered min year',
+					sortByFormatted: true,
+					formatter: this.tableMinYearFormatter,
+					sortable: true,
+					class: "text-right"
+				}] : [],
+				... (this.columns.includes('enteredMaxYear')) ? [{
+					// virtual column with custom formatter
+					key: 'maxyear',
+					label: 'entered max year',
+					sortByFormatted: true,
+					formatter: this.tableMaxYearFormatter,
+					sortable: true,
+					class: "text-right"
+					}] : [],
+				... (this.columns.includes('enteredDiff')) ? [{
+					// virtual column with custom formatter
+					key: 'entereddiff',
+					label: 'duration',
+					sortByFormatted: true,
+					formatter: this.enteredDiffFormatter,
+					sortable: true,
+					class: "text-right"
+				}] : [],
+				... (this.columns.includes('derivedMinYear')) ? [{
+					// virtual column with custom formatter
+					key: 'derivedminyear',
+					label: 'derived min year',
+					sortByFormatted: true,
+					formatter: this.derivedMinYearFormatter,
+					sortable: true,
+					class: "text-right"
+				}] : [],
+				
+				... (this.columns.includes('derivedMaxYear')) ? [{
+					// virtual column with custom formatter
+					key: 'derivedmaxyear',
+					label: 'derived max year',
+					sortByFormatted: true,
+					formatter: this.derivedMaxYearFormatter,
+					sortable: true,
+					class: "text-right"
+				}] : [],
+				... (this.columns.includes('duration')) ? [{
+					// virtual column with custom formatter
+					key: 'duration',
+					label: 'duration',
+					sortByFormatted: true,
+					formatter: this.durationFormatter,
+					sortable: true,
+					class: "text-right"
+				}] : [],				
+				... (this.columns.includes('included')) ? [{
+						key: "data.included",
+						label: "included",	
+						formatter: value => value ? "✓" : "✗",				
+						sortable: true,
+						class: "text-center"				
+				}] : [],     
+				/*{
+					key: "data.dating.minYear",
+					label: "min year",
+					sortable: true
+				},
+				{
+					key: "data.dating.maxYear",
+					label: "max year",
+					sortable: true
+				},*/
+				{ 	
+					key: "actions", 
+					label: ""
+				}
+			]		
+		}
 	},
 	mounted() {},
 	methods: {				
-		createItem() {
+		insertItem() {
 			let self = this
 			switch(self.itemClass) {
 				case NodeClass.PHASE: 
-					self.$store.dispatch('createPhase'); break;
+					self.$store.dispatch('insertPhase'); break;
 				case NodeClass.GROUP: 
-					self.$store.dispatch('createGroup'); break;
+					self.$store.dispatch('insertGroup'); break;
 				case NodeClass.SUBGROUP: 
-					self.$store.dispatch('createSubGroup'); break;
+					self.$store.dispatch('insertSubGroup'); break;
 				case NodeClass.CONTEXT: 
-					self.$store.dispatch('createContext'); break;
-				case NodeClass.FIND: 
-					self.$store.dispatch('createFind'); break;
-				case NodeClass.SAMPLE: 
-					self.$store.dispatch('createSample'); break;
+					self.$store.dispatch('insertContext'); break;
 				case NodeClass.DATING: 
-					self.$store.dispatch('createDating'); break;				
+					self.$store.dispatch('insertDating'); break;					
 			}
 		},
 
 		updateItem(item) {
-			if(item) this.$store.dispatch('updateNode', item)
+			if(item) {
+				if(this.itemClass == "edge")
+					this.$store.dispatch('updateEdge', item)
+				else
+					this.$store.dispatch('updateNode', item)
+			}
 
 		},
 			
@@ -230,7 +282,10 @@ export default {
 				.then(value => { 
 					if(value) { 
 						this.$emit('itemDeleted', item.data.id)
-						self.$store.dispatch('deleteNode', item) 
+						if(this.itemClass == "edge")
+							this.$store.dispatch('deleteEdge', item)
+						else
+							this.$store.dispatch('deleteNode', item)
 					}
 				})		
 		},
@@ -244,9 +299,15 @@ export default {
 				this.$emit('itemSelected', items[0])				
 			}	
 		},
+		tableSourceIdFormatter(value, key, item) {
+			return(this.$store.getters.nodeLabel(item.data.source, true))
+		},
+		tableTargetIdFormatter(value, key, item) {
+			return(this.$store.getters.nodeLabel(item.data.target, true))
+		},
 		// display node parent as label not id
 		tableParentFormatter(value, key, item) {
-			return(this.$store.getters.nodeLabel(item.data.parent))
+			return(this.$store.getters.nodeLabel(item.data.parent, true))
 		},	
 		tableMinYearFormatter(value, key, item) {
 			let dating = item.data.dating
@@ -275,6 +336,13 @@ export default {
 		},
 		derivedMaxYearFormatter(value, key, item) { 
 			return this.$store.getters.derivedDates(item.data.id).maxYear 
+		},
+		durationFormatter(value, key, item) {
+			return this.$store.getters.duration(item.data.id) 
+		},
+		enteredDiffFormatter(value, key, item) {
+			let dating = item.data.dating
+            return (dating.maxYear !== null && dating.minYear !== null) ? (dating.maxYear - dating.minYear) + 1 : null
 		},
 	}
 } 

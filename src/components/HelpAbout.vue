@@ -1,10 +1,12 @@
 <template>
 	<b-modal centered id="modalAbout" title="About">
 		<div class="text-center">
-			<img src="phaser-spacedout-logo.png" class="mb-3">				
+			<img src="phaser-spacedout-logo.png" class="mb-3">
+			<p>Version {{ $store.getters.appVersion }}</p>				
 			<p>A stratigraphic matrix editing tool</p>
 			<p>Created as part of the MATRIX project</p>
-			<p>https://stratigraphic.github.io/matrix/</p>			
+			<a target="_blank" href="https://stratigraphic.github.io/matrix/">https://stratigraphic.github.io/matrix/</a>
+
 		</div>
 		<!--keep this - removes default buttons from modal-->
 		<template #modal-footer><div></div></template>

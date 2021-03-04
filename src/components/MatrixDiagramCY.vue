@@ -1,49 +1,57 @@
 <template>	
 	<!--cytoscape graph-->
-    <div id="holder" class="overflow-auto">        
-        <MatrixLegend/>
-
+    <div id="holder" class="overflow-auto"> 
+        <div class="position-relative">       
+            <MatrixLegend class="position-absolute m-2" 
+                style="{ top: 0; right: 0; z-index: 100; }"/>
+        </div>
+        <div class="position-relative"> 
+            <Lock 
+                class="position-absolute m-2" 
+                style="{ top: 0; left: 0; z-index: 100; }"
+                :value="locked"
+                @change="lockChanged"/>
+        </div>
+        
         <cytoscape id="diagram" 
             ref="cy" 
             :config="config" 
             :preConfig="preConfig" 
             :afterCreated="afterCreated">            
-            <!--<cy-element v-for="def in elements.edges.filter(e => e.data.type == 'above')"
-                :key="`${def.data.id}`"
-                :definition="def"/>-->
-            <!--<cy-element v-for="def in elements"
-                :key="`${def.data.id}`"
-                :definition="def"
-                :sync="true"/>-->
+           
             <cy-element v-for="node in nodes"
                 :key="`${node.data.id}`"
                 :definition="node"
-                v-on:click="nodeSelected($event, node)"
+                v-on:click="elementSelected($event, node)"
                 :sync="true"/>
-
+            
             <cy-element v-for="edge in edges"
                 :key="`${edge.data.id}`"
-                :definition="edge"/>            
+                :definition="edge"
+                v-on:click="elementSelected($event, edge)"/>            
         </cytoscape>
     </div>
 	
 </template>
 
 <script>
-//import MyComponent from '@/components/MyComponent.vue'
+
 import dagre from 'cytoscape-dagre'
+import elk from 'cytoscape-elk'
+import klay from 'cytoscape-klay'
 import gridGuide from 'cytoscape-grid-guide'
-//import Layers from 'cytoscape-layers'
 import cyCanvas from 'cytoscape-canvas'
 
 import moment from 'moment'
 import PhaserCommon from '@/mixins/PhaserCommon.js'
 import MatrixLegend from '@/components/MatrixLegend'
+import Lock from '@/components/Lock'
 
 export default {
 	name: 'MatrixDiagramCY',
 	components: {
-		MatrixLegend 
+		MatrixLegend, 
+        Lock 
 	},
 	mixins: [ PhaserCommon ],
 	props: { 
@@ -56,8 +64,9 @@ export default {
 	data() {
         return {
             container: "cy",
+            locked: true,
             config: {
-                layout: {
+                layoutDagre: {
                     name: 'dagre', 
                     // dagre options, uses default value if undefined
                     nodeSep: this.gridSize - 4, // the separation between adjacent nodes in the same rank
@@ -66,12 +75,12 @@ export default {
                     marginx: this.gridSize / 2,
                     marginy: this.gridSize / 2,                    
                     rankDir: 'TB', // 'TB' for top to bottom flow, 'LR' for left to right
-                    ranker: undefined, // Type of algorithm to assign a rank to each node in the input graph. Possible values: 'network-simplex', 'tight-tree' or 'longest-path'
+                    ranker: 'network-simplex', // Type of algorithm to assign a rank to each node in the input graph. Possible values: 'network-simplex', 'tight-tree' or 'longest-path'
                     //minLen: function( edge ){ return 1; }, // number of ranks to keep between the source and target of the edge
                     //edgeWeight: function( edge ){ return 1; }, // higher weight edges are generally made shorter and straighter than lower weight edges
 
                     // general layout options
-                    fit: true, // whether to fit to viewport
+                    fit: false, // whether to fit to viewport
                     padding: this.gridSize / 2, // fit padding
                     spacingFactor: undefined, // Applies a multiplicative factor (>0) to expand or compress the overall area that the nodes take up
                     nodeDimensionsIncludeLabels: false, // whether labels should be included in determining the space used by a node
@@ -83,6 +92,108 @@ export default {
                     ready: function(){}, // on layoutready
                     stop: this.layoutStop // on layoutstop              
                 },
+                layoutElk: {
+                    name: "elk",
+                    nodeDimensionsIncludeLabels: false, // Boolean which changes whether label dimensions are included when calculating node dimensions
+                    fit: false, // Whether to fit
+                    padding: this.gridSize / 2, // Padding on fit
+                    animate: false, // Whether to transition the node positions
+                    animationDuration: 500, // Duration of animation in ms if enabled
+                    animationEasing: undefined, // Easing of animation if enabled
+                    transform: function( node, pos ){ return pos; }, // A function that applies a transform to the final node position
+                    ready: undefined, // Callback on layoutready
+                    stop: undefined, // Callback on layoutstop
+                    elk: {
+                        // All options are available at http://www.eclipse.org/elk/reference.html
+                        // 'org.eclipse.elk.' can be dropped from the Identifier
+                        // Or look at demo-demo.js for an example.
+                        // Enums use the name of the enum e.g.
+                        // 'searchOrder': 'DFS'
+                        //
+                        // The main field to set is `algorithm`, which controls which particular
+                        // layout algorithm is used.
+                        algorithm: "stress" // box disco force layered mrtree random stress
+                    }                
+                },
+                layoutKlay: {
+                    name: "klay",                    
+                    nodeDimensionsIncludeLabels: false, // Boolean which changes whether label dimensions are included when calculating node dimensions
+                    fit: false, // Whether to fit
+                    padding: this.gridSize / 2, // Padding on fit
+                    animate: false, // Whether to transition the node positions
+                    animateFilter: function( ){ return true; }, // Whether to animate specific nodes when animation is on; non-animated nodes immediately go to their final positions
+                    animationDuration: 500, // Duration of animation in ms if enabled
+                    animationEasing: undefined, // Easing of animation if enabled
+                    transform: function( node, pos ){ return pos; }, // A function that applies a transform to the final node position
+                    ready: undefined, // Callback on layoutready
+                    stop: undefined, // Callback on layoutstop
+                    klay: {
+                        // Following descriptions taken from http://layout.rtsys.informatik.uni-kiel.de:9444/Providedlayout.html?algorithm=de.cau.cs.kieler.klay.layered
+                        addUnnecessaryBendpoints: false, // Adds bend points even if an edge does not change direction.
+                        aspectRatio: 1.6, // The aimed aspect ratio of the drawing, that is the quotient of width by height
+                        borderSpacing: 20, // Minimal amount of space to be left to the border
+                        compactComponents: false, // Tries to further compact components (disconnected sub-graphs).
+                        crossingMinimization: 'LAYER_SWEEP', // Strategy for crossing minimization.
+                        /* LAYER_SWEEP The layer sweep algorithm iterates multiple times over the layers, trying to find node orderings that minimize the number of crossings. The algorithm uses randomization to increase the odds of finding a good result. To improve its results, consider increasing the Thoroughness option, which influences the number of iterations done. The Randomization seed also influences results.
+                        INTERACTIVE Orders the nodes of each layer by comparing their positions before the layout algorithm was started. The idea is that the relative order of nodes as it was before layout was applied is not changed. This of course requires valid positions for all nodes to have been set on the input graph before calling the layout algorithm. The interactive layer sweep algorithm uses the Interactive Reference Point option to determine which reference point of nodes are used to compare positions. */
+                        cycleBreaking: 'GREEDY', // Strategy for cycle breaking. Cycle breaking looks for cycles in the graph and determines which edges to reverse to break the cycles. Reversed edges will end up pointing to the opposite direction of regular edges (that is, reversed edges will point left if edges usually point right).
+                        /* GREEDY This algorithm reverses edges greedily. The algorithm tries to avoid edges that have the Priority property set.
+                        INTERACTIVE The interactive algorithm tries to reverse edges that already pointed leftwards in the input graph. This requires node and port coordinates to have been set to sensible values.*/
+                        direction: 'DOWN', // Overall direction of edges: horizontal (right / left) or vertical (down / up)
+                        /* UNDEFINED, RIGHT, LEFT, DOWN, UP */
+                        edgeRouting: 'ORTHOGONAL', // Defines how edges are routed (POLYLINE, ORTHOGONAL, SPLINES)
+                        edgeSpacingFactor: 0.5, // Factor by which the object spacing is multiplied to arrive at the minimal spacing between edges.
+                        feedbackEdges: false, // Whether feedback edges should be highlighted by routing around the nodes.
+                        fixedAlignment: 'NONE', // Tells the BK node placer to use a certain alignment instead of taking the optimal result.  This option should usually be left alone.
+                        /* NONE Chooses the smallest layout from the four possible candidates.
+                        LEFTUP Chooses the left-up candidate from the four possible candidates.
+                        RIGHTUP Chooses the right-up candidate from the four possible candidates.
+                        LEFTDOWN Chooses the left-down candidate from the four possible candidates.
+                        RIGHTDOWN Chooses the right-down candidate from the four possible candidates.
+                        BALANCED Creates a balanced layout from the four possible candidates. */
+                        inLayerSpacingFactor: 1.0, // Factor by which the usual spacing is multiplied to determine the in-layer spacing between objects.
+                        layoutHierarchy: false, // Whether the selected layouter should consider the full hierarchy
+                        linearSegmentsDeflectionDampening: 0.3, // Dampens the movement of nodes to keep the diagram from getting too large.
+                        mergeEdges: false, // Edges that have no ports are merged so they touch the connected nodes at the same points.
+                        mergeHierarchyCrossingEdges: true, // If hierarchical layout is active, hierarchy-crossing edges use as few hierarchical ports as possible.
+                        nodeLayering:'NETWORK_SIMPLEX', // Strategy for node layering.
+                        /* NETWORK_SIMPLEX This algorithm tries to minimize the length of edges. This is the most computationally intensive algorithm. The number of iterations after which it aborts if it hasn't found a result yet can be set with the Maximal Iterations option.
+                        LONGEST_PATH A very simple algorithm that distributes nodes along their longest path to a sink node.
+                        INTERACTIVE Distributes the nodes into layers by comparing their positions before the layout algorithm was started. The idea is that the relative horizontal order of nodes as it was before layout was applied is not changed. This of course requires valid positions for all nodes to have been set on the input graph before calling the layout algorithm. The interactive node layering algorithm uses the Interactive Reference Point option to determine which reference point of nodes are used to compare positions. */
+                        nodePlacement:'BRANDES_KOEPF', // Strategy for Node Placement
+                        /* BRANDES_KOEPF Minimizes the number of edge bends at the expense of diagram size: diagrams drawn with this algorithm are usually higher than diagrams drawn with other algorithms.
+                        LINEAR_SEGMENTS Computes a balanced placement.
+                        INTERACTIVE Tries to keep the preset y coordinates of nodes from the original layout. For dummy nodes, a guess is made to infer their coordinates. Requires the other interactive phase implementations to have run as well.
+                        SIMPLE Minimizes the area at the expense of... well, pretty much everything else. */
+                        randomizationSeed: 1, // Seed used for pseudo-random number generators to control the layout algorithm; 0 means a new seed is generated
+                        routeSelfLoopInside: false, // Whether a self-loop is routed around or inside its node.
+                        separateConnectedComponents: true, // Whether each connected component should be processed separately
+                        spacing: 20, // Overall setting for the minimal amount of space to be left between objects
+                        thoroughness: 7 // How much effort should be spent to produce a nice layout..
+                    },
+                    priority: function(  ){ return null; }, // Edges with a non-nil value are skipped when greedy edge cycle breaking is enabled
+                },
+                layoutBreadthFirst: {
+                    name: 'breadthfirst',
+                    fit: false, // whether to fit the viewport to the graph
+                    directed: true, // whether the tree is directed downwards (or edges can point in any direction if false)
+                    padding: this.gridSize / 2, // padding on fit
+                    circle: false, // put depths in concentric circles if true, put depths top down if false
+                    grid: true, // whether to create an even grid into which the DAG is placed (circle:false only)
+                    spacingFactor: 1, // positive spacing factor, larger => more space between nodes (N.B. n/a if causes overlap)
+                    boundingBox: undefined, // constrain layout bounds; { x1, y1, x2, y2 } or { x1, y1, w, h }
+                    avoidOverlap: true, // prevents node overlap, may overflow boundingBox if not enough space
+                    nodeDimensionsIncludeLabels: false, // Excludes the label when calculating node bounding boxes for the layout algorithm
+                    roots: undefined, // the roots of the trees
+                    maximal: true, // whether to shift nodes down their natural BFS depths in order to avoid upwards edges (DAGS only)
+                    animate: false, // whether to transition the node positions
+                    animationDuration: 500, // duration of animation in ms if enabled
+                    animationEasing: undefined, // easing of animation if enabled,
+                    animateFilter: function (  ){ return true; }, // a function that determines whether the node should be animated.  All nodes animated by default on animate enabled.  Non-animated nodes are positioned immediately when the layout starts
+                    ready: undefined, // callback on layoutready
+                    stop: undefined, // callback on layoutstop
+                    transform: function (node, position ){ return position; } // transform a given node position. Useful for changing flow direction in discrete layouts
+                },
                 minZoom: 0.05,
                 maxZoom: 2.0,
                 style: [
@@ -92,6 +203,7 @@ export default {
                     {
                         selector: 'node',
                         style: {
+                            'min-zoomed-font-size': 1,
                             'font-family': 'sans-serif',
                             'font-size': '1em',
                             'shape': 'rectangle',
@@ -111,7 +223,7 @@ export default {
                             //'background-fill': 'radial-gradient',
                             //'background-gradient-stop-colors': 'aliceblue blue'
                         }
-                    },	
+                    },                    
                     {                       
                         selector: 'node[class="context"]',
                         style: {
@@ -125,25 +237,28 @@ export default {
                     {                       
                         selector: 'node[class="context"]:selected',
                         style: { 'background-color': 'gold' }
-                    },
+                    },  
                     {
                         selector: 'node[class="phase"]',
                         style: {
-                            'label':  el => `${el.data('label') ? el.data('label') : el.data('id')}`,
+                            //'label':  el => `${el.data('label') ? el.data('label') : el.data('id')}`,
                             'width': '600px',
                             'text-opacity': 0.75,
                             'text-valign': 'top',
                             'text-halign': 'right',
-                            'padding': this.gridSize / 2,
+                            'text-margin-x': 5,
+                            'text-margin-y': 15,
+                            'padding': this.gridSize,
                             'color': 'gray',                            
-                            'background-color': 'ivory',
-                            'border-color': 'lightgray'                            
+                            //'background-color': 'ivory',
+                            'border-color': 'lightgray',
+                            'border-width': '1px'                            
                         }
                     }, 
                     {                       
                         selector: 'node[class="phase"]:selected',
                         style: { 'background-color': 'gold' }
-                    },                   
+                    },                                     
                     {
                         selector: 'node[class="group"]',
                         style: {
@@ -152,11 +267,13 @@ export default {
                             'text-opacity': 0.75,
                             'text-valign': 'top',
                             'text-halign': 'right',
+                            'text-margin-x': 5,
+                            'text-margin-y': 15,
                             'color': 'green',                            
                             'background-color': 'honeydew',
                             'border-color': 'green'                            
                         }
-                    },  
+                    }, 
                     {                       
                         selector: 'node[class="group"]:selected',
                         style: { 'background-color': 'gold' }
@@ -168,15 +285,19 @@ export default {
                             'text-opacity': 0.75,
                             'text-valign': 'center',
                             'text-halign': 'right',
+                            'text-margin-x': 5,
+                            //'text-margin-y': 0,
+                            'text-justification': 'auto',
+                            
                             'color': 'blue',                            
                             'background-color': 'aliceblue',
                             'border-color': 'blue',                           
                         }
-                    },
+                    },	 
                     {                       
                         selector: 'node[class="subgroup"]:selected',
                         style: { 'background-color': 'gold' }
-                    },	                    	
+                    },                    	
                     {
                         selector: 'edge',
                         style: {
@@ -193,7 +314,11 @@ export default {
                             'line-style': 'solid',
                             'target-arrow-color': '#9dbaea'
                         }
-                    }
+                    },
+                    {                       
+                        selector: 'edge:selected',
+                        style: { 'line-color': 'gold' }
+                    },
                 ]                
             }
 		}
@@ -203,7 +328,7 @@ export default {
         selectedID(newValue) {            
             const cyi = (this.$refs.cy || {}).instance || null
             if(!cyi) return 
-            cyi.elements("node:selected").unselect()           
+            cyi.elements(":selected").unselect()           
             cyi.$id(newValue).select()            
         }
     },
@@ -215,26 +340,14 @@ export default {
                 .concat(this.$store.getters.groups)
                 .concat(this.$store.getters.subgroups)
                 .concat(this.$store.getters.contexts)
-                //.concat(this.$store.getters.finds)    // don't display on graph
-                //.concat(this.$store.getters.samples)  // don't display on graph
+                //.concat(this.$store.getters.datings)    // don't display on graph               
         },
         edges() {
             return (this.$store.getters.edges).filter(e => e.data.type == "above")
         }, 
         selectedID() {
             return this.$store.getters.selectedID            
-        },             
-        /*elements() {
-            return []
-            .concat(this.$store.getters.edges).filter(e => e.data.type == "above")
-                .concat(this.$store.getters.phases)
-                .concat(this.$store.getters.groups)
-                .concat(this.$store.getters.subgroups)
-                .concat(this.$store.getters.contexts)
-                //.concat(this.$store.getters.finds)    // don't display on graph
-                //.concat(this.$store.getters.samples)  // don't display on graph
-                
-        }*/                   
+        },                   
     },
     /*watch: {
         elements: async function () {
@@ -245,6 +358,8 @@ export default {
 	methods: {
         preConfig(cytoscape) {
             cytoscape.use(dagre) 
+            cytoscape.use(elk)
+            cytoscape.use(klay)
             cytoscape.use(gridGuide) // gridGuide(cytoscape)
             cytoscape.use(cyCanvas)
             //cytoscape.use(Layers)
@@ -252,12 +367,16 @@ export default {
         },
 
         // notify store that a node has been selected in the diagram
-        nodeSelected(event, node){
-            this.$store.dispatch('setSelectedID', node.data.id)
+        elementSelected(event, element){
+            const cyi = (this.$refs.cy || {}).instance || null
+            if(!cyi) return 
+            cyi.elements(":selected").unselect()           
+            cyi.$id(element.data.id).select()     
+            this.$store.dispatch('setSelectedID', element.data.id)
         },
          
         afterCreated(cytoscape) {
-            
+            // set up grid, snap and guidelines
             cytoscape.gridGuide({
                 // On/Off Modules
                 /* From the following four snap options, at most one should be true at a given time */
@@ -360,7 +479,8 @@ export default {
             cyi.pan({x: 0, y: 0})
         },
 
-        // zoom diagram
+        // zoom diagram to various scales
+        zoomFit(cyi) { if(cyi) cyi.fit() },
         zoomIn(cyi) { this.zoomMe(cyi, 1.25) },
         zoomOut(cyi) { this.zoomMe(cyi, 0.75) },
         zoomMe(cyi, zoomBy=1) {
@@ -372,22 +492,24 @@ export default {
                     y: Math.round((cyi.extent().y1 + cyi.extent().y2) / 2),
                 }
             })
-        },
+        },        
 
-        zoomFit(cyi) {
-            if(!cyi) return            
-            cyi.fit()
-        },
-
-        redoLayout(cyi) {
-            if(!cyi) return
+        redoLayout(cyi, name="dagre") {
+            if(!cyi || this.locked) return           
             this.clear(cyi)
-            cyi.layout(this.config.layout).run() 
+            let options = this.config.layoutDagre
+            switch(name) {
+                case "elk": options = this.config.layoutElk;break;
+                case "dagre": options = this.config.layoutDagre;break;  
+                case "klay": options = this.config.layoutKlay;break;    
+                case "breadthfirst": options = this.config.layoutBreadthFirst;break;                      
+            }
+            cyi.layout(options).run() 
             //this.drawPhases(cyi)
-        },
+        },  
+
         layoutStop() {
-            // update node x,y positions within store following auto-layout, as
-            // cytoscape-vue "sync" doesn't do it? (only syncs manual positions)
+            // update node x,y positions within store following auto-layout
             const cyi = (this.$refs.cy || {}).instance || null
             if(!cyi) return
             
@@ -396,6 +518,124 @@ export default {
                     data: node.data(), 
                     position: node.position() 
                 })
+            })
+        },
+
+        lockChanged(value) {
+            this.locked = value
+            const cyi = (this.$refs.cy || {}).instance || null
+            if(cyi) cyi.autolock(value)
+        },
+
+        drawPhases(cyi) {
+            if(!cyi) return
+            // drawing phases on supplementary layer
+            var layer = cyi.cyCanvas()
+            var canvas = layer.getCanvas()
+            var ctx = canvas.getContext('2d')
+
+            cyi.on("render cyCanvas.resize pan", function() {
+                
+                layer.resetTransform(ctx)
+                layer.clear(ctx)
+                layer.setTransform(ctx)
+
+                // Draw fixed elements
+                //ctx.fillRect(0, 0, 100, 100); // Top left corner
+                
+                // Draw phase elements relative to cy nodes
+                let extent = cyi.extent()            
+                cyi.nodes('[class = "phase"]')
+                    .forEach(function(n) {
+                        let dims = n.layoutDimensions()
+                        let x = extent.x1
+                        let y = n.position().y - (dims.h/2)
+                        let w = extent.w
+                        let h = dims.h
+                    
+                        // draw phase outline (dashed red)
+                        ctx.strokeStyle = "red"
+                        ctx.setLineDash([5,5])
+                        ctx.strokeRect(x, y, w, h) 
+                        
+                        // draw phase fill
+                        ctx.globalAlpha = 0.2
+                        ctx.fillStyle = "ivory"
+                        ctx.fillRect(x,y, w,h)
+                        ctx.globalAlpha = 1.0
+                });
+            });
+        },
+
+        // draw phase lines midway between each phase instead??
+        drawPhases2(cyi) {
+            if(!cyi) return
+            // drawing phases on supplementary layer
+            var layer = cyi.cyCanvas()
+            var canvas = layer.getCanvas()
+            var ctx = canvas.getContext('2d')
+
+            cyi.on("render cyCanvas.resize pan", function() {
+                // prepare layer for drawing
+                layer.resetTransform(ctx)
+                layer.clear(ctx)
+                layer.setTransform(ctx)
+                
+                let prevNode = null
+                let extent = cyi.extent()  
+
+                // Draw phase elements relative to cy nodes                    
+                cyi.nodes('[class = "phase"]')
+                    .sort((a,b) => a.data().dating?.maxYear - b.data().dating?.maxYear)
+                    .forEach(function(thisNode) {
+                        let dims = thisNode.layoutDimensions()
+                        let x = extent.x1
+                        let y = thisNode.position().y - (dims.h/2)                         
+
+                        // line style for drawing (dashed red)
+                        ctx.strokeStyle = "red"
+                        ctx.strokeWidth = "2"
+                        ctx.setLineDash([4,4])
+
+                        // draw phase line directly above this node                       
+                        ctx.beginPath()
+                        ctx.moveTo(x, y)
+                        ctx.lineTo(extent.w, y)
+                        ctx.stroke()                           
+                       
+                        if(!prevNode) {
+                            // first/lowest - draw extra phase line below this node
+                            let y = thisNode.position().y + (dims.h/2)
+                            ctx.beginPath()
+                            ctx.moveTo(x, y)
+                            ctx.lineTo(extent.w, y)
+                            ctx.stroke()                            
+                        }  
+
+                        // draw phase fill
+                        //ctx.globalAlpha = 0.1
+                        //ctx.fillStyle = "ivory"
+                        //ctx.fillRect(x,y, w,h)
+                        //ctx.globalAlpha = 1.0
+                    
+                        // draw phase line (dashed red)
+                        /*ctx.strokeStyle = "red"
+                        ctx.setLineDash([5,5])
+                        ctx.beginPath()
+                        ctx.moveTo(x1, y)
+                        ctx.lineTo(x2, y)
+                        ctx.stroke()    */
+                        
+                        // draw phase label
+                        ctx.font = "20px Arial"
+                        ctx.textAlign = "left"
+                        ctx.textBaseline = "top"
+                        ctx.fillStyle = "red"
+                        ctx.fillText(thisNode.data().label, extent.x1 + 10, y + 10)
+
+                        // store prev for next iteration
+                        prevNode = thisNode
+                    })
             })
         }
     },
@@ -411,80 +651,78 @@ export default {
         let self = this  
         const cyi = (this.$refs.cy || {}).instance || null      
         if(!cyi) return
+
+        // diagram locked by default
+        cyi.autolock(true)
                 
         // cytoscape diagram event handlers
         cyi.on('click tap', 'node', function(evt) {
             self.selectedElementID = evt.target.id() 
-            //document.querySelector("#cytoscape-div > canvas:nth-child(2)").style.zIndex = "0"           
         })
-
+        // 'position' event causes endless loop here, so using vmouseup/tapend
+        // notify store of new node position after being dragged on screen
+        cyi.on('vmouseup tapend', 'node', function(evt) {
+            let payload = {
+               data: evt.target.data(),
+               position: evt.target.position()
+            }
+            self.$store.dispatch('updateNode', payload)
+        })
+        
         // drawing phases on supplementary layer
-        var layer = cyi.cyCanvas();
-        var canvas = layer.getCanvas();
-        var ctx = canvas.getContext('2d');
-        cyi.on("render cyCanvas.resize pan", function() {
-            
-            layer.resetTransform(ctx);
-            layer.clear(ctx)
-
-            // Draw fixed elements
-            //ctx.fillRect(0, 0, 100, 100); // Top left corner
-
-            layer.setTransform(ctx);
-
-            // Draw phase elements relative to cy nodes
-            let extent = cyi.extent()            
-            cyi.nodes('[class = "phase"]')
-                //.filter(node => node.data.class == "phase")
-                .forEach(function(node) {
-                    let dims = node.layoutDimensions()
-                    let x = extent.x1
-                    let y = node.position().y - (dims.h/2)
-                    let w = extent.w
-                    let h = dims.h
-                   
-                    // draw phase outline (dashed red)
-                    ctx.strokeStyle = "red"
-                    ctx.setLineDash([5,5]);
-                    ctx.strokeRect(x, y, w, h);  
-                    
-                     // draw phase fill
-                    ctx.globalAlpha = 0.2;
-                    ctx.fillStyle = "ivory";
-                    ctx.fillRect(x,y, w,h)
-                    ctx.globalAlpha = 1.0;
-            });
-        });
-
-
+       // self.drawPhases(cyi)
+        self.drawPhases2(cyi)
         // override height setting on cytoscape-vue div, else always 600px!
         // see https://github.com/rcarcasses/vue-cytoscape/issues/47
         document.getElementById("cytoscape-div").style.minHeight="900px" 
                 
-        // event bus message handlers (events fired from menu bar)
+        // event bus message handlers (for events fired from menu bar)
         self.$root.$on("diagramClear", () => self.clear(cyi))
         self.$root.$on("diagramZoomIn", () => self.zoomIn(cyi))
         self.$root.$on("diagramZoomOut", () => self.zoomOut(cyi))
         self.$root.$on("diagramZoomFit", () => self.zoomFit(cyi))
-        self.$root.$on("diagramRedoLayout", () => self.redoLayout(cyi))        
         self.$root.$on("diagramExportPartPNG", () => self.exportPartPNG(cyi))
         self.$root.$on("diagramExportFullPNG", () => self.exportFullPNG(cyi))
+        self.$root.$on("diagramRedoLayout", name => self.redoLayout(cyi, name))      
+        // this one fired from ItemEditor - just re-layout contents of this node
+        self.$root.$on("redoCompoundNodeLayout", node => {
+            let cyNode = cyi.$(`#${node.data.id}`)
+            // get TL position of compound node prior to redoing layout
+            let bbox1 = cyNode.boundingBox()
+            let tlPos = { x: bbox1.x1, y: bbox1.y1 }
+            
+            // only redoing layout for descendant
+            // nodes and their associated edges
+            let nodes = cyNode.descendants()
+            let edges = nodes.edgesWith(nodes)
+            nodes.merge(edges).layout(this.config.layoutDagre).run() 
 
-        // ensure parent change is updated on diagram (grouping)
+            // compound node may have moved - restore to previous position   
+            let bbox2 = cyNode.boundingBox() 
+            let newPos = {
+                x: (tlPos.x + (bbox2.w / 2)) - 5, // not sure why -5 but it works??
+                y: (tlPos.y + (bbox2.h / 2))
+            }        
+            cyNode.position(newPos)
+            // inform the store about the new position
+            self.$store.dispatch('updateNode', { data: node.data, position: newPos })
+        }), 
+
+        // ensure parent change in data is reflected on diagram, 
         // cytoscape data.parent is immutable so must call 'move'
         self.$root.$on("nodeParentChanged", (node) => {
-            let eles = cyi.elements(`[id = "${node.data.id}"]`)
-            if(node.data.parent !== "")
-                eles.move({ parent: node.data.parent }) 
+            let cyNode = cyi.$(`#${node.data.id}`)
+            if(cyNode && node.data.parent !== "")
+                cyNode.move({ parent: node.data.parent }) 
             else    // removing from group
-                eles.move({ parent: null })
+                cyNode.move({ parent: null })
         })
     },
 	beforeUpdate() {},
 	updated() {},
 	beforeDestroy() {},
 	destroyed() {
-        // ckear event listeners to avoid memory leaks. See:
+        // clear event listeners to avoid memory leaks. See:
         // https://blog.usejournal.com/vue-js-best-practices-c5da8d7af48d
         //self.$root.$off()
     }
@@ -492,5 +730,5 @@ export default {
 </script>
 
 <style scoped>
-    #diagram2 { position: absolute; }
+  /* #diagram2 { position: absolute; } */
 </style>

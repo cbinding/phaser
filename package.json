@@ -19,7 +19,9 @@
     "cytoscape": "^3.18.0",
     "cytoscape-canvas": "^3.0.1",
     "cytoscape-dagre": "^2.3.2",
+    "cytoscape-elk": "^2.0.1",
     "cytoscape-grid-guide": "^2.3.2",
+    "cytoscape-klay": "^3.1.4",
     "cytoscape-layers": "^2.1.0",
     "dagre": "^0.8.5",
     "graphlib": "^2.1.8",
@@ -30,7 +32,8 @@
     "vue-papa-parse": "^2.0.0",
     "vue-popperjs": "^2.3.0",
     "vuex": "^3.5.1",
-    "vuex-persistedstate": "^4.0.0-beta.3"
+    "vuex-persistedstate": "^4.0.0-beta.3",
+    "web-worker": "^1.0.0"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~4.3.0",

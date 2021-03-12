@@ -5,5 +5,6 @@ export const NodeClass = Object.freeze({
     CONTEXT: "context",
     //FIND: "find",
     //SAMPLE: "sample",
-    DATING: "dating"
+    DATING: "dating",
+    PERIOD: "period"
 })

@@ -49,6 +49,8 @@
 
 <script>
 //import MyMixin from '@/mixins/MyMixin.js'
+import _merge from "lodash/merge"
+//import _uniqueId  from 'lodash/uniqueId'
 
 export default {
 	name: 'FileImport',
@@ -124,7 +126,7 @@ export default {
         }
     },
 	methods: {        
-        loadFile(file){
+        loadFile(file) {
             if(!file) return
 
             const self = this
@@ -135,7 +137,7 @@ export default {
             }
             reader.readAsText(file)
         },
-        handleOK(){
+        handleOK() {
             const self = this
             const config = {
                 delimiter: self.delimiter,
@@ -194,70 +196,63 @@ export default {
                 let cleanContextType = clean(item.contextType).toLowerCase()
                 let cleanStratRelationship = clean(item.stratRelationship).toLowerCase()
                 let cleanRelatedContextNo = clean(item.relatedContextNo).toLowerCase()
+                
+                if(cleanStratRelationship == "above" && 
+                    cleanContextNo !== "" && 
+                    cleanRelatedContextNo !== "") {
 
-                if(cleanStratRelationship != "above") continue
+                    // create identifiers for source and target nodes
+                    //let sourceID = _uniqueId("context-")
+                    //let targetID = _uniqueId("context-")
+                    let sourceID = `context-${cleanContextNo.replace("+","-")}` // '+' caused problems in IDs
+                    let targetID = `context-${cleanRelatedContextNo.replace("+","-")}`
 
-                // create new node for THIS context
-                if(cleanContextNo !== "") {
-                    // { id: "context-12345", class: "context", type: "layer", identifier: "12345", siteCode: "XSM10" } 
-                    let newNode = { 
+                     // create new source node
+                    let sourceNode = { 
                         data: {
-                            id: `context-${cleanContextNo}`,
+                            id: sourceID,
                             class: "context",
-                            type: cleanContextType,
                             label: cleanContextNo,
+                            type: cleanContextType,                            
                             siteCode: cleanSiteCode 
                         }                   
-                    }
-                    // If it already exists, merge new properties 
-                    if(uniqueNodes.has(newNode.data.id)) { 
-                        let oldNode = uniqueNodes.get(newNode.data.id)
-                        newNode = Object.assign({}, oldNode, newNode)
+                    }    
+
+                    // if we already had it then merge any new data
+                    if(uniqueNodes.has(sourceID)) { 
+                        let oldNode = uniqueNodes.get(sourceID)
+                        sourceNode = _merge(oldNode, sourceNode)
                     }
 
-                    // add it or overwrite existing
-                    uniqueNodes.set(newNode.data.id, newNode)  
-                }
-
-                // create new node for the RELATED context
-                if(cleanRelatedContextNo !== "") {
-                    let newNode = { 
+                    // add source node (or overwrite existing)
+                    uniqueNodes.set(sourceID, sourceNode)  
+                
+                    // add target node only if it doesn't already exist
+                    if(!uniqueNodes.has(targetID)) {
+                        // add as new 'skeleton' target node
+                        // (will be supplemented when main record 
+                        // for this context is encountered later)
+                        uniqueNodes.set(targetID, { 
+                            data: {
+                                id: targetID,
+                                class: "context",
+                                label: cleanRelatedContextNo,
+                                siteCode: cleanSiteCode 
+                            }                   
+                        }) 
+                    }                 
+                    
+                    // add new edge (or overwrite existing)
+                    let edgeID = `${sourceID}-${targetID}`
+                    uniqueEdges.set(edgeID, { 
                         data: {
-                            id: `context-${cleanRelatedContextNo}`,
-                            class: "context",
-                            type: "",
-                            label: cleanRelatedContextNo,
-                            siteCode: cleanSiteCode                    
-                        }
-                    }
-                    // If it already exists, merge new properties 
-                    if(uniqueNodes.has(newNode.data.id)) { 
-                        let oldNode = uniqueNodes.get(newNode.data.id)
-                        newNode = Object.assign({}, oldNode, newNode)
-                    }
-                    // add it or overwrite existing
-                    uniqueNodes.set(newNode.data.id, newNode) 
-                }
-
-                // create new edge  
-                if(cleanContextNo !== "" && cleanRelatedContextNo !== "") {             
-                    // { id: "context-12345-23456", source: "context-12345", target: "context-23456", type: "above" }
-                    let newEdge = { 
-                        data: {
-                            id: `context-${cleanContextNo}-${cleanRelatedContextNo}`,
-                            source: `context-${cleanContextNo}`,
-                            target: `context-${cleanRelatedContextNo}`,
+                            id: edgeID,
+                            source: sourceID,
+                            target: targetID,
                             type: cleanStratRelationship 
                         }                   
-                    }
-                    // If it already exists, update by merging new properties 
-                    if(uniqueEdges.has(newEdge.data.id)) { 
-                        let oldEdge = uniqueEdges.get(newEdge.data.id)
-                        newEdge = Object.assign({}, oldEdge, newEdge)
-                    }
-                    // Either add it or overwrite the one that is there
-                    uniqueEdges.set(newEdge.data.id, newEdge) 
-                }
+                    }) 
+                }                
             }
 
             return {

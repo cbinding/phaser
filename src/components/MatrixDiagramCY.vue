@@ -1,8 +1,10 @@
-<template>	
+<template>
+<b-overlay :show="busy" rounded="sm">	
 	<!--cytoscape graph-->
     <div id="holder" class="overflow-auto"> 
         <div class="position-relative">       
-            <MatrixLegend class="position-absolute m-2" 
+            <Legend 
+                class="position-absolute m-2" 
                 style="{ top: 0; right: 0; z-index: 100; }"/>
         </div>
         <div class="position-relative"> 
@@ -31,7 +33,7 @@
                 v-on:click="elementSelected($event, edge)"/>            
         </cytoscape>
     </div>
-	
+</b-overlay>	
 </template>
 
 <script>
@@ -44,13 +46,13 @@ import cyCanvas from 'cytoscape-canvas'
 
 import moment from 'moment'
 import PhaserCommon from '@/mixins/PhaserCommon.js'
-import MatrixLegend from '@/components/MatrixLegend'
+import Legend from '@/components/Legend'
 import Lock from '@/components/Lock'
 
 export default {
 	name: 'MatrixDiagramCY',
 	components: {
-		MatrixLegend, 
+		Legend, 
         Lock 
 	},
 	mixins: [ PhaserCommon ],
@@ -64,6 +66,7 @@ export default {
 	data() {
         return {
             container: "cy",
+            busy: false,
             locked: true,
             config: {
                 layoutDagre: {
@@ -495,7 +498,8 @@ export default {
         },        
 
         redoLayout(cyi, name="dagre") {
-            if(!cyi || this.locked) return           
+            if(!cyi || this.locked) return      
+            this.busy = true     
             this.clear(cyi)
             let options = this.config.layoutDagre
             switch(name) {
@@ -519,6 +523,7 @@ export default {
                     position: node.position() 
                 })
             })
+            this.busy = false
         },
 
         lockChanged(value) {

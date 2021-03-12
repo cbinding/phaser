@@ -1,5 +1,6 @@
 import Vue from "vue"
 import Vuex from "vuex"
+
 // import VuexPersist from 'vuex-persist'
 import createPersistedState from "vuex-persistedstate"
 import _merge from "lodash/merge"
@@ -17,14 +18,14 @@ const vuexLocalStorage = new VuexPersist({
 export default new Vuex.Store({
 	// strict: true,
     // plugins: [vuexLocalStorage.plugin],
-    plugins: [ createPersistedState({ storage: window.localStorage, paths: ["graph"] }) ],
+    plugins: [ createPersistedState({ storage: window.localStorage }) ],
 	state: {
         appName: "Phaser",  // application name
-        appVersion: "1.2",  // application version
+        appVersion: "1.1",  // application version
         selectedID: "",     // ID of currently selected node        
         about: {            // not used yet..
             project: "My example project",
-            descrip: "VUEX data for Cytoscape graph elements structure",
+            descrip: "VUEX store data for Cytoscape graph elements structure",
             creator: "Ceri Binding, University of South Wales",
             contact: "ceri.binding@southwales.ac.uk",
             created: "2021-01-07",
@@ -32,8 +33,10 @@ export default new Vuex.Store({
             version: "1.0",           
         },  
         graph: {
-            nodes: [],
-            edges: []
+            nodeMap: new Map(),
+            edgeMap: new Map(),
+            //nodes: [],
+            //edges: []
         }, 
         types: {            
             groupTypes: [
@@ -188,10 +191,10 @@ export default new Vuex.Store({
                 "sample",
                 "manual"
             ],
-            /*periodTypes: [
+            periodTypes: [
                 { id: "1", label: "Roman", min: 43, max: 410 },
                 { id: "1", label: "Medieval", min: 1066, max: 1540 },
-            ] */        
+            ]         
         }     
     },	
     
@@ -201,13 +204,14 @@ export default new Vuex.Store({
         about: state => state.about, // metadata about this graph (not used yet)        
         
         // basic elements of graph structure 
-        elements: state => state.graph,      
-        nodes: (state, getters) => getters.elements.nodes,
-        edges: (state, getters) => getters.elements.edges,    
-        isNode: (state, getters) => id => getters.nodes.some(n => n.data.id === id),     
-        isEdge: (state, getters) => id => getters.edges.some(n => n.data.id === id),
-        nodeByID: (state, getters) => id => getters.nodes.find(n => n.data.id === id),
-        edgeByID: (state, getters) => id => getters.edges.find(e => e.data.id === id), 
+        //elements: state => state.graph, 
+        nodeMap: state => state.graph.nodeMap,
+        nodes: (state, getters) => getters.nodeMap.values(),
+        edges: state => Array.from(state.graph.edgeMap.values()),    
+        isNode: state => id => state.graph.nodeMap.has(id),     
+        isEdge: state => id => state.graph.edgeMap.has(id), 
+        nodeByID: state => id => state.graph.nodeMap.get(id),
+        edgeByID: state => id => state.graph.edgeMap.get(id), 
 
         //nodeLabel: (state, getters) => id => ((getters.nodeByID(id) || {}).data || {}).label || id,
         nodeLabel: (state, getters) => (id, includeClass=false) => {
@@ -228,9 +232,8 @@ export default new Vuex.Store({
         subgroups: (state, getters) => getters.nodes.filter(n => n.data.class === NodeClass.SUBGROUP),
         contexts: (state, getters) => getters.nodes.filter(n => n.data.class === NodeClass.CONTEXT),
         datings: (state, getters) => getters.nodes.filter(n => n.data.class === NodeClass.DATING),
-        periods: (state, getters) => getters.nodes.filter(n => n.data.class === NodeClass.PERIOD),
 
-        // ID of currently selected node - for UI
+        // currently selected node ID - for UI
         selectedID: state => state.selectedID,
 
         // options for lookup controls        
@@ -256,10 +259,7 @@ export default new Vuex.Store({
             .sort((a, b) => (a.text || "") - (b.text || "")),
         contextOptions: (state, getters) => getters.contexts
             .map(n => { return { value: n.data.id, text: `(context) ${n.data.label}` }})
-            .sort((a, b) => (a.text || "") - (b.text || "")),
-        periodOptions: (state, getters) => getters.periods
-            .map(n => { return { value: n.data.id, text: `${n.data.label}` }})
-            .sort((a, b) => (a.text || "") - (b.text || "")),                    
+            .sort((a, b) => (a.text || "") - (b.text || "")),                  
         
             // grouped option lists for element selectors
         phaseOptionsGrouped: (state, getters) => (getters.phaseOptions.length == 0) ? 
@@ -270,8 +270,6 @@ export default new Vuex.Store({
             [] : [{ label: "Subgroups", options: getters.subgroupOptions }],            
         contextOptionsGrouped: (state, getters) => (getters.contextOptions.length == 0) ? 
             [] : [{ label: "Contexts", options: getters.contextOptions }],
-        periodOptionsGrouped: (state, getters) => (getters.periodOptions.length == 0) ? 
-            [] : [{ label: "Periods", options: getters.periodOptions }],
             
         // context parent could be subgroup, group or phase. May have same label, so grouping options to disambiguate
         contextParentOptions: (state, getters) => [
@@ -309,18 +307,16 @@ export default new Vuex.Store({
             else 
                 return { minYear: null, maxYear: null }
         },
-
         derivedEdgeDates: (state, getters) => id => {
             let edge = getters.edgeByID(id)
             let sourceDates = getters.derivedDates(edge.data.source)
             let targetDates = getters.derivedDates(edge.data.target)      
             
             return { 
-                minYear: targetDates.maxYear ? targetDates.maxYear + 1: null, 
-                maxYear: sourceDates.minYear ? sourceDates.minYear - 1: null
+                minYear: targetDates.maxYear ? targetDates.maxYear : null, 
+                maxYear: sourceDates.minYear ? sourceDates.minYear : null
             }
         },
-
         derivedNodeDates: (state, getters) => id => {
             let minYear = Number.MAX_VALUE
             let maxYear = Number.MIN_VALUE
@@ -362,17 +358,16 @@ export default new Vuex.Store({
                 maxYear: maxYear > Number.MIN_VALUE ? Math.round(maxYear) : null
             }
         },
-
         duration: (state, getters) => id => { 
             let dates = getters.derivedDates(id)
             return (dates.maxYear && dates.minYear) ? (dates.maxYear - dates.minYear) + 1 : null
         },        
         
-        newPhase: (state, getters) => { 
+        newPhase: state => { 
             const nc = NodeClass.PHASE
             // get next available phase ID to use
             let nextID = 1
-            while(getters.nodeByID(`${nc}-${nextID}`)) nextID++ 
+            while(state.graph.nodeMap.has(`${nc}-${nextID}`)) nextID++ 
             const id = `${nc}-${nextID}`
             // structure of a new phase
             return { 
@@ -398,11 +393,11 @@ export default new Vuex.Store({
             }
         },
 
-        newGroup: (state, getters) => { 
+        newGroup: state => { 
             const nc = NodeClass.GROUP
             // get next available group ID to use
             let nextID = 1
-            while(getters.nodeByID(`${nc}-${nextID}`)) nextID++ 
+            while(state.graph.nodeMap.has(`${nc}-${nextID}`)) nextID++ 
             const id = `${nc}-${nextID}`
             // structure of a new group
             return { 
@@ -410,8 +405,7 @@ export default new Vuex.Store({
                     id: id, 
                     class: nc, 
                     parent: "", 
-                    type: "", 
-                    cud: "",                   
+                    type: "",                    
                     label: nextID.toString(), 
                     description: ""
                 }, 
@@ -422,11 +416,11 @@ export default new Vuex.Store({
             }
         },
 
-        newSubGroup: (state, getters) => { 
+        newSubGroup: state => { 
             const nc = NodeClass.SUBGROUP
             // get next available subgroup ID to use
             let nextID = 1
-            while(getters.nodeByID(`${nc}-${nextID}`)) nextID++ 
+            while(state.graph.nodeMap.has(`${nc}-${nextID}`)) nextID++ 
             const id = `${nc}-${nextID}`
             // structure of a new subgroup
             return { 
@@ -435,7 +429,6 @@ export default new Vuex.Store({
                     class: nc, 
                     parent: "", 
                     type: "",
-                    cud: "",  
                     label: nextID.toString(), 
                     description: ""                    
                 }, 
@@ -446,11 +439,11 @@ export default new Vuex.Store({
             }
         },
 
-        newContext: (state, getters) => { 
+        newContext: state => { 
             const nc = NodeClass.CONTEXT
             // get next available context ID to use 
             let nextID = 1
-            while(getters.nodeByID(`${nc}-${nextID}`)) nextID++ 
+            while(state.graph.nodeMap.has(`${nc}-${nextID}`)) nextID++ 
             const id = `${nc}-${nextID}`
             // structure of a new context
             return { 
@@ -459,7 +452,6 @@ export default new Vuex.Store({
                     class: nc, 
                     parent: "", 
                     type: "",
-                    cud: "",  
                     label: nextID.toString(),
                     description: ""                    
                 }, 
@@ -470,11 +462,11 @@ export default new Vuex.Store({
             }
         },
         
-        newDating: (state, getters) => { 
+        newDating: state => { 
             const nc = NodeClass.DATING
             // get next available context ID to use 
             let nextID = 1
-            while(getters.nodeByID(`${nc}-${nextID}`)) nextID++ 
+            while(state.graph.nodeMap.has(`${nc}-${nextID}`)) nextID++ 
             const id = `${nc}-${nextID}`
             // structure of a new dating
             return { 
@@ -486,7 +478,6 @@ export default new Vuex.Store({
                     label: nextID.toString(), 
                     description: "",
                     included: true,
-                    association: "direct",
                     dating: {
                         label: "",
                         minYear: null,
@@ -504,41 +495,10 @@ export default new Vuex.Store({
             } 
         },
 
-        newPeriod: (state, getters) => { 
-            const nc = NodeClass.PERIOD
-            // get next available context ID to use 
-            let nextID = 1
-            while(getters.nodeByID(`${nc}-${nextID}`)) nextID++ 
-            const id = `${nc}-${nextID}`
-            // structure of a new dating
-            return { 
-                data: { 
-                    id: id, 
-                    class: nc, 
-                    label: "", 
-                    uri: "",
-                    description: "",
-                    dating: {
-                        label: "",
-                        minYear: null,
-                        maxYear: null,
-                        minYearTolValue: 0,
-                        maxYearTolValue: 0,
-                        minYearTolUnit: "years",
-                        maxYearTolUnit: "years"
-                    }  
-                }, 
-                position: { 
-                    x: 0, 
-                    y: 0 
-                }
-            } 
-        },
-
-        newEdge: (state, getters) => {
+        newEdge: state => {
             // get next available edge ID to use 
             let nextID = 1            
-            while(getters.edgeByID(`edge-${nextID}`)) nextID++ 
+            while(state.graph.edgeMap.has(`edge-${nextID}`)) nextID++ 
             const id = `edge-${nextID}` 
             // structure of a new edge
             return { data: { id: id, source: "source", target: "target", type: "above" } }
@@ -549,13 +509,16 @@ export default new Vuex.Store({
 	mutations: { 
         // performs an insert if the node doesn't exist       
         UPDATE_NODE(state, node) {
-            const nodes = state.graph.nodes
-            const index = nodes.findIndex(n => n.data?.id === node?.data?.id)  // check if id exists     
-            if(index === -1)            // id doesn't exist - add new node
-                nodes.push(node)          
-            else                        // id exists - update existing node
-                Vue.set(nodes, index, node) // see if this works better? trying to ensure reactivity of grouping
+            //const nodes = state.graph.nodes
+            //const index = nodes.findIndex(n => n.data?.id === node?.data?.id)  // check if id exists     
+            //if(index === -1)            // id doesn't exist - add new node
+                //nodes.push(node)          
+            //else                        // id exists - update existing node
+                //Vue.set(nodes, index, node) // see if this works better? trying to ensure reactivity of grouping
                 //nodes.splice(index, 1, node)  // otherwise this will work.. replace the node  
+
+            state.graph.nodeMap.set(node.data.id, node)
+
         },
 
         // currently selected node ID - for visual indication
@@ -564,35 +527,40 @@ export default new Vuex.Store({
         },
 
         DELETE_NODE(state, node) {
-            const nodes = state.graph.nodes
-            const index = nodes.findIndex(n => n.data.id === node?.data?.id)
-            if(index !== -1)                    // id exists
-                nodes.splice(index, 1)          // remove 
+            //const nodes = state.graph.nodes
+            //const index = nodes.findIndex(n => n.data.id === node?.data?.id)
+            //if(index !== -1)                    // id exists
+                //nodes.splice(index, 1)          // remove 
+            state.graph.nodeMap.delete(node.data.id)
         },
 
         DELETE_NODES(state) {
-            state.graph.nodes = []
+            //state.graph.nodes = []
+            state.graph.nodeMap.clear()
         }, 
 
         UPDATE_EDGE(state, edge) {
-            const edges = state.graph.edges
-            const index = edges.findIndex(e => e.data.id === edge?.data?.id)
-            if(index === -1)        // id doesn't exist - add new edge
-                edges.push(edge)               
-            else                    // id exists - update existing edge
-                Vue.set(edges, index, edge) // see if this works? trying to ensure reactivity of grouping
-                //edges.splice(index, 1, edge)    // otherwise this will work.. replace the edge            
+            //const edges = state.graph.edges
+            //const index = edges.findIndex(e => e.data.id === edge?.data?.id)
+            //if(index === -1)        // id doesn't exist - add new edge
+                //edges.push(edge)               
+            //else                    // id exists - update existing edge
+                //Vue.set(edges, index, edge) // see if this works? trying to ensure reactivity of grouping
+                //edges.splice(index, 1, edge)    // otherwise this will work.. replace the edge 
+            state.graph.edgeMap.set(edge?.data?.id, edge)           
         },
 
         DELETE_EDGE(state, edge) {
-            const edges = state.graph.edges
-            const index = edges.findIndex(e => e.data.id === edge?.data?.id)
-            if(index !== -1)            // exists, remove 
-                edges.splice(index, 1)  // remove 
+            //const edges = state.graph.edges
+            //const index = edges.findIndex(e => e.data.id === edge?.data?.id)
+            //if(index !== -1)            // exists, remove 
+               // edges.splice(index, 1)  // remove
+            state.graph.edgeMap.delete(edge?.data?.id)
         },
 
         DELETE_EDGES(state) {
-            state.graph.edges = []
+            //state.graph.edges = []
+            state.graph.edgeMap.clear()
         }		
 	},
 	actions: {
@@ -611,15 +579,13 @@ export default new Vuex.Store({
             let subgroups = (elements.nodes || []).filter(n => n.data.class == NodeClass.SUBGROUP)
             let contexts = (elements.nodes || []).filter(n => n.data.class == NodeClass.CONTEXT)
             let datings = (elements.nodes || []).filter(n => n.data.class == NodeClass.DATING)
-            let periods = (elements.nodes || []).filter(n => n.data.class == NodeClass.PERIOD)
 
             // not just insertNode, need to ensure each object has all required properties
             phases.forEach(item => dispatch('insertPhase', item, commit))
             groups.forEach(item => dispatch('insertGroup', item, commit))
             subgroups.forEach(item => dispatch('insertSubGroup', item, commit))
             contexts.forEach(item => dispatch('insertContext', item, commit))  
-            datings.forEach(item => dispatch('insertDating', item, commit))    
-            periods.forEach(item => dispatch('insertPeriod', item, commit))   
+            datings.forEach(item => dispatch('insertDating', item, commit))       
             //await dispatch('insertNodes', data.nodes || [], commit)
             await dispatch('insertEdges', elements.edges || [], commit)
         },
@@ -699,11 +665,6 @@ export default new Vuex.Store({
         insertDating({commit, dispatch, getters}, item={}) {
             // ensure item to add has all required properties        
             let node = _merge({}, getters.newDating, item)
-            dispatch('insertNode', node, commit)  
-        },  
-        insertPeriod({commit, dispatch, getters}, item={}) {
-            // ensure item to add has all required properties        
-            let node = _merge({}, getters.newPeriod, item)
             dispatch('insertNode', node, commit)  
         }  
 	}	

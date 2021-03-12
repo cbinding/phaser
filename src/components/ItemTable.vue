@@ -113,6 +113,8 @@ export default {
 					return this.$store.getters.samples
 				case NodeClass.DATING:
 					return this.$store.getters.datings
+				case NodeClass.PERIOD:
+					return this.$store.getters.periods
 				case "edge":
 					return this.$store.getters.edges
 				default:
@@ -121,11 +123,12 @@ export default {
 		},			
 		columns() { 
 			switch(this.itemClass) {
-				case NodeClass.PHASE: return ["label", "enteredMinYear", "enteredMaxYear", "enteredDiff", "derivedMinYear", "derivedMaxYear", "duration"]
-				case NodeClass.GROUP: return ["label", "type", "parent", "derivedMinYear", "derivedMaxYear", "duration"]
-				case NodeClass.SUBGROUP: return ["label", "type", "parent", "derivedMinYear", "derivedMaxYear", "duration"]
-				case NodeClass.CONTEXT: return ["label", "type", "parent", "derivedMinYear", "derivedMaxYear", "duration"]	
-				case NodeClass.DATING: return ["label", "type", "parent", "enteredMinYear", "enteredMaxYear", "enteredDiff", "included"]
+				case NodeClass.PHASE: return ["label", "enteredMinYear", "enteredMaxYear", "enteredDiff", "derivedMinYear", "derivedMaxYear", "duration", "period"]
+				case NodeClass.GROUP: return ["label", "type", "parent", "derivedMinYear", "derivedMaxYear", "duration", "period"]
+				case NodeClass.SUBGROUP: return ["label", "type", "parent", "derivedMinYear", "derivedMaxYear", "duration", "period"]
+				case NodeClass.CONTEXT: return ["label", "type", "parent", "derivedMinYear", "derivedMaxYear", "duration", "period"]	
+				case NodeClass.DATING: return ["label", "type", "parent", "enteredMinYear", "enteredMaxYear", "enteredDiff", "included", "period"]
+				case NodeClass.PERIOD: return ["label", "enteredMinYear", "enteredMaxYear", "enteredDiff"]
 				case "edge": return ["source", "type", "target", "derivedMinYear", "derivedMaxYear", "duration"]
 				default: return []				
 			}			
@@ -196,6 +199,14 @@ export default {
 					sortable: true,
 					class: "text-right"
 				}] : [],
+				... (this.columns.includes('period')) ? [{
+					// virtual column with custom formatter
+					key: 'period',
+					label: 'period',
+					sortByFormatted: true,
+					formatter: this.tablePeriodFormatter,
+					sortable: true					
+				}] : [],
 				... (this.columns.includes('derivedMinYear')) ? [{
 					// virtual column with custom formatter
 					key: 'derivedminyear',
@@ -262,7 +273,9 @@ export default {
 				case NodeClass.CONTEXT: 
 					self.$store.dispatch('insertContext'); break;
 				case NodeClass.DATING: 
-					self.$store.dispatch('insertDating'); break;					
+					self.$store.dispatch('insertDating'); break;	
+				case NodeClass.PERIOD: 
+					self.$store.dispatch('insertPeriod'); break;				
 			}
 		},
 
@@ -309,6 +322,9 @@ export default {
 		tableParentFormatter(value, key, item) {
 			return(this.$store.getters.nodeLabel(item.data.parent, true))
 		},	
+		tablePeriodFormatter(value, key, item) {
+			return(this.$store.getters.nodeLabel(item.data.period, false))
+		},
 		tableMinYearFormatter(value, key, item) {
 			let dating = item.data.dating
             let year = dating.minYear

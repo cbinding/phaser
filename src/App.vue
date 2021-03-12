@@ -15,7 +15,7 @@ export default {
     },
     computed: {},
     mounted() {
-		document.title = `Phaser v${this.$store.getters.appVersion}`
+		document.title = `${this.$store.getters.appName} v${this.$store.getters.appVersion}`
 	},
 }
 </script>

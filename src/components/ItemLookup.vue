@@ -6,7 +6,7 @@
             <b-form-select 
                 :disabled="this.disabled"
                 name="itemSelector" 
-                class="shadow-sm"                
+                class="shadow-sm"
                 :placeholder="placeholder"
                 :value="value"
                 :options="optionsForSelect" 

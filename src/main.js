@@ -23,11 +23,9 @@ import 'cytoscape-grid-guide'
 //import {Splitpanes, Pane} from 'splitpanes'          // https://github.com/antoniandre/splitpanes
 //import 'splitpanes/dist/splitpanes.css'
 // apply imported libraries
-Vue.use(BootstrapVue)
-Vue.use(BootstrapVueIcons)
+Vue.use(BootstrapVue)       // for main UI components
+Vue.use(BootstrapVueIcons)  // for main UI icons
 //Vue.use(Popper)
-//Vue.use(Joint)              // for matrix diagram  (superseded)
-//Vue.use(VueKonva)           // not used, from alt diagram library test
 Vue.use(VuePapaParse)       // for CSV I/O
 Vue.use(VueCytoscape)       // for matrix diagram
 
@@ -37,7 +35,7 @@ Vue.use(VueCytoscape)       // for matrix diagram
 Vue.config.productionTip = false
 
 /*
-// todo - incorporate VueRouter, to have contexts, groups, matrix etc. separate pages
+// todo - incorporate VueRouter, to have contexts, groups, matrix etc. separate pages?
 import VueRouter from 'vue-router'
 Vue.use(VueRouter);
 import Home from '@/Components/Home.vue'
@@ -56,6 +54,6 @@ const router = new VueRouter({
 
 new Vue({
     // router: router,
-    store: store, // vuex store - see store.js
+    store: store, // vuex store - see ./store/storeCY.js
     render: h => h(App) 
 }).$mount('#app')

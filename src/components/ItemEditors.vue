@@ -31,6 +31,16 @@
 			</template>
 			<ItemEditor itemClass="edge"/>
 		</b-tab>
+
+		<b-tab>
+			<template v-slot:title>
+				<span>Validation</span>
+				<b-badge pill variant="outline" class="border secondary pb-1 m-0 ml-2">
+					<span>{{ 0 }}</span>
+				</b-badge>
+			</template>
+			<Validation/>
+		</b-tab>
 		
     </b-tabs>
 </template>
@@ -38,12 +48,14 @@
 <script>
 import PhaserCommon from '@/mixins/PhaserCommon.js'
 import ItemEditor from '@/components/ItemEditor'
+import Validation from '@/components/Validation'
 import {NodeClass} from '@/mixins/constants.js'
 
 export default {
 	name: 'ItemEditors',
 	components: {
-		ItemEditor
+		ItemEditor,
+		Validation
 	},
 	mixins: [ PhaserCommon ],
 	props: {},
@@ -72,7 +84,8 @@ export default {
 					case NodeClass.GROUP: this.tabIndex = 1;break;
 					case NodeClass.SUBGROUP: this.tabIndex = 2;break;
 					case NodeClass.CONTEXT: this.tabIndex = 3;break;
-					case NodeClass.DATING: this.tabIndex = 4;break;					
+					case NodeClass.DATING: this.tabIndex = 4;break;
+					case NodeClass.PERIOD: this.tabIndex = 5;break;					
 					default: this.tabIndex = 0;break;
 				}
 			}
@@ -88,6 +101,7 @@ export default {
 				case NodeClass.SUBGROUP: return this.$store.getters.subgroups.length
 				case NodeClass.CONTEXT: return this.$store.getters.contexts.length
 				case NodeClass.DATING: return this.$store.getters.datings.length
+				case NodeClass.PERIOD: return this.$store.getters.periods.length
 				default: return 0
 			}
 		}

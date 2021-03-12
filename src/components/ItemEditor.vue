@@ -9,8 +9,8 @@
 					:disabled="disabled" 
 					variant="outline-primary"
 					class="text-left shadow" 
-					title="add" 
-					alt="add"			
+					title="redo layout" 
+					alt="redo layout"			
 					@click.stop="redoCompoundNodeLayout">
 					<b-icon-diagram-3 class="mr-2" />
 					<span>{{`Redo layout for this ${itemClass}`}}</span>
@@ -63,6 +63,36 @@
 					@change="parentChanged"/>
 			</b-col>
 			<b-col>
+				<ItemLookup v-if="fields.includes('period')"
+					label="Period" 
+					:disabled="disabled"
+					class="shadow-sm"
+					:placeholder="`${itemClass} period`" 
+					v-model="((selectedItem || {}).data || {}).period"  
+					:options="$store.getters.periodOptions" 
+					@change="periodChanged"/>
+
+				<b-form-group v-if="fields.includes('cud')"
+					label="Construction/Use/Disuse"				
+					label-for="itemCUD">
+					<b-form-select 
+						:disabled="this.disabled"
+						v-model="((selectedItem || {}).data || {}).cud"
+						name="itemCUD" 
+						class="shadow-sm"                
+						:options="[
+							{ value: null, text: 'Choose an option:' }, 
+							{ value: 'C', text: 'construction' }, 
+							{ value: 'U', text: 'use' }, 
+							{ value: 'D', text: 'disuse' },
+							{ value: 'CU', text: 'construction / use' }, 
+							{ value: 'CD', text: 'construction / disuse' },
+							{ value: 'UD', text: 'use / disuse' },
+							{ value: 'CUD', text: 'construction / use / disuse' }
+						]" 
+						@change="cudChanged"/>
+				</b-form-group>
+			
 				<b-form-group v-if="fields.includes('contains')" 
 					label="Contains"				
 					label-for="itemContains">
@@ -107,6 +137,15 @@
 						class="shadow-sm"
 						:value="containsDatings"/>
 				</b-form-group>	
+
+				<b-form-group v-if="fields.includes('periodContains')" 
+					label="Period contains"				
+					label-for="periodContains">
+					<b-form-input
+						:disabled="true"
+						class="shadow-sm"
+						:value="nodesForPeriod"/>
+				</b-form-group>	
 			</b-col>
 		</b-form-row> 
 
@@ -148,6 +187,24 @@
 					switch 
 					@change="includeChanged">Included in calculations</b-form-checkbox>						
 			</b-col>
+			<b-col>
+				<b-form-group v-if="fields.includes('association')"
+					label="Association"				
+					label-for="itemAssociation">
+					<b-form-select 
+						:disabled="this.disabled"
+						v-model="((selectedItem || {}).data || {}).association"
+						name="itemAssociation" 
+						class="shadow-sm"                
+						:options="[
+							{ value: 'direct', text: 'direct' }, 
+							{ value: 'residual', text: 'residual' }, 
+							{ value: 'intrusive', text: 'intrusive' }, 
+							{ value: 'other', text: 'other' }
+						]" 
+						@change="associationChanged"/>
+				</b-form-group>
+			</b-col>	
 		</b-form-row>
 			
 		<b-form-row>	
@@ -169,7 +226,6 @@ import ItemLookup from '@/components/ItemLookup'
 //import DatingYearRange from '@/components/DatingYearRange'
 import Stratigraphy from '@/components/Stratigraphy'
 import Dating from '@/components/Dating'
-//import DerivedDating from '@/components/DerivedDating'
 
 export default {
 	name: 'ItemEditor',
@@ -178,8 +234,8 @@ export default {
 		ItemLookup,
 		//DatingYearRange,
 		Stratigraphy,
-		Dating,
-		//DerivedDating	
+		Dating
+		
 	},
 	mixins: [ ],
 	props: {
@@ -200,11 +256,12 @@ export default {
 		position() { return this.selectedItem?.position },
 		fields() { 
 			switch(this.itemClass) {
-				case NodeClass.PHASE: return ["label", "description", "containsGroups", "containsSubGroups", "containsContexts", "dating", "redolayout"]
-				case NodeClass.GROUP: return ["label", "type", "parent", "containsSubGroups", "containsContexts", "description", "redolayout"]
-				case NodeClass.SUBGROUP: return ["label", "type", "parent", "containsContexts", "description", "redolayout"]
-				case NodeClass.CONTEXT: return ["label", "type", "parent", "containsDatings", "description", "stratigraphy"]		
-				case NodeClass.DATING: return ["label", "type", "parent", "description", "dating", "included"]
+				case NodeClass.PHASE: return ["label", "description", "containsGroups", "containsSubGroups", "containsContexts", "dating", "redolayout", "period"]
+				case NodeClass.GROUP: return ["label", "type", "parent", "containsSubGroups", "containsContexts", "description", "redolayout", "cud", "period"]
+				case NodeClass.SUBGROUP: return ["label", "type", "parent", "containsContexts", "description", "redolayout", "cud", "period"]
+				case NodeClass.CONTEXT: return ["label", "type", "parent", "containsDatings", "description", "stratigraphy", "cud", "period"]		
+				case NodeClass.DATING: return ["label", "type", "parent", "description", "dating", "included", "association", "period"]
+				case NodeClass.PERIOD: return ["label", "description", "periodContains", "dating"]
 				default: return []
 			}			
 		},
@@ -227,7 +284,7 @@ export default {
 				default: return []
 			}
 		},
-		itemContains() { 
+		/*itemContains() { 
 			let id = this.selectedItem?.data?.id || ""
 			if(id !== "")
 				return this.$store.getters.childrenOfID(id)
@@ -236,6 +293,18 @@ export default {
 					.join(", ")
 			else
 				return "" 
+		},*/
+		nodesForPeriod(){
+			let id = this.selectedItem?.data?.id || ""
+			if(id !== "") {
+				return this.$store.getters.nodes
+					.filter(n => n.data.period == id)
+					.map(n => n.data.label)
+					.sort((a,b) => a - b) // ensures numeric values still sorted correctly
+					.join(", ")
+			}
+			else
+				return ""
 		},
 		containsGroups() { 
 			let id = this.selectedItem?.data?.id || ""
@@ -339,6 +408,24 @@ export default {
 		includeChanged(value) {	
 			if(this.selectedItem) {
 				this.selectedItem.data.included = value
+				this.itemChanged()
+			}
+		},
+		associationChanged(value) {	
+			if(this.selectedItem) {
+				this.selectedItem.data.association = value
+				this.itemChanged()
+			}
+		},
+		cudChanged(value) {	
+			if(this.selectedItem) {
+				this.selectedItem.data.cud = value
+				this.itemChanged()
+			}
+		},
+		periodChanged(value) {	
+			if(this.selectedItem) {
+				this.selectedItem.data.period = value
 				this.itemChanged()
 			}
 		},

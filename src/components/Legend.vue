@@ -7,7 +7,7 @@
             <b-icon-key class="mr-2"/>Key</div>
             <b-collapse id="legendItems" class="card-body m-0 px-3 py-1">               
             <b-list-group flush class="bg-light">
-                <b-list-group-item v-for="(item, index) in legendItems" :key="index" class="m-0 p-0 border-0">
+                <b-list-group-item v-for="(item, index) in items" :key="index" class="m-0 p-0 border-0">
                     <svg height="15" width="30">
                         <rect x="1" y="1" 
                             width="28" height="11" 
@@ -46,7 +46,7 @@ export default {
 	props: {},
 	data() {
         return {
-            legendItems: [
+            items: [
                 { label: "Phase", fillColor: "transparent", borderColor: "red", dashed: true },
                 { label: "Group", fillColor: "honeydew", borderColor: "green" },
                 { label: "Sub-Group", fillColor: "aliceblue", borderColor: "blue" },

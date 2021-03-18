@@ -77,12 +77,12 @@
 
 <script>
 //import PhaserCommon from '@/mixins/PhaserCommon.js'
-//import YearTolerance from '@/components/YearTolerance.vue'
+//import DatingYearTolerance from '@/components/YearTolerance.vue'
 
 export default {
 	name: 'DatingYearRange',
 	components: {
-        //YearTolerance
+        //DatingYearTolerance
 	},
 	mixins: [ ],
 	props: { 

@@ -11,8 +11,9 @@
             <Lock 
                 class="position-absolute m-2" 
                 style="{ top: 0; left: 0; z-index: 100; }"
-                :value="locked"
-                @change="lockChanged"/>
+                v-model="locked"  
+                @input="lockChanged"/><!--:value="locked"
+                @change="lockChanged"-->
         </div>
         
         <cytoscape id="diagram" 
@@ -658,7 +659,7 @@ export default {
         if(!cyi) return
 
         // diagram locked by default
-        cyi.autolock(true)
+        cyi.autolock(this.locked)
                 
         // cytoscape diagram event handlers
         cyi.on('click tap', 'node', function(evt) {

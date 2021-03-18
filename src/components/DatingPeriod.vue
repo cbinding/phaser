@@ -54,9 +54,5 @@ export default {
 </script>
 
 <style scoped>
-p {
-	color: blue;
-	background: white;
-}
+
 </style>
-<!--note see https://github.com/vuejs/awesome-vue for VUE examples and resources-->

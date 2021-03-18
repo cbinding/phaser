@@ -40,15 +40,15 @@ export default {
 	data() {		
 		return {
             tolTypes: [{ value: 'percent', text: '%' }, { value: 'years', text: 'years' }],
-            tolValue: this.tolerance.tolValue,            
-            tolType: this.tolerance.tolType.toString().trim().toLowerCase()
+            tolValue: this.tolerance?.tolValue,            
+            tolType: this.tolerance?.tolType?.toString().trim().toLowerCase()
 		}
 	},
 	computed: {
 		local() {
             return {
-                tolValue: (this.tolerance || {}).tolValue,  
-                tolUnit: (this.tolerance || {}).tolUnit || "years"
+                tolValue: this.tolerance?.tolValue || 0,  
+                tolUnit: this.tolerance?.tolUnit || "years"
             }
 		}
 	},

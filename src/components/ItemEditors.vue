@@ -25,7 +25,7 @@
 		<b-tab>
 			<template v-slot:title>
 				<span>Edges</span>
-				<b-badge pill variant="outline" class="border secondary pb-1 m-0 ml-2">
+				<b-badge variant="outline" class="border secondary pb-1 m-0 ml-2">
 					<span>{{ $store.getters.edges.length }}</span>
 				</b-badge>
 			</template>
@@ -35,7 +35,7 @@
 		<b-tab>
 			<template v-slot:title>
 				<span>Validation</span>
-				<b-badge pill variant="outline" class="border secondary pb-1 m-0 ml-2">
+				<b-badge variant="outline" class="border secondary pb-1 m-0 ml-2">
 					<span>{{ 0 }}</span>
 				</b-badge>
 			</template>
@@ -86,7 +86,7 @@ export default {
 					case NodeClass.CONTEXT: this.tabIndex = 3;break;
 					case NodeClass.DATING: this.tabIndex = 4;break;
 					case NodeClass.PERIOD: this.tabIndex = 5;break;					
-					default: this.tabIndex = 0;break;
+					default: break;
 				}
 			}
 			else

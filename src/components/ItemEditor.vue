@@ -15,7 +15,7 @@
 					<b-icon-diagram-3 class="mr-2" />
 					<span>{{`Redo layout for this ${itemClass}`}}</span>
 				</b-button>
-			</b-col>
+			</b-col>			
 		</b-form-row>
 		<b-form-row>
 			<!--<b-col>
@@ -30,7 +30,7 @@
 				</b-form-group>
 			</b-col>-->
 			<b-col>
-				<b-form-group v-if="fields.includes('label')" 
+				<!--<b-form-group v-if="fields.includes('label')" 
 					label="Identifier" 
 					label-for="itemLabel">	
 					<b-form-input text 
@@ -42,7 +42,27 @@
 						autocomplete="off" 
 						v-model.trim="((selectedItem || {}).data || {}).label" 
 						@change="labelChanged"/>
-				</b-form-group>
+				</b-form-group>-->
+
+				<ItemLabel v-if="fields.includes('label')" 
+					:disabled="disabled" 
+					:placeholder="`${itemClass}`" 
+					v-model.lazy="((selectedItem || {}).data || {}).label" 
+					@input="labelChanged"/>
+
+				<ItemLabel v-if="fields.includes('uri')" 
+					:disabled="disabled" 
+					label="URI"
+					:placeholder="`${itemClass}`" 
+					v-model.lazy="((selectedItem || {}).data || {}).uri" 
+					@input="uriChanged"/>
+
+				<ItemLookup v-if="fields.includes('period')"
+					label="Period" 
+					:disabled="disabled"
+					v-model="((selectedItem || {}).data || {}).period"  
+					:options="$store.getters.periodOptions" 
+					@change="periodChanged"/>
 			
 				<ItemLookup v-if="fields.includes('type')"
 					label="Type" 
@@ -51,8 +71,24 @@
 					:placeholder="`${itemClass} type`" 
 					v-model="((selectedItem || {}).data || {}).type" 
 					:options="typeLookupOptions"
-					@change="typeChanged"/>   			
+					@change="typeChanged"/> 
 
+				<ItemLookup v-if="fields.includes('cud')"
+					label="Construction/Use/Disuse" 
+					:disabled="disabled" 
+					v-model="((selectedItem || {}).data || {}).cud"
+					:options="[
+						{ value: 'C', text: 'construction' }, 
+						{ value: 'U', text: 'use' }, 
+						{ value: 'D', text: 'disuse' },
+						{ value: 'CU', text: 'construction &amp; use' }, 
+						{ value: 'CD', text: 'construction &amp; disuse' },
+						{ value: 'UD', text: 'use &amp; disuse' },
+						{ value: 'CUD', text: 'construction &amp; use &amp; disuse' }
+					]" 
+					@change="cudChanged"/>				
+			</b-col>
+			<b-col>
 				<ItemLookup v-if="fields.includes('parent')"
 					label="Within" 
 					:disabled="disabled"
@@ -60,49 +96,25 @@
 					:placeholder="`${itemClass} parent`" 
 					v-model="((selectedItem || {}).data || {}).parent"  
 					:options="parentLookupOptions" 
-					@change="parentChanged"/>
-			</b-col>
-			<b-col>
-				<ItemLookup v-if="fields.includes('period')"
-					label="Period" 
-					:disabled="disabled"
-					class="shadow-sm"
-					:placeholder="`${itemClass} period`" 
-					v-model="((selectedItem || {}).data || {}).period"  
-					:options="$store.getters.periodOptions" 
-					@change="periodChanged"/>
+					@change="parentChanged"/>	
 
-				<b-form-group v-if="fields.includes('cud')"
-					label="Construction/Use/Disuse"				
-					label-for="itemCUD">
-					<b-form-select 
-						:disabled="this.disabled"
-						v-model="((selectedItem || {}).data || {}).cud"
-						name="itemCUD" 
-						class="shadow-sm"                
-						:options="[
-							{ value: null, text: 'Choose an option:' }, 
-							{ value: 'C', text: 'construction' }, 
-							{ value: 'U', text: 'use' }, 
-							{ value: 'D', text: 'disuse' },
-							{ value: 'CU', text: 'construction / use' }, 
-							{ value: 'CD', text: 'construction / disuse' },
-							{ value: 'UD', text: 'use / disuse' },
-							{ value: 'CUD', text: 'construction / use / disuse' }
-						]" 
-						@change="cudChanged"/>
-				</b-form-group>
-			
-				<b-form-group v-if="fields.includes('contains')" 
+				<ItemList v-if="fields.includes('contains')"	 			
+					label="Contains" 
+					:disabled="true" 
+					:items="itemContains"/>
+
+				<!--<b-form-group v-if="fields.includes('contains')" 
 					label="Contains"				
-					label-for="itemContains">
-					<b-form-input
-						:disabled="true"
-						class="shadow-sm"
-						placeholder="contains" :value="itemContains"/>
-				</b-form-group>	
+					label-for="itemContains" size="sm">
+					<b-list-group 
+						class="shadow-sm overflow-auto m-1" 
+						style="height: 175px;"   
+						:disabled="true">
+						<b-list-group-item v-for="(item, index) in itemContains" :key="index">{{item}}</b-list-group-item>
+					</b-list-group>
+				</b-form-group>	-->
 
-				<b-form-group v-if="fields.includes('containsGroups')" 
+				<!--<b-form-group v-if="fields.includes('containsGroups')" 
 					label="Contains groups"				
 					label-for="containsGroups">
 					<b-form-input
@@ -136,16 +148,20 @@
 						:disabled="true"
 						class="shadow-sm"
 						:value="containsDatings"/>
-				</b-form-group>	
+				</b-form-group>	-->
+				<ItemList v-if="fields.includes('periodContains')"	 			
+					label="Contains" 
+					:disabled="true" 
+					:items="periodContains"/>
 
-				<b-form-group v-if="fields.includes('periodContains')" 
+				<!--<b-form-group v-if="fields.includes('periodContains')" 
 					label="Period contains"				
 					label-for="periodContains">
 					<b-form-input
 						:disabled="true"
 						class="shadow-sm"
 						:value="nodesForPeriod"/>
-				</b-form-group>	
+				</b-form-group>-->	
 			</b-col>
 		</b-form-row> 
 
@@ -226,6 +242,8 @@ import ItemLookup from '@/components/ItemLookup'
 //import DatingYearRange from '@/components/DatingYearRange'
 import Stratigraphy from '@/components/Stratigraphy'
 import Dating from '@/components/Dating'
+import ItemLabel from '@/components/ItemLabel'
+import ItemList from '@/components/ItemList'
 
 export default {
 	name: 'ItemEditor',
@@ -234,7 +252,9 @@ export default {
 		ItemLookup,
 		//DatingYearRange,
 		Stratigraphy,
-		Dating
+		Dating,
+		ItemLabel,
+		ItemList
 		
 	},
 	mixins: [ ],
@@ -256,12 +276,12 @@ export default {
 		position() { return this.selectedItem?.position },
 		fields() { 
 			switch(this.itemClass) {
-				case NodeClass.PHASE: return ["label", "description", "containsGroups", "containsSubGroups", "containsContexts", "dating", "redolayout", "period"]
-				case NodeClass.GROUP: return ["label", "type", "parent", "containsSubGroups", "containsContexts", "description", "redolayout", "cud", "period"]
-				case NodeClass.SUBGROUP: return ["label", "type", "parent", "containsContexts", "description", "redolayout", "cud", "period"]
-				case NodeClass.CONTEXT: return ["label", "type", "parent", "containsDatings", "description", "stratigraphy", "cud", "period"]		
+				case NodeClass.PHASE: return ["label", "description", "contains", "containsGroups", "containsSubGroups", "containsContexts", "dating", "redolayout", "period"]
+				case NodeClass.GROUP: return ["label", "type", "parent", "contains", "containsSubGroups", "containsContexts", "description", "redolayout", "cud", "period"]
+				case NodeClass.SUBGROUP: return ["label", "type", "parent", "contains", "containsContexts", "description", "redolayout", "cud", "period"]
+				case NodeClass.CONTEXT: return ["label", "type", "parent", "contains", "containsDatings", "description", "stratigraphy", "cud", "period"]		
 				case NodeClass.DATING: return ["label", "type", "parent", "description", "dating", "included", "association", "period"]
-				case NodeClass.PERIOD: return ["label", "description", "periodContains", "dating"]
+				case NodeClass.PERIOD: return ["label", "uri", "description", "periodContains", "dating"]
 				default: return []
 			}			
 		},
@@ -284,72 +304,74 @@ export default {
 				default: return []
 			}
 		},
-		/*itemContains() { 
+		itemContains() { 
 			let id = this.selectedItem?.data?.id || ""
 			if(id !== "")
-				return this.$store.getters.childrenOfID(id)
-					.map(n => n.data.label)
-					.sort((a,b) => a - b) // ensures numeric values still sorted correctly
-					.join(", ")
+				return this.$store.getters.descendantsOfID(id)
+					.map(n => `(${n.data.class}) ${n.data.label}`)					
 			else
-				return "" 
-		},*/
-		nodesForPeriod(){
-			let id = this.selectedItem?.data?.id || ""
-			if(id !== "") {
+				return [] 
+		},
+		periodContains(){
+			let id = this.selectedItem?.data?.id
+			if(id) {
 				return this.$store.getters.nodes
 					.filter(n => n.data.period == id)
-					.map(n => n.data.label)
-					.sort((a,b) => a - b) // ensures numeric values still sorted correctly
-					.join(", ")
+					.map(n => `(${n.data.class}) ${n.data.label}`)
+					//.sort((a,b) => a - b) // ensures numeric values still sorted correctly
+					//.join(", ")
 			}
 			else
-				return ""
+				return []
 		},
-		containsGroups() { 
-			let id = this.selectedItem?.data?.id || ""
-			if(id !== "")
+		/*containsGroups() { 
+			let id = this.selectedItem?.data?.id
+			if(id) {
 				return this.$store.getters.descendantsOfID(id)
 					.filter(n => n.data.class == NodeClass.GROUP)
 					.map(n => n.data.label)
 					.sort((a,b) => a - b) // ensures numeric values still sorted correctly
 					.join(", ")
+			}
 			else
 				return "" 
 		},
 		containsSubGroups() { 
-			let id = this.selectedItem?.data?.id || ""
-			if(id !== "")
+			let id = this.selectedItem?.data?.id
+			if(id) {
 				return this.$store.getters.descendantsOfID(id)
 					.filter(n => n.data.class == NodeClass.SUBGROUP)
 					.map(n => n.data.label)
 					.sort((a,b) => a - b) // ensures numeric values still sorted correctly
 					.join(", ")
+			}
 			else
 				return "" 
 		},
 		containsContexts() { 
-			let id = this.selectedItem?.data?.id || ""
-			if(id !== "")
+			let id = this.selectedItem?.data?.id
+			if(id) {
 				return this.$store.getters.descendantsOfID(id)
 					.filter(n => n.data.class == NodeClass.CONTEXT)
 					.map(n => n.data.label)
 					.sort((a,b) => a - b) // ensures numeric values still sorted correctly
 					.join(", ")
+			}
 			else
 				return "" 
 		},
 		containsDatings() { 
-			let id = this.selectedItem?.data?.id || ""
-			if(id !== "")
+			let id = this.selectedItem?.data?.id
+			if(id) {
 				return this.$store.getters.descendantsOfID(id)
 					.filter(n => n.data.class == NodeClass.DATING)
 					.map(n => n.data.label)
 					.sort((a,b) => a - b) // ensures numeric values still sorted correctly
 					.join(", ")
+			}
 			else
 				return "" 
-		}
+		}*/
 	},
 	methods: {
         itemSelected(item) {
@@ -364,6 +386,9 @@ export default {
 				this.selectedItem = null
 		},
 		labelChanged() {
+			this.itemChanged()
+		},
+		uriChanged() {
 			this.itemChanged()
 		},
 		descriptionChanged() {

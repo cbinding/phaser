@@ -20,7 +20,7 @@ export default new Vuex.Store({
     plugins: [ createPersistedState({ storage: window.localStorage, paths: ["graph"] }) ],
 	state: {
         appName: "Phaser",  // application name
-        appVersion: "1.2",  // application version
+        appVersion: "1.3",  // application version
         selectedID: "",     // ID of currently selected node        
         about: {            // not used yet..
             project: "My example project",
@@ -247,19 +247,19 @@ export default new Vuex.Store({
         // option lists for element selectors
         phaseOptions: (state, getters) => getters.phases
             .map(n => { return { value: n.data.id, text: `(phase) ${n.data.label}` }})
-            .sort((a, b) => (a.text || "") - (b.text || "")),
+            .sort((a, b) => a.text > b.text ? 1 : -1),
         groupOptions: (state, getters) => getters.groups
             .map(n => { return { value: n.data.id, text: `(group) ${n.data.label}` }})
-            .sort((a, b) => (a.text || "") - (b.text || "")),
+            .sort((a, b) => a.text > b.text ? 1 : -1),
         subgroupOptions: (state, getters) => getters.subgroups
             .map(n => { return { value: n.data.id, text: `(subgroup) ${n.data.label}` }})
-            .sort((a, b) => (a.text || "") - (b.text || "")),
+            .sort((a, b) => a.text > b.text ? 1 : -1),
         contextOptions: (state, getters) => getters.contexts
             .map(n => { return { value: n.data.id, text: `(context) ${n.data.label}` }})
-            .sort((a, b) => (a.text || "") - (b.text || "")),
+            .sort((a, b) => a.text > b.text ? 1 : -1),
         periodOptions: (state, getters) => getters.periods
             .map(n => { return { value: n.data.id, text: `${n.data.label}` }})
-            .sort((a, b) => (a.text || "") - (b.text || "")),                    
+            .sort((a, b) => a.text > b.text ? 1 : -1),                    
         
             // grouped option lists for element selectors
         phaseOptionsGrouped: (state, getters) => (getters.phaseOptions.length == 0) ? 
@@ -298,7 +298,47 @@ export default new Vuex.Store({
         descendantsOfID: (state, getters) => id => getters.descendantsOfIDs([id]),
         
         //datingsForID: (state, getters) => id => getters.descendantsOfID(id)
-            //.filter(n => n.data.class == NodeClass.DATING && n.data.included),        
+            //.filter(n => n.data.class == NodeClass.DATING && n.data.included), 
+            
+        // get actual min/max years accounting for any tolerance set
+        enteredDates: (state, getters) => id => {            
+            let node = getters.nodeByID(id)
+            let minYear = Number.POSITIVE_INFINITY
+            let maxYear = Number.NEGATIVE_INFINITY
+            //if(!node) return null
+            let dating = {
+                minYear: Number(node?.data?.dating?.minYear),
+                maxYear: Number(node?.data?.dating?.maxYear),
+                minYearTolValue: Number(node?.data?.dating?.minYearTolValue || 0),
+                maxYearTolValue: Number(node?.data?.dating?.maxYearTolValue || 0),
+                minYearTolUnit: node?.data?.dating?.minYearTolUnit,
+                maxYearTolUnit: node?.data?.dating?.maxYearTolUnit
+            }
+            if(minYear > dating.minYear) minYear = dating.minYear
+            if(maxYear < dating.maxYear) maxYear = dating.maxYear
+
+            // apply minYear tolerance (if present)
+            if(dating.minYearTolValue !== 0) {
+                if(dating.minYearTolUnit == "percent") 
+                    minYear -= (dating.minYear * (dating.minYearTolValue / 100))
+                else
+                    minYear -= dating.minYearTolValue
+            }
+
+            // apply maxYear tolerance (if present)
+            if(dating.maxYearTolValue !== 0) {
+                if(dating.maxYearTolUnit == "percent") 
+                    maxYear += (dating.maxYear * (dating.maxYearTolValue / 100)) 
+                else
+                    maxYear += dating.maxYearTolValue
+            }
+                
+            // return overall rounded min/max year values after tolerances applied
+            return { 
+                minYear: minYear < Number.POSITIVE_INFINITY ? Math.round(minYear) : null, 
+                maxYear: maxYear > Number.NEGATIVE_INFINITY ? Math.round(maxYear) : null
+            }    
+        },
 
         // derive min/max years from hierarchical descendant datings
         derivedDates: (state, getters) => id => {
@@ -322,8 +362,31 @@ export default new Vuex.Store({
         },
 
         derivedNodeDates: (state, getters) => id => {
-            let minYear = Number.MAX_VALUE
-            let maxYear = Number.MIN_VALUE
+            let minYear = Number.POSITIVE_INFINITY
+            let maxYear = Number.NEGATIVE_INFINITY
+            
+            getters.descendantsOfID(id)
+                .filter(n => n.data.class == NodeClass.DATING && n.data.included && n.data.dating)
+                //.map(n => ((n || {}).data || {}).dating)
+                //.filter(dating => dating) 
+                .forEach(n => {
+                    // extents of date range, accounting for any tolerance set
+                    let dating = getters.enteredDates(n.data.id)                    
+                    // less than the current minimum?
+                    if(dating.minYear < minYear) minYear = dating.minYear
+                    // more than the current maximum?
+                    if(dating.maxYear > maxYear) maxYear = dating.maxYear
+                })
+            // return overall rounded min/max year after tolerances applied
+            return { 
+                minYear: minYear < Number.POSITIVE_INFINITY ? Math.round(minYear) : null, 
+                maxYear: maxYear > Number.NEGATIVE_INFINITY ? Math.round(maxYear) : null
+            }
+        },
+
+        derivedNodeDatesOld: (state, getters) => id => {
+            let minYear = Number.POSITIVE_INFINITY
+            let maxYear = Number.NEGATIVE_INFINITY
             
             getters.descendantsOfID(id)
                 .filter(n => n.data.class == NodeClass.DATING && n.data.included && n.data.dating)
@@ -358,21 +421,28 @@ export default new Vuex.Store({
                 })
             // return overall rounded min/max year after tolerances applied
             return { 
-                minYear: minYear < Number.MAX_VALUE ? Math.round(minYear) : null, 
-                maxYear: maxYear > Number.MIN_VALUE ? Math.round(maxYear) : null
+                minYear: minYear < Number.POSITIVE_INFINITY ? Math.round(minYear) : null, 
+                maxYear: maxYear > Number.NEGATIVE_INFINITY ? Math.round(maxYear) : null
             }
         },
 
-        duration: (state, getters) => id => { 
+        // duration for derived dates (accounting for any tolerance set)
+        derivedDuration: (state, getters) => id => { 
             let dates = getters.derivedDates(id)
-            return (dates.maxYear && dates.minYear) ? (dates.maxYear - dates.minYear) + 1 : null
-        },        
+            return (dates.maxYear !== null && dates.minYear !== null) ? (dates.maxYear - dates.minYear) + 1 : null
+        },
+        
+        // duration for entered dates (accounting for any tolerance set)
+        enteredDuration: (state, getters) => id => { 
+            let dates = getters.enteredDates(id)
+            return (dates.maxYear !== null && dates.minYear !== null) ? (dates.maxYear - dates.minYear) + 1 : null
+        }, 
         
         newPhase: (state, getters) => { 
             const nc = NodeClass.PHASE
             // get next available phase ID to use
             let nextID = 1
-            while(getters.nodeByID(`${nc}-${nextID}`)) nextID++ 
+            while(getters.isNode(`${nc}-${nextID}`)) nextID++ 
             const id = `${nc}-${nextID}`
             // structure of a new phase
             return { 
@@ -402,7 +472,7 @@ export default new Vuex.Store({
             const nc = NodeClass.GROUP
             // get next available group ID to use
             let nextID = 1
-            while(getters.nodeByID(`${nc}-${nextID}`)) nextID++ 
+            while(getters.isNode(`${nc}-${nextID}`)) nextID++ 
             const id = `${nc}-${nextID}`
             // structure of a new group
             return { 
@@ -426,7 +496,7 @@ export default new Vuex.Store({
             const nc = NodeClass.SUBGROUP
             // get next available subgroup ID to use
             let nextID = 1
-            while(getters.nodeByID(`${nc}-${nextID}`)) nextID++ 
+            while(getters.isNode(`${nc}-${nextID}`)) nextID++ 
             const id = `${nc}-${nextID}`
             // structure of a new subgroup
             return { 
@@ -450,7 +520,7 @@ export default new Vuex.Store({
             const nc = NodeClass.CONTEXT
             // get next available context ID to use 
             let nextID = 1
-            while(getters.nodeByID(`${nc}-${nextID}`)) nextID++ 
+            while(getters.isNode(`${nc}-${nextID}`)) nextID++ 
             const id = `${nc}-${nextID}`
             // structure of a new context
             return { 
@@ -474,7 +544,7 @@ export default new Vuex.Store({
             const nc = NodeClass.DATING
             // get next available context ID to use 
             let nextID = 1
-            while(getters.nodeByID(`${nc}-${nextID}`)) nextID++ 
+            while(getters.isNode(`${nc}-${nextID}`)) nextID++ 
             const id = `${nc}-${nextID}`
             // structure of a new dating
             return { 
@@ -496,10 +566,6 @@ export default new Vuex.Store({
                         minYearTolUnit: "years",
                         maxYearTolUnit: "years"
                     }  
-                }, 
-                position: { 
-                    x: 0, 
-                    y: 0 
                 }
             } 
         },
@@ -508,7 +574,7 @@ export default new Vuex.Store({
             const nc = NodeClass.PERIOD
             // get next available context ID to use 
             let nextID = 1
-            while(getters.nodeByID(`${nc}-${nextID}`)) nextID++ 
+            while(getters.isNode(`${nc}-${nextID}`)) nextID++ 
             const id = `${nc}-${nextID}`
             // structure of a new dating
             return { 
@@ -527,10 +593,6 @@ export default new Vuex.Store({
                         minYearTolUnit: "years",
                         maxYearTolUnit: "years"
                     }  
-                }, 
-                position: { 
-                    x: 0, 
-                    y: 0 
                 }
             } 
         },
@@ -538,7 +600,7 @@ export default new Vuex.Store({
         newEdge: (state, getters) => {
             // get next available edge ID to use 
             let nextID = 1            
-            while(getters.edgeByID(`edge-${nextID}`)) nextID++ 
+            while(getters.isEdge(`edge-${nextID}`)) nextID++ 
             const id = `edge-${nextID}` 
             // structure of a new edge
             return { data: { id: id, source: "source", target: "target", type: "above" } }
@@ -554,8 +616,9 @@ export default new Vuex.Store({
             if(index === -1)            // id doesn't exist - add new node
                 nodes.push(node)          
             else                        // id exists - update existing node
-                Vue.set(nodes, index, node) // see if this works better? trying to ensure reactivity of grouping
-                //nodes.splice(index, 1, node)  // otherwise this will work.. replace the node  
+                nodes.splice(index, 1, node)  // otherwise this will work.. replace the node 
+                //Vue.set(nodes, index, node) // think set is deprecated from Vue3?
+                 
         },
 
         // currently selected node ID - for visual indication
@@ -580,8 +643,9 @@ export default new Vuex.Store({
             if(index === -1)        // id doesn't exist - add new edge
                 edges.push(edge)               
             else                    // id exists - update existing edge
-                Vue.set(edges, index, edge) // see if this works? trying to ensure reactivity of grouping
-                //edges.splice(index, 1, edge)    // otherwise this will work.. replace the edge            
+                edges.splice(index, 1, edge)    // otherwise this will work.. replace the edge  
+                //Vue.set(edges, index, edge) // think set is deprecated in Vue3?
+                          
         },
 
         DELETE_EDGE(state, edge) {

@@ -55,9 +55,7 @@ export default {
 		},		
 	},
 	data() {
-		return {
-			
-		}
+		return {}
 	},
 	computed: {},
 	methods: {

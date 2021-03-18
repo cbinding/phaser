@@ -6,14 +6,15 @@ const PhaserCommon = {
     }, 
     methods: {
         getJSON(uri, success=()=>{}, error=()=>{}) {
-            let options = {
+           /* let options = {
                 method: 'GET', 
                 headers: { 
                     'Accept': 'application/json',
                     'Content-Type': 'application/json' 
                 } 
             }
-            fetch(uri, options)
+            fetch(uri, options)*/
+            fetch(uri)
                 .then(response => response.json())
                 .then(success)
                 .catch(error)

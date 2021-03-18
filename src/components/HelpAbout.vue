@@ -8,7 +8,7 @@
 			<a target="_blank" href="https://stratigraphic.github.io/matrix/">https://stratigraphic.github.io/matrix/</a>
 
 		</div>
-		<!--keep this - removes default buttons from modal-->
+		<!--this removes default buttons from modal-->
 		<template #modal-footer><div></div></template>
 	</b-modal>	
 </template>

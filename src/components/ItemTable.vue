@@ -11,7 +11,7 @@
 					:alt="`add ${itemClass}`"			
 					@click.stop="insertItem()">
 					<b-icon-plus />Add {{ itemClass }}</b-button>
-				</b-col>
+			</b-col>
 			<b-col>
 				<b-form-group
 					label="Filter"
@@ -46,11 +46,11 @@
 					primary-key="id"
 					:items="items" 
 					:fields="fields"
-					:filter="filter"						
+					:filter="filter"
 					class="overflow-auto shadow-sm"
 					@row-selected="rowSelected">
 					<template #cell(actions)="row">
-						<div class="text-right">															
+						<div class="text-right">
 							<b-icon-x-circle width="15" height="15"
 								class="action mr-2" 
 								:title="`delete ${itemClass} ${row.item.data.label}`" 
@@ -78,7 +78,7 @@ import {NodeClass} from '@/mixins/constants.js'
 
 export default {
 	name: 'ItemTable',
-	components: {},
+	components: { },
 	mixins: [ PhaserCommon ],
 	props: {		
 		itemClass: {
@@ -146,6 +146,14 @@ export default {
 					label: "id",
 					sortable: true					
 				}] : [],
+				... (this.columns.includes('period')) ? [{
+					// virtual column with custom formatter
+					key: 'period',
+					label: 'period',
+					sortByFormatted: true,
+					formatter: this.tablePeriodFormatter,
+					sortable: true					
+				}] : [],
 				... (this.columns.includes('source')) ? [{
 					key: "data.source",
 					label: "source",
@@ -198,15 +206,7 @@ export default {
 					formatter: this.enteredDiffFormatter,
 					sortable: true,
 					class: "text-right"
-				}] : [],
-				... (this.columns.includes('period')) ? [{
-					// virtual column with custom formatter
-					key: 'period',
-					label: 'period',
-					sortByFormatted: true,
-					formatter: this.tablePeriodFormatter,
-					sortable: true					
-				}] : [],
+				}] : [],				
 				... (this.columns.includes('derivedMinYear')) ? [{
 					// virtual column with custom formatter
 					key: 'derivedminyear',
@@ -343,7 +343,7 @@ export default {
             if(year == null || year == "")
 				return ""
 			else if(tolv == 0)
-				return `${year}`
+				return Number(year) //`${year}`
 			else
 				return `${year}±${tolv}${tolu == "years" ? "y" : "%"}`
         },
@@ -354,11 +354,13 @@ export default {
 			return this.$store.getters.derivedDates(item.data.id).maxYear 
 		},
 		durationFormatter(value, key, item) {
-			return this.$store.getters.duration(item.data.id) 
+			return this.$store.getters.derivedDuration(item.data.id) 
 		},
 		enteredDiffFormatter(value, key, item) {
-			let dating = item.data.dating
-            return (dating.maxYear !== null && dating.minYear !== null) ? (dating.maxYear - dating.minYear) + 1 : null
+			return this.$store.getters.enteredDuration(item.data.id) 
+			//let dating = this.$store.getters.enteredNodeDates(item.data.id)
+			//let dating = item.data.dating
+            //return (dating.maxYear !== null && dating.minYear !== null) ? (dating.maxYear - dating.minYear) + 1 : null
 		},
 	}
 } 

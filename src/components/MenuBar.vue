@@ -18,11 +18,21 @@
 							@input="fileLoad">
 						</b-form-file>					
 					</b-dropdown-item-button>
+					<!--<b-dropdown-item-button v-b-modal.modalFileOpenFromURL>
+						<b-icon-upload class="mr-2" />
+						<span>Open from URL...</span>	
+						<FileOpenFromURL />							
+					</b-dropdown-item-button>-->					
 					<b-dropdown-item-button @click="fileSave">
 						<b-icon-download class="mr-2" />
 						<span>Save...</span>						
 					</b-dropdown-item-button>					
 					<b-dropdown-divider/>
+					<b-dropdown-item-button v-b-modal.modalPeriodsImport>
+						<b-icon-box-arrow-in-left class="mr-2" />
+						<span>Import Perio.do collection...</span>	
+						<PeriodsImport />							
+					</b-dropdown-item-button>
 					<b-dropdown-item-button v-b-modal.modalFileImport>
 						<b-icon-box-arrow-in-left class="mr-2" />
 						<span>Import context stratigraphy (CSV)...</span>
@@ -92,18 +102,22 @@
 </template>
 
 <script>
-//import ModalFileOpen from '@/components/ModalFileOpen'
 import FileImport from '@/components/FileImport'
+//import FileOpenFromURL from '@/components/FileOpenFromURL'
+import PeriodsImport from '@/components/PeriodsImport'
 import HelpAbout from '@/components/HelpAbout'
 import moment from 'moment'
+import PhaserCommon from '@/mixins/PhaserCommon.js'
 
 export default {
 	name: 'MenuBar',
 	components: {
-		//ModalFileOpen,
 		FileImport,
+		//FileOpenFromURL,
+		PeriodsImport,
 		HelpAbout
 	},
+	mixins: [ PhaserCommon ],
 	props: { },
 	data: function() {
 		return { }
@@ -117,13 +131,19 @@ export default {
 
 		clearAll() {
 			let self = this
-			self.$bvModal.msgBoxConfirm('Clear all current data, are you sure?')
-				.then(value => {
-					if(value) { 
-						self.$store.dispatch('clearAll') 
-						this.$root.$emit('diagramClear')
-					}
-				})	
+			self.$bvModal.msgBoxConfirm('This will clear all current data, are you sure?',{
+				//title: 'New file',
+				size: 'sm',
+				buttonSize: 'sm',
+				centered: true,
+				okTitle: 'Yes',
+				cancelTitle: 'No',
+			}).then(value => {
+				if(value) { 
+					self.$store.dispatch('clearAll') 
+					this.$root.$emit('diagramClear')
+				}
+			})	
 		},
 		
 		fileLoad(file) {
@@ -136,6 +156,10 @@ export default {
                 self.$store.dispatch('loadMatrixData', fileContents)				
             }
             reader.readAsText(file)
+		},
+
+		fileOpenFromURL() {
+
 		},
 
 		fileSave() {

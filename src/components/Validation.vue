@@ -64,17 +64,11 @@ export default {
 	name: 'Validation',
 	components: { },
 	mixins: [ ],
-	props: {
-		name: {
-			type: String,
-			required: false,
-			default: "Fred" 
-		}		
-	},
+	props: { },
 	data() {
 		return {
 			filter: "",
-            sortBy: "data.label",
+            sortBy: "test",
 			sortDesc: false	
 		}
 	},

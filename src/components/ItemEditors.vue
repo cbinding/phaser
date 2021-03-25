@@ -35,9 +35,9 @@
 		<b-tab>
 			<template v-slot:title>
 				<span>Validation</span>
-				<b-badge variant="outline" class="border secondary pb-1 m-0 ml-2">
+				<!--<b-badge variant="outline" class="border secondary pb-1 m-0 ml-2">
 					<span>{{ 0 }}</span>
-				</b-badge>
+				</b-badge>-->
 			</template>
 			<Validation/>
 		</b-tab>

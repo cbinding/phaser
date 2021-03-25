@@ -8,3 +8,4 @@ export const NodeClass = Object.freeze({
     DATING: "dating",
     PERIOD: "period"
 })
+//export default NodeClass

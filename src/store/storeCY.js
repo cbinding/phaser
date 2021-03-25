@@ -20,16 +20,17 @@ export default new Vuex.Store({
     plugins: [ createPersistedState({ storage: window.localStorage, paths: ["graph"] }) ],
 	state: {
         appName: "Phaser",  // application name
-        appVersion: "1.3",  // application version
+        appVersion: "1.4",  // application version
         selectedID: "",     // ID of currently selected node        
-        about: {            // not used yet..
-            project: "My example project",
-            descrip: "VUEX data for Cytoscape graph elements structure",
+        about: {            // dataset metadata - not used yet..
+            title: "My example project",
+            description: "VUEX data for Cytoscape graph elements structure",
             creator: "Ceri Binding, University of South Wales",
             contact: "ceri.binding@southwales.ac.uk",
             created: "2021-01-07",
-            updated: "2021-01-07", 
-            version: "1.0",           
+            modified: "2021-03-19", 
+            license: "https://creativecommons.org/licenses/by/4.0/",
+            version: "20210319",           
         },  
         graph: {
             nodes: [],
@@ -173,32 +174,18 @@ export default new Vuex.Store({
                 "Wheel rut",
                 "Wheel rut: fill"
             ],
-            /*findTypes: [
-                "find type A",
-                "find type B",
-                "find type C"
-            ],
-            sampleTypes: [
-                "sample type A",
-                "sample type B",
-                "sample type C"
-            ],*/
             datingTypes: [
                 "find",
                 "sample",
                 "manual"
-            ],
-            /*periodTypes: [
-                { id: "1", label: "Roman", min: 43, max: 410 },
-                { id: "1", label: "Medieval", min: 1066, max: 1540 },
-            ] */        
+            ]            
         }     
     },	
     
 	getters: { 
-        appName: state => state.appName, // application name
-        appVersion: state => state.appVersion, // application version
-        about: state => state.about, // metadata about this graph (not used yet)        
+        appName: state => state.appName,        // application name
+        appVersion: state => state.appVersion,  // application version
+        about: state => state.about,            // metadata about this graph (not used yet)        
         
         // basic elements of graph structure 
         elements: state => state.graph,      
@@ -206,10 +193,9 @@ export default new Vuex.Store({
         edges: (state, getters) => getters.elements.edges,    
         isNode: (state, getters) => id => getters.nodes.some(n => n.data.id === id),     
         isEdge: (state, getters) => id => getters.edges.some(n => n.data.id === id),
-        nodeByID: (state, getters) => id => getters.nodes.find(n => n.data.id === id),
-        edgeByID: (state, getters) => id => getters.edges.find(e => e.data.id === id), 
+        nodeByID: (state, getters) => id => getters.nodes.find(n => n.data.id === id), // make this faster once Map is supported in VUEX?
+        edgeByID: (state, getters) => id => getters.edges.find(e => e.data.id === id), // otherwise use object properties as map structure?
 
-        //nodeLabel: (state, getters) => id => ((getters.nodeByID(id) || {}).data || {}).label || id,
         nodeLabel: (state, getters) => (id, includeClass=false) => {
             let node = getters.nodeByID(id)
             if(node) {
@@ -223,13 +209,13 @@ export default new Vuex.Store({
         edgesByTarget: (state, getters) => target => getters.edges.filter(e => e.data.target === target),
 
         // specialized elements of graph structure
-        phases: (state, getters) => getters.nodes.filter(n => n.data.class === NodeClass.PHASE),
-		groups: (state, getters) => getters.nodes.filter(n => n.data.class === NodeClass.GROUP),
-        subgroups: (state, getters) => getters.nodes.filter(n => n.data.class === NodeClass.SUBGROUP),
-        contexts: (state, getters) => getters.nodes.filter(n => n.data.class === NodeClass.CONTEXT),
-        datings: (state, getters) => getters.nodes.filter(n => n.data.class === NodeClass.DATING),
-        periods: (state, getters) => getters.nodes.filter(n => n.data.class === NodeClass.PERIOD),
-
+        phases: (state, getters) => getters.nodes.filter(node => node.data?.class === NodeClass.PHASE),
+		groups: (state, getters) => getters.nodes.filter(node => node.data?.class === NodeClass.GROUP),
+        subgroups: (state, getters) => getters.nodes.filter(node => node.data?.class === NodeClass.SUBGROUP),
+        contexts: (state, getters) => getters.nodes.filter(node => node.data?.class === NodeClass.CONTEXT),
+        datings: (state, getters) => getters.nodes.filter(node => node.data?.class === NodeClass.DATING),
+        periods: (state, getters) => getters.nodes.filter(node => node.data?.class === NodeClass.PERIOD),
+        
         // ID of currently selected node - for UI
         selectedID: state => state.selectedID,
 
@@ -239,7 +225,6 @@ export default new Vuex.Store({
         //contextTypes: state => state.types.contextTypes,        
         //findTypes: state => state.types.findTypes,
         //sampleTypes: state => state.types.sampleTypes,
-        phaseTypeOptions: state => state.types.phaseTypes.map(s => { return { value: s, text: s }}),
         groupTypeOptions: state => state.types.groupTypes.map(s => { return { value: s, text: s }}),
         contextTypeOptions: state => state.types.contextTypes.map(s => { return { value: s, text: s }}),
         datingTypeOptions: state => state.types.datingTypes.map(s => { return { value: s, text: s }}),
@@ -287,7 +272,7 @@ export default new Vuex.Store({
         descendantsOfIDs: (state, getters) => ids => {
             let descendants = []
             let childNodes = getters.childrenOfIDs(ids)
-            let iteration = 0 // to break self referential loops
+            let iteration = 0 // to break possible self referential loops
             while(childNodes.length > 0 && iteration < 5) {
                 descendants = descendants.concat(childNodes)
                 childNodes = getters.childrenOfIDs(childNodes.map(n => n.data.id))
@@ -296,6 +281,25 @@ export default new Vuex.Store({
             return descendants
         },
         descendantsOfID: (state, getters) => id => getters.descendantsOfIDs([id]),
+
+        ancestorsOfNode: (state, getters) => node => {
+            let ancestors = []
+            let iteration = 0 // to break possible self referential loops
+            
+            if(!node) return []
+            let parent = getters.nodeByID(node.data?.parent)
+
+            while(parent && iteration < 5) { 
+                ancestors.push(parent)
+                parent = getters.nodeByID(parent.data?.parent)                 
+                iteration++   
+            }
+            return ancestors
+        },
+        ancestorsOfID: (state, getters) => id => {
+            let node = getters.nodeByID(id)
+            return getters.ancestorsOfNode(node)
+        },
         
         //datingsForID: (state, getters) => id => getters.descendantsOfID(id)
             //.filter(n => n.data.class == NodeClass.DATING && n.data.included), 
@@ -303,41 +307,38 @@ export default new Vuex.Store({
         // get actual min/max years accounting for any tolerance set
         enteredDates: (state, getters) => id => {            
             let node = getters.nodeByID(id)
-            let minYear = Number.POSITIVE_INFINITY
-            let maxYear = Number.NEGATIVE_INFINITY
-            //if(!node) return null
-            let dating = {
-                minYear: Number(node?.data?.dating?.minYear),
-                maxYear: Number(node?.data?.dating?.maxYear),
-                minYearTolValue: Number(node?.data?.dating?.minYearTolValue || 0),
-                maxYearTolValue: Number(node?.data?.dating?.maxYearTolValue || 0),
-                minYearTolUnit: node?.data?.dating?.minYearTolUnit,
-                maxYearTolUnit: node?.data?.dating?.maxYearTolUnit
+            
+            // get clean dating values
+            let dating = node?.data?.dating || {}
+            let cleaned = {
+                minYear: Number(dating.minYear || Number.POSITIVE_INFINITY),
+                maxYear: Number(dating.maxYear || Number.NEGATIVE_INFINITY),
+                minYearTolValue: Number(dating.minYearTolValue || 0),
+                maxYearTolValue: Number(dating.maxYearTolValue || 0),
+                minYearTolUnit: (dating.minYearTolUnit || "years").trim().toLowerCase(),
+                maxYearTolUnit: (dating.maxYearTolUnit || "years").trim().toLowerCase()
             }
-            if(minYear > dating.minYear) minYear = dating.minYear
-            if(maxYear < dating.maxYear) maxYear = dating.maxYear
-
             // apply minYear tolerance (if present)
-            if(dating.minYearTolValue !== 0) {
-                if(dating.minYearTolUnit == "percent") 
-                    minYear -= (dating.minYear * (dating.minYearTolValue / 100))
+            if(cleaned.minYear < Number.POSITIVE_INFINITY && cleaned.minYearTolValue !== 0) {
+                if(cleaned.minYearTolUnit == "percent") 
+                    cleaned.minYear -= (cleaned.minYear * (cleaned.minYearTolValue / 100))
                 else
-                    minYear -= dating.minYearTolValue
+                    cleaned.minYear -= cleaned.minYearTolValue
             }
-
+	
             // apply maxYear tolerance (if present)
-            if(dating.maxYearTolValue !== 0) {
-                if(dating.maxYearTolUnit == "percent") 
-                    maxYear += (dating.maxYear * (dating.maxYearTolValue / 100)) 
+            if(cleaned.maxYear > Number.NEGATIVE_INFINITY && cleaned.maxYearTolValue !== 0) {
+                if(cleaned.maxYearTolUnit == "percent") 
+                    cleaned.maxYear += (cleaned.maxYear * (cleaned.maxYearTolValue / 100)) 
                 else
-                    maxYear += dating.maxYearTolValue
+                    cleaned.maxYear += cleaned.maxYearTolValue
             }
-                
-            // return overall rounded min/max year values after tolerances applied
+	
+            // return overall rounded minYear/maxYear values after tolerances applied
             return { 
-                minYear: minYear < Number.POSITIVE_INFINITY ? Math.round(minYear) : null, 
-                maxYear: maxYear > Number.NEGATIVE_INFINITY ? Math.round(maxYear) : null
-            }    
+                minYear: cleaned.minYear < Number.POSITIVE_INFINITY ? Math.round(cleaned.minYear) : null, 
+                maxYear: cleaned.maxYear > Number.NEGATIVE_INFINITY ? Math.round(cleaned.maxYear) : null
+            }  
         },
 
         // derive min/max years from hierarchical descendant datings
@@ -382,49 +383,7 @@ export default new Vuex.Store({
                 minYear: minYear < Number.POSITIVE_INFINITY ? Math.round(minYear) : null, 
                 maxYear: maxYear > Number.NEGATIVE_INFINITY ? Math.round(maxYear) : null
             }
-        },
-
-        derivedNodeDatesOld: (state, getters) => id => {
-            let minYear = Number.POSITIVE_INFINITY
-            let maxYear = Number.NEGATIVE_INFINITY
-            
-            getters.descendantsOfID(id)
-                .filter(n => n.data.class == NodeClass.DATING && n.data.included && n.data.dating)
-                .map(n => ((n || {}).data || {}).dating)
-                //.filter(dating => dating) 
-                .forEach(d => {
-                    let clean = {
-                        minYear: Number(d.minYear),
-                        maxYear: Number(d.maxYear),
-                        minYearTolValue: Number(d.minYearTolValue),
-                        maxYearTolValue: Number(d.maxYearTolValue),
-                        minYearTolUnit: d.minYearTolUnit,
-                        maxYearTolUnit: d.maxYearTolUnit
-                    }
-                    
-                    // apply minYear tolerance (if present)
-                    if(clean.minYearTolUnit == "percent") 
-                        clean.minYear -= (clean.minYear * (clean.minYearTolValue / 100))
-                    else
-                        clean.minYear -= clean.minYearTolValue
-
-                    // apply maxYear tolerance (if present)
-                    if(clean.maxYearTolUnit == "percent") 
-                        clean.maxYear += (clean.maxYear * (clean.maxYearTolValue / 100)) 
-                    else
-                        clean.maxYear += clean.maxYearTolValue 
-
-                    // less than the current minimum?
-                    if(clean.minYear < minYear) minYear = clean.minYear
-                    // more than the current maximum?
-                    if(clean.maxYear > maxYear) maxYear = clean.maxYear
-                })
-            // return overall rounded min/max year after tolerances applied
-            return { 
-                minYear: minYear < Number.POSITIVE_INFINITY ? Math.round(minYear) : null, 
-                maxYear: maxYear > Number.NEGATIVE_INFINITY ? Math.round(maxYear) : null
-            }
-        },
+        },        
 
         // duration for derived dates (accounting for any tolerance set)
         derivedDuration: (state, getters) => id => { 
@@ -616,7 +575,7 @@ export default new Vuex.Store({
             if(index === -1)            // id doesn't exist - add new node
                 nodes.push(node)          
             else                        // id exists - update existing node
-                nodes.splice(index, 1, node)  // otherwise this will work.. replace the node 
+                nodes.splice(index, 1, node)  // replace the node 
                 //Vue.set(nodes, index, node) // think set is deprecated from Vue3?
                  
         },
@@ -643,7 +602,7 @@ export default new Vuex.Store({
             if(index === -1)        // id doesn't exist - add new edge
                 edges.push(edge)               
             else                    // id exists - update existing edge
-                edges.splice(index, 1, edge)    // otherwise this will work.. replace the edge  
+                edges.splice(index, 1, edge)    // replace the edge  
                 //Vue.set(edges, index, edge) // think set is deprecated in Vue3?
                           
         },
@@ -651,7 +610,7 @@ export default new Vuex.Store({
         DELETE_EDGE(state, edge) {
             const edges = state.graph.edges
             const index = edges.findIndex(e => e.data.id === edge?.data?.id)
-            if(index !== -1)            // exists, remove 
+            if(index !== -1)            // exists
                 edges.splice(index, 1)  // remove 
         },
 

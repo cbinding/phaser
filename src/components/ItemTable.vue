@@ -40,7 +40,7 @@
 					id="datatable"
 					sort-icon-left
 					hover outlined selectable small 
-					:no-border-collapse="false"
+					:no-border-collapse="true"
 					sticky-header="300px" 
 					select-mode="single"
 					primary-key="id"

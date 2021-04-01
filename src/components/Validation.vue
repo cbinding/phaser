@@ -40,10 +40,10 @@
 					id="datatable"
 					:busy="isBusy"
 					sort-icon-left
-					hover outlined selectable small 
+					hover outlined small 
 					:no-border-collapse="true"
 					sticky-header="600px" 
-					select-mode="single"
+					select-mode="single"					
 					primary-key="id"
 					:items="items" 
 					:fields="fields"
@@ -65,7 +65,7 @@
 						<b-list-group>
 							<b-list-group-item v-for="(result, key) in row.item.results" 
 								:key="key" 
-								:variant="result.passed ? 'success': 'danger'">
+								:variant="result.passed ? 'success': row.item.optional ? 'warning' : 'danger'">
 								<span v-if="result.passed">✓</span>
 								<span v-else>✗</span>
 								<span class="ml-2">{{ result.description }}</span>
@@ -154,15 +154,15 @@ export default {
 		tableRowSelected() {},
 		tableRowClass(item, type) {
 			if (!item || type !== 'row') 
-				return ""
-			else if (item.results.length == 0) 
 				return "table-light"
-			else if (item.results.some(result => result.passed == false)) 
-				return 'table-danger' 
-			else 
-				return 'table-success'
+			if (item.results.length == 0) 
+				return "table-light"
+			if (item.results.some(result => result.passed == false)) 
+				if(item.optional) return 'table-warning'
+				else return 'table-danger' 
+			else return 'table-success'
 		},
-
+		
 		clear() { this.items = [] },
 
         refresh() { 
@@ -230,7 +230,7 @@ export default {
 		},
 		
 		testPhaseContainsAtLeastOneContext() {
-			let test = { results: [], testName: "Phases must contain at least one context" }
+			let test = { results: [], optional: false, testName: "Phases must contain at least one context" }
 			this.$store.getters.phases.forEach(phase => {
 				let passed = this.testNodeDescendantIsContext(phase)
 				test.results.push({
@@ -242,7 +242,7 @@ export default {
 		},
 
 		testPhaseDefinesDateRange() {
-			let test = { results: [], testName: "Phases should define a date range" }
+			let test = { results: [], optional: true, testName: "Phases should define a date range" }
 			this.$store.getters.phases.forEach(phase => {
 				let passed = phase.data.dating.minYear && phase.data.dating.maxYear				
 				test.results.push({
@@ -254,7 +254,7 @@ export default {
 		},
 
 		testPhaseAllocatedToPeriod() {
-			let test = { results: [], testName: "Phases should be allocated to a period" }
+			let test = { results: [], optional: true, testName: "Phases should be allocated to a period" }
 			this.$store.getters.phases.forEach(phase => {	
 				let passed = this.testNodeAllocatedToPeriod(phase)	
 				test.results.push({
@@ -266,7 +266,7 @@ export default {
 		},
 
 		testGroupContainsAtLeastOneContext() {
-			let test = { results: [], testName: "Groups must contain at least one context" }
+			let test = { results: [], optional: false, testName: "Groups must contain at least one context" }
 			this.$store.getters.groups.forEach(group => {
 				let passed = this.testNodeDescendantIsContext(group)
 				test.results.push({
@@ -278,7 +278,7 @@ export default {
 		},
 
 		testGroupAllocatedToPhase() {
-			let test = { results: [], testName: "Groups must be allocated to a phase" }
+			let test = { results: [], optional: false, testName: "Groups must be allocated to a phase" }
 			this.$store.getters.groups.forEach(group => {				
 				let passed = this.testNodeAllocatedToPhase(group)	
 				test.results.push({
@@ -290,7 +290,7 @@ export default {
 		},
 
 		testGroupAllocatedToPeriod() {
-			let test = { results: [], testName: "Groups must be allocated to a period" }
+			let test = { results: [], optional: true, testName: "Groups should be allocated to a period" }
 			this.$store.getters.groups.forEach(group => {							
 				let passed = this.testNodeAllocatedToPeriod(group)
 				test.results.push({
@@ -302,7 +302,7 @@ export default {
 		},
 
 		testSubgroupContainsAtLeastOneContext() {
-			let test = { results: [], testName: "Subgroups must contain at least one context" }
+			let test = { results: [], optional: false, testName: "Subgroups must contain at least one context" }
 			this.$store.getters.subgroups.forEach(subgroup => {								
 				let passed = this.testNodeDescendantIsContext(subgroup)
 				test.results.push({
@@ -314,7 +314,7 @@ export default {
 		},
 
 		testSubgroupParentMustBeGroup() {
-			let test = { results: [], testName: "Subgroups must be allocated to a group" }
+			let test = { results: [], optional: false, testName: "Subgroups must be allocated to a group" }
 			this.$store.getters.subgroups.forEach(subgroup => {
 				let parent = this.$store.getters.nodeByID(subgroup.data.parent)				
 				let passed = parent?.data?.class == NodeClass.GROUP
@@ -327,7 +327,7 @@ export default {
 		},
 
 		testSubgroupAllocatedToPhase() {
-			let test = { results: [], testName: "Subgroups must be allocated to a phase" }
+			let test = { results: [], optional: false, testName: "Subgroups must be allocated to a phase" }
 			this.$store.getters.subgroups.forEach(subgroup => {								
 				let passed = this.testNodeAllocatedToPhase(subgroup)
 				test.results.push({
@@ -339,7 +339,7 @@ export default {
 		},
 
 		testSubgroupAllocatedToPeriod() {
-			let test = { results: [], testName: "Subgroups must be allocated to a period" }
+			let test = { results: [], optional: true, testName: "Subgroups should be allocated to a period" }
 			this.$store.getters.subgroups.forEach(subgroup => {				
 				let passed = this.testNodeAllocatedToPeriod(subgroup)
 				test.results.push({
@@ -351,7 +351,7 @@ export default {
 		},
 
 		testContextAboveContext() {
-			let test = { results: [], testName: "Context stratigraphy supported by dating evidence?" }
+			let test = { results: [], optional: false, testName: "Context stratigraphy supported by dating evidence?" }
 			this.$store.getters.edges
 				.filter(edge => edge.type = "above").forEach(edge => {											
 					let sourceLabel = this.$store.getters.nodeLabel(edge.data.source)
@@ -366,7 +366,7 @@ export default {
 		},
 
 		testContextAllocatedToPhase() {
-			let test = { results: [], testName: "Contexts must be allocated to a phase" }
+			let test = { results: [], optional: false, testName: "Contexts must be allocated to a phase" }
 			this.$store.getters.contexts.forEach(context => {				
 				let passed = this.testNodeAllocatedToPhase(context)		
 				test.results.push({
@@ -378,7 +378,7 @@ export default {
 		},
 
 		testContextAllocatedToPeriod() {
-			let test = { results: [], testName: "Contexts must be allocated to a period" }
+			let test = { results: [], optional: true, testName: "Contexts should be allocated to a period" }
 			this.$store.getters.contexts.forEach(context => {				
 				let passed = this.testNodeAllocatedToPeriod(context)
 				test.results.push({
@@ -390,7 +390,7 @@ export default {
 		},
 
 		testContextHasType() {
-			let test = { results: [], testName: "Contexts must have a type" }
+			let test = { results: [], optional: true, testName: "Contexts should have a type" }
 			this.$store.getters.contexts.forEach(context => {				
 				let passed = (context.data?.type || "").trim()  !== "" ? true : false		
 				test.results.push({
@@ -402,7 +402,7 @@ export default {
 		},
 
 		testPeriodDefinesDateRange() {
-			let test = { results: [], testName: "Periods should define a date range" }
+			let test = { results: [], optional: true, testName: "Periods should define a date range" }
 			this.$store.getters.periods.forEach(period => {				
 				let passed = period.data?.dating?.minYear !== null && period.data?.dating?.maxYear !== null	
 				test.results.push({

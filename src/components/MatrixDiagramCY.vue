@@ -2,18 +2,14 @@
 <b-overlay :show="busy" rounded="sm">	
 	<!--cytoscape graph-->
     <div id="holder" class="overflow-auto"> 
-        <div class="position-relative">       
-            <Legend 
-                class="position-absolute m-2" 
-                style="{ top: 0; right: 0; z-index: 100; }"/>
-        </div>
-        <div class="position-relative"> 
+        <div class="position-relative">             
             <Lock 
                 class="position-absolute m-2" 
-                style="{ top: 0; left: 0; z-index: 100; }"
-                v-model="locked"  
-                @input="lockChanged"/><!--:value="locked"
-                @change="lockChanged"-->
+                style="{ top: 0; left: 0; z-index: 100; }"                
+                v-model="locked" @input="lockChanged"/>
+            <Legend class="position-absolute m-2" 
+                style="{ top: 0; right: 0; z-index: 100; }" />
+             
         </div>
         
         <cytoscape id="diagram" 
@@ -44,6 +40,8 @@ import elk from 'cytoscape-elk'
 import klay from 'cytoscape-klay'
 import gridGuide from 'cytoscape-grid-guide'
 import cyCanvas from 'cytoscape-canvas'
+import panzoom from 'cytoscape-panzoom'
+import $ from 'jquery'
 
 import moment from 'moment'
 import PhaserCommon from '@/mixins/PhaserCommon.js'
@@ -69,7 +67,32 @@ export default {
             container: "cy",
             busy: false,
             locked: true,
-            config: {
+            config: {  
+                panzoom: {
+                    zoomFactor: 0.05, // zoom factor per zoom tick
+                    zoomDelay: 45, // how many ms between zoom ticks
+                    minZoom: 0.05, // min zoom level
+                    maxZoom: 2, // max zoom level
+                    fitPadding: 50, // padding when fitting
+                    panSpeed: 20, // how many ms in between pan ticks
+                    panDistance: 20, // max pan distance per tick
+                    panDragAreaSize: 75, // the length of the pan drag box in which the vector for panning is calculated (bigger = finer control of pan speed and direction)
+                    panMinPercentSpeed: 0.25, // the slowest speed we can pan by (as a percent of panSpeed)
+                    panInactiveArea: 8, // radius of inactive area in pan drag box
+                    panIndicatorMinOpacity: 0.5, // min opacity of pan indicator (the draggable nib); scales from this to 1.0
+                    zoomOnly: false, // a minimal version of the ui only with zooming (useful on systems with bad mousewheel resolution)
+                    fitSelector: undefined, // selector of elements to fit
+                    animateOnFit: function(){ // whether to animate on fit
+                        return false;
+                    },
+                    fitAnimationDuration: 1000, // duration of animation on fit
+
+                    // icon class names
+                    sliderHandleIcon: 'fa fa-minus',
+                    zoomInIcon: 'fa fa-plus',
+                    zoomOutIcon: 'fa fa-minus',
+                    resetIcon: 'fa fa-expand'
+                },                            
                 layoutDagre: {
                     name: 'dagre', 
                     // dagre options, uses default value if undefined
@@ -183,8 +206,8 @@ export default {
                     directed: true, // whether the tree is directed downwards (or edges can point in any direction if false)
                     padding: this.gridSize / 2, // padding on fit
                     circle: false, // put depths in concentric circles if true, put depths top down if false
-                    grid: true, // whether to create an even grid into which the DAG is placed (circle:false only)
-                    spacingFactor: 1, // positive spacing factor, larger => more space between nodes (N.B. n/a if causes overlap)
+                    grid: false, // whether to create an even grid into which the DAG is placed (circle:false only)
+                    //spacingFactor: 1, // positive spacing factor, larger => more space between nodes (N.B. n/a if causes overlap)
                     boundingBox: undefined, // constrain layout bounds; { x1, y1, x2, y2 } or { x1, y1, w, h }
                     avoidOverlap: true, // prevents node overlap, may overflow boundingBox if not enough space
                     nodeDimensionsIncludeLabels: false, // Excludes the label when calculating node bounding boxes for the layout algorithm
@@ -233,7 +256,7 @@ export default {
                         style: {
                             'width': this.gridSize * 3,
                             'height': this.gridSize * 1,
-                            'label':  el => `${el.data('label') ? el.data('label') : el.data('id')}`,                             
+                            'label':  el => `${el.data('label') ? el.data('label') : el.data('id')}`,
                             //'background-fill': 'radial-gradient',
                             //'background-gradient-stop-colors': 'white gray'  
                         }
@@ -241,7 +264,13 @@ export default {
                     {                       
                         selector: 'node[class="context"]:selected',
                         style: { 'background-color': 'gold' }
-                    },  
+                    },
+                    /*{  
+                        // different shape based on type                     
+                        selector: 'node[type="Layer"]',
+                        style: { 'shape': 'rhomboid' }
+                    },*/
+
                     {
                         selector: 'node[class="phase"]',
                         style: {
@@ -319,6 +348,24 @@ export default {
                             'target-arrow-color': '#9dbaea'
                         }
                     },
+                    {
+                        selector: 'edge[class="derived"]',
+                        style: {
+                            'curve-style': 'straight',
+                            'taxi-direction': 'downward',
+                            //'taxi-turn': 15,
+                            //'edge-distances': 'intersection',
+                            //'taxi-turn-min-distance': 15,
+                            'source-endpoint': 'outside-to-line',
+                            'target-endpoint': 'outside-to-line',
+                            'width': 4,
+                            'target-arrow-shape': 'triangle',                            
+                            'arrow-scale': 5,
+                            'line-color': 'red',
+                            'line-style': 'solid',
+                            //'target-arrow-color': '#9dbaea'
+                        }
+                    },
                     {                       
                         selector: 'edge:selected',
                         style: { 'line-color': 'gold' }
@@ -329,11 +376,11 @@ export default {
 	},
     watch: {
         // show visual indicator of currently selected node if selected elsewhere
-        selectedID(newValue) {            
+        selectedID(newValue) {
             const cyi = (this.$refs.cy || {}).instance || null
             if(!cyi) return 
-            cyi.elements(":selected").unselect()           
-            cyi.$id(newValue).select()            
+            cyi.elements(":selected").unselect()
+            cyi.$id(newValue).select()
         }
     },
 	computed: { 
@@ -348,6 +395,7 @@ export default {
         },
         edges() {
             return (this.$store.getters.edges).filter(e => e.data.type == "above")
+            //return (this.$store.getters.derivedEdges)
         }, 
         selectedID() {
             return this.$store.getters.selectedID            
@@ -364,10 +412,10 @@ export default {
             cytoscape.use(dagre) 
             cytoscape.use(elk)
             cytoscape.use(klay)
-            cytoscape.use(gridGuide) // gridGuide(cytoscape)
-            cytoscape.use(cyCanvas)
-            //cytoscape.use(Layers)
-
+            cytoscape.use(gridGuide) 
+            cytoscape.use(cyCanvas) 
+            cytoscape.use(panzoom)     
+            cytoscape.use($)               
         },
 
         // notify store that a node has been selected in the diagram
@@ -378,8 +426,11 @@ export default {
             cyi.$id(element.data.id).select()     
             this.$store.dispatch('setSelectedID', element.data.id)
         },
-         
+        
         afterCreated(cytoscape) {
+            
+            cytoscape.panzoom(this.config.panzoom)
+        
             // set up grid, snap and guidelines
             cytoscape.gridGuide({
                 // On/Off Modules
@@ -502,15 +553,16 @@ export default {
             if(!cyi || this.locked) return      
             this.busy = true     
             this.clear(cyi)
-            let options = this.config.layoutDagre
+            let options = this.config.layoutDagre //default
             switch(name) {
                 case "elk": options = this.config.layoutElk;break;
                 case "dagre": options = this.config.layoutDagre;break;  
                 case "klay": options = this.config.layoutKlay;break;    
-                case "breadthfirst": options = this.config.layoutBreadthFirst;break;                      
+                case "breadthfirst": options = this.config.layoutBreadthFirst;break;        
             }
             cyi.layout(options).run() 
             //this.drawPhases(cyi)
+            this.busy = false
         },  
 
         layoutStop() {
@@ -530,7 +582,7 @@ export default {
         lockChanged(value) {
             this.locked = value
             const cyi = (this.$refs.cy || {}).instance || null
-            if(cyi) cyi.autolock(value)
+            if(cyi) cyi.autolock(value)           
         },
 
         drawPhases(cyi) {
@@ -638,7 +690,7 @@ export default {
                         ctx.textBaseline = "top"
                         ctx.fillStyle = "red"
                         ctx.fillText(thisNode.data().label, extent.x1 + 10, y + 10)
-
+                        ctx.fillText(thisNode.data().label, extent.x2 - 15, y + 10)
                         // store prev for next iteration
                         prevNode = thisNode
                     })
@@ -660,7 +712,9 @@ export default {
 
         // diagram locked by default
         cyi.autolock(this.locked)
-                
+
+        cyi.panzoom(this.config.panzoom)
+        
         // cytoscape diagram event handlers
         cyi.on('click tap', 'node', function(evt) {
             self.selectedElementID = evt.target.id() 

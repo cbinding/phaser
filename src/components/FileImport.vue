@@ -52,6 +52,11 @@
 import _merge from "lodash/merge"
 //import _uniqueId  from 'lodash/uniqueId'
 
+// used to avoid node/edge IDs having invalid characters
+const str2hex = str => Array.from(str)
+    .map(c => c.charCodeAt(0).toString(16).padStart(2, '0'))
+    .join('')
+
 export default {
 	name: 'FileImport',
 	components: {},
@@ -204,8 +209,8 @@ export default {
                     // create identifiers for source and target nodes
                     //let sourceID = _uniqueId("context-")
                     //let targetID = _uniqueId("context-")
-                    let sourceID = `context-${cleanContextNo.replace("+","-")}` // '+' caused problems in IDs
-                    let targetID = `context-${cleanRelatedContextNo.replace("+","-")}`
+                    let sourceID = `context-${str2hex(cleanContextNo)}` // '+' caused problems in IDs
+                    let targetID = `context-${str2hex(cleanRelatedContextNo)}`
 
                      // create new source node
                     let sourceNode = { 

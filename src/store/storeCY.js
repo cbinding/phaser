@@ -13,6 +13,10 @@ const vuexLocalStorage = new VuexPersist({
     storage: window.localStorage // or window.sessionStorage or localForage
 })
 */
+// used to avoid invalid characters in node/edge IDs
+const str2hex = str => Array.from(str)
+    .map(c => c.charCodeAt(0).toString(16).padStart(2, '0'))
+    .join('')
 
 export default new Vuex.Store({
 	// strict: true,
@@ -20,7 +24,7 @@ export default new Vuex.Store({
     plugins: [ createPersistedState({ storage: window.localStorage, paths: ["graph"] }) ],
 	state: {
         appName: "Phaser",  // application name
-        appVersion: "1.4",  // application version
+        appVersion: "1.5",  // application version
         selectedID: "",     // ID of currently selected node        
         about: {            // dataset metadata - not used yet..
             title: "My example project",
@@ -194,7 +198,7 @@ export default new Vuex.Store({
         isNode: (state, getters) => id => getters.nodes.some(n => n.data.id === id),     
         isEdge: (state, getters) => id => getters.edges.some(n => n.data.id === id),
         nodeByID: (state, getters) => id => getters.nodes.find(n => n.data.id === id), // make this faster once Map is supported in VUEX?
-        edgeByID: (state, getters) => id => getters.edges.find(e => e.data.id === id), // otherwise use object properties as map structure?
+        edgeByID: (state, getters) => id => getters.edges.find(e => e.data.id === id), // or use object properties as map structure?
 
         nodeLabel: (state, getters) => (id, includeClass=false) => {
             let node = getters.nodeByID(id)
@@ -299,7 +303,51 @@ export default new Vuex.Store({
         ancestorsOfID: (state, getters) => id => {
             let node = getters.nodeByID(id)
             return getters.ancestorsOfNode(node)
-        },
+        },        
+
+        // hierarchically derived stratigraphic links between elements
+        /*derivedEdges: (state, getters) => {           
+            
+            const newEdges = new Map()
+            getters.edges
+                .filter(edge => edge.data.type == "above")
+                .forEach(edge => {
+                // get ancestry of source and target nodes (as sets of IDs)
+                let sourceAncestry = new Set(getters.ancestorsOfID(edge.data.source).map(node => node.data.id))                    
+                let targetAncestry = new Set(getters.ancestorsOfID(edge.data.target).map(node => node.data.id))
+
+                // add source and target IDs themselves
+                sourceAncestry.add(edge.data.source)
+                targetAncestry.add(edge.data.target)
+
+                // remove any IDs the 2 lists have in common
+                sourceAncestry.forEach(id => {
+                    if(targetAncestry.has(id))
+                        sourceAncestry.delete(id)
+                        targetAncestry.delete(id)
+                })
+
+                // generate links - all elements in sourceAncestry 
+                // are 'above' all elements in targetAncestry 
+                sourceAncestry.forEach(sourceID => {
+                    targetAncestry.forEach(targetID => {
+                        let edgeID = `edge-${str2hex(sourceID)}-${str2hex(targetID)}`
+                        if(!newEdges.has(edgeID)) {
+                            newEdges.set(edgeID, { 
+                                data: { 
+                                    id: edgeID, 
+                                    source: sourceID, 
+                                    target: targetID, 
+                                    type: "above"
+                                }
+                            })
+                        }
+                    })
+                })
+
+            })
+            return [...newEdges.values()]
+        },*/
         
         //datingsForID: (state, getters) => id => getters.descendantsOfID(id)
             //.filter(n => n.data.class == NodeClass.DATING && n.data.included), 
@@ -685,7 +733,7 @@ export default new Vuex.Store({
             // ensure item to add has all required properties  
             let newEdge = _merge({}, getters.newEdge, edge)
             if(!newEdge.data.id) 
-                newEdge.data.id = `edge-${newEdge.data.source || 'source'}-${newEdge.data.target || 'target'}`
+                newEdge.data.id = `edge-${str2hex(newEdge.data.source || 'source')}-${str2hex(newEdge.data.target || 'target')}`
             commit('UPDATE_EDGE', newEdge)            
         },
         insertEdges({commit, dispatch}, edges) {

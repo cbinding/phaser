@@ -24,7 +24,7 @@ export default new Vuex.Store({
     plugins: [ createPersistedState({ storage: window.localStorage, paths: ["graph"] }) ],
 	state: {
         appName: "Phaser",  // application name
-        appVersion: "1.5",  // application version
+        appVersion: "1.6",  // application version
         selectedID: "",     // ID of currently selected node        
         about: {            // dataset metadata - not used yet..
             title: "My example project",
@@ -306,7 +306,7 @@ export default new Vuex.Store({
         },        
 
         // hierarchically derived stratigraphic links between elements
-        /*derivedEdges: (state, getters) => {           
+        derivedEdges: (state, getters) => {           
             
             const newEdges = new Map()
             getters.edges
@@ -347,7 +347,7 @@ export default new Vuex.Store({
 
             })
             return [...newEdges.values()]
-        },*/
+        },
         
         //datingsForID: (state, getters) => id => getters.descendantsOfID(id)
             //.filter(n => n.data.class == NodeClass.DATING && n.data.included), 

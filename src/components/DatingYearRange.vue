@@ -7,7 +7,7 @@
                     :invalid-feedback="minYearInvalid"
                     :state="minYearValidation">            
                     <b-form-group class="my-2"
-                        label="Minimum year"
+                        label="Minimum (earliest) Year"
                         label-for="minYearInput">
                         <b-form-input number 
                             :disabled="disabled" 
@@ -42,7 +42,7 @@
                     :invalid-feedback="maxYearInvalid"
                     :state="maxYearValidation">
                     <b-form-group class="my-2"
-                        label="Maximum year"
+                        label="Maximum (latest) year"
                         label-for="maxYearInput">
                         <b-form-input number 
                             :disabled="disabled"

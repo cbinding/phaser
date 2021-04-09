@@ -181,11 +181,15 @@
 						@change="descriptionChanged"/>
 				</b-form-group>
 			</b-col>
-		</b-form-row>  
+		</b-form-row>
 
 		<b-form-row>	
 			<b-col>		
-				<Dating v-if="fields.includes('dating')"  
+				<DatingYearRange v-if="fields.includes('yearrange')"  
+					:disabled="disabled" 
+					:dating="((selectedItem || {}).data || {}).dating"
+					@change="datingChanged"/>
+				<SciDating v-if="fields.includes('scidating')"  
 					:disabled="disabled" 
 					:dating="((selectedItem || {}).data || {}).dating"
 					@change="datingChanged"/>
@@ -241,7 +245,8 @@ import ItemTable from '@/components/ItemTable'
 import ItemLookup from '@/components/ItemLookup'
 //import DatingYearRange from '@/components/DatingYearRange'
 import Stratigraphy from '@/components/Stratigraphy'
-import Dating from '@/components/Dating'
+import DatingYearRange from '@/components/DatingYearRange'
+import SciDating from '@/components/SciDating'
 import ItemLabel from '@/components/ItemLabel'
 import ItemList from '@/components/ItemList'
 
@@ -252,7 +257,8 @@ export default {
 		ItemLookup,
 		//DatingYearRange,
 		Stratigraphy,
-		Dating,
+		DatingYearRange,
+		SciDating,
 		ItemLabel,
 		ItemList
 		
@@ -276,12 +282,12 @@ export default {
 		position() { return this.selectedItem?.position },
 		fields() { 
 			switch(this.itemClass) {
-				case NodeClass.PHASE: return ["label", "description", "contains", "containsGroups", "containsSubGroups", "containsContexts", "dating", "redolayout", "period"]
+				case NodeClass.PHASE: return ["label", "description", "contains", "containsGroups", "containsSubGroups", "containsContexts", "yearrange", "redolayout", "period"]
 				case NodeClass.GROUP: return ["label", "type", "parent", "contains", "containsSubGroups", "containsContexts", "description", "redolayout", "cud", "period"]
 				case NodeClass.SUBGROUP: return ["label", "type", "parent", "contains", "containsContexts", "description", "redolayout", "cud", "period"]
-				case NodeClass.CONTEXT: return ["label", "type", "parent", "contains", "containsDatings", "description", "stratigraphy", "cud", "period"]		
-				case NodeClass.DATING: return ["label", "type", "parent", "description", "dating", "included", "association", "period"]
-				case NodeClass.PERIOD: return ["label", "uri", "description", "periodContains", "dating"]
+				case NodeClass.CONTEXT: return ["label", "type", "parent", "contains", "containsDatings", "description", "stratigraphy", "cud", "period"]	
+				case NodeClass.DATING: return ["label", "type", "parent", "description", "scidating", "included", "association", "period"]
+				case NodeClass.PERIOD: return ["label", "uri", "description", "periodContains", "yearrange"]
 				default: return []
 			}			
 		},

@@ -48,19 +48,22 @@
 </template>
 
 <script>
-//import MyMixin from '@/mixins/MyMixin.js'
+import { ref, computed } from "@vue/composition-api" // Vue 2 only. for Vue 3 use "from '@vue'"
+import { str2hex } from "@/global/PhaserCommon.js"
+//import MyMixin from '@/global/MyMixin.js'
 import _merge from "lodash/merge"
 //import _uniqueId  from 'lodash/uniqueId'
 
-// used to avoid node/edge IDs having invalid characters
-const str2hex = str => Array.from(str)
-    .map(c => c.charCodeAt(0).toString(16).padStart(2, '0'))
-    .join('')
+/*
+expectedColumns: {
+    phases: ["siteCode", "phaseID", "phaseLabel", "phaseStart", "phaseEnd"],
+    groups: ["siteCode", "groupID", "groupLabel", "relationship", "relatedGroupID"],
+    subgroups: ["siteCode", "subGroupID", "subGrouplabel", "relationship", "relatedSubGroupID"],
+    contexts: ["siteCode", "contextNo", "contextType", "relationship", "relatedContextNo"],                
+    },
+*/
 
-export default {
-	name: 'FileImport',
-	components: {},
-	mixins: [],
+export default {	
 	props: {
         defaultDelimiter: {
             type: String,
@@ -68,6 +71,196 @@ export default {
             default: ","
         }
     },
+    setup(props, context) {
+        // used to avoid node/edge IDs having invalid characters
+        //const str2hex = str => Array.from(str).map(c => c.charCodeAt(0).toString(16).padStart(2, '0')).join('')
+        const delimiter = ref(props.defaultDelimiter)
+        const delimiterOptions = [
+            { value: '\\t', text: 'Tab' },                
+            { value: ',', text: 'Comma' },
+            //{ value: ':', text: 'Colon' },
+            { value: ';', text: 'Semicolon' },
+            { value: '|', text: 'Pipe' },
+            { value: ' ', text: 'Space' }               
+        ]
+        const hasHeader = ref(true)
+        const previewRows = ref(5)
+        const selectedFile = ref(null)
+        const fileContents = ref("")
+        /* 
+        Parses selectedFile CSV data to papaParse JSON columns format
+        example input: 
+            siteCode,contextNo,contextType,stratRelationship,relatedContextNo
+            "XSM10","12345","layer","above","23456"
+            "XSM10","23456","pit","below","12345"
+        example output:
+            [
+                { siteCode: "XSM10", contextNo: "12345", contextType: "layer", stratRelationship: "above", relatedContextNo: "23456" },
+                { siteCode: "XSM10", contextNo: "23456", contextType: "pit", stratRelationship: "below", relatedContextNo: "12345" },
+            ]
+        */
+        const  parserPreview = computed(() => {
+            const config = {
+                delimiter: delimiter.value,
+                encoding: "UTF-8",
+                header: hasHeader.value,
+                preview: previewRows.value,
+                skipEmptyLines: "greedy"
+            }             
+            let parserResult = context.root.$papa.parse(fileContents.value, config)          
+            return parserResult.data
+        })
+        /*
+        const fileMeta = () => parserPreview.value.meta        
+        const fileData = () => parserPreview.value.data
+        const fileErrors = () => parserPreview.value.errors
+        */
+        const loadFile = (file) => {
+            if(!file) return
+
+            const reader = new FileReader()
+            reader.onload = function(e) { 
+                fileContents.value = e.target.result
+                //self.$store.dispatch('loadPhaserData', data) 
+            }
+            reader.readAsText(file)        
+        }
+        const handleOK = () => {
+            const config = {
+                delimiter: delimiter.value,
+                encoding: "UTF-8",
+                header: hasHeader.value,
+                skipEmptyLines: "greedy"
+            } 
+            let parserResult = context.root.$papa.parse(fileContents.value, config)
+            let graph = contextDataToGraph(parserResult.data)
+            context.root.$store.dispatch('clearAll') 
+            context.root.$store.dispatch('loadMatrixData', graph) 
+            selectedFile.value = null
+            fileContents.value = ""
+        }
+
+        const handleClose = () => {
+            selectedFile.value = null
+            fileContents.value = ""
+        }  
+        /* Convert pre-parsed CSV fields (as papaParse JSON columns) to graph format
+            input = [{
+                siteCode: "XSM10",
+                contextNo: "12345",
+                contextType: "layer",
+                stratRelationship: "above",
+                relatedContextNo: "23456"
+            },
+            {
+                siteCode: "XSM10",
+                contextNo: "23456",
+                contextType: "pit",
+                stratRelationship: "below",
+                relatedContextNo: "12345"
+            }]
+            output = {
+                nodes: [
+                    { id: "context-12345", class: "context", identifier: "12345", type: "layer", siteCode: "XSM10" },
+                    { id: "context-23456", class: "context", identifier: "23456", type: "pit", siteCode: "XSM10" },
+                ],
+                edges: [
+                    { id: "context-12345-23456", source: "context-12345", target: "context-23456", type: "above" },
+                    { id: "context-23456-12345", source: "context-23456", target: "context-12345", type: "below" },
+                ]
+            }
+        */
+        const contextDataToGraph = (data) => { 
+            const clean = s => (s || "").toString().trim()
+            
+            const uniqueNodes = new Map()
+            const uniqueEdges = new Map()
+
+            for (const item of data) {
+                // get clean input field values
+                let cleanSiteCode = clean(item.siteCode)
+                let cleanContextNo = clean(item.contextNo).toLowerCase()
+                let cleanContextType = clean(item.contextType).toLowerCase()
+                let cleanStratRelationship = clean(item.stratRelationship).toLowerCase()
+                let cleanRelatedContextNo = clean(item.relatedContextNo).toLowerCase()
+                
+                if(cleanStratRelationship == "above" && 
+                    cleanContextNo !== "" && 
+                    cleanRelatedContextNo !== "") {
+
+                    // create identifiers for source and target nodes
+                    //let sourceID = _uniqueId("context-")
+                    //let targetID = _uniqueId("context-")
+                    let sourceID = `context-${str2hex(cleanContextNo)}` // '+' caused problems in IDs
+                    let targetID = `context-${str2hex(cleanRelatedContextNo)}`
+
+                     // create new source node
+                    let sourceNode = { 
+                        data: {
+                            id: sourceID,
+                            class: "context",
+                            label: cleanContextNo,
+                            type: cleanContextType,                            
+                            siteCode: cleanSiteCode 
+                        }                   
+                    }    
+
+                    // if we already had it then merge any new data
+                    if(uniqueNodes.has(sourceID)) { 
+                        let oldNode = uniqueNodes.get(sourceID)
+                        sourceNode = _merge(oldNode, sourceNode)
+                    }
+
+                    // add source node (or overwrite existing)
+                    uniqueNodes.set(sourceID, sourceNode)  
+                
+                    // add target node only if it doesn't already exist
+                    if(!uniqueNodes.has(targetID)) {
+                        // add as new 'skeleton' target node
+                        // (will be supplemented when main record 
+                        // for this context is encountered later)
+                        uniqueNodes.set(targetID, { 
+                            data: {
+                                id: targetID,
+                                class: "context",
+                                label: cleanRelatedContextNo,
+                                siteCode: cleanSiteCode 
+                            }                   
+                        }) 
+                    }                 
+                    
+                    // add new edge (or overwrite existing)
+                    let edgeID = `${sourceID}-${targetID}`
+                    uniqueEdges.set(edgeID, { 
+                        data: {
+                            id: edgeID,
+                            source: sourceID,
+                            target: targetID,
+                            type: cleanStratRelationship 
+                        }                   
+                    }) 
+                }                
+            }
+
+            return {
+                nodes: [...uniqueNodes.values()],   // Map values as array            
+                edges: [...uniqueEdges.values()]    // Map values as array          
+            }
+        }           
+
+        return {
+            delimiter,
+            delimiterOptions,
+            hasHeader,
+            selectedFile,
+            parserPreview,
+            handleOK,
+            handleClose, 
+            loadFile
+        }
+    }
+
+    /*
 	data() {
 		return {
             delimiter: this.defaultDelimiter,
@@ -78,13 +271,7 @@ export default {
                 { value: ';', text: 'Semicolon' },
                 { value: '|', text: 'Pipe' },
                 { value: ' ', text: 'Space' }               
-            ],
-            /*expectedColumns: {
-                phases: ["siteCode", "phaseID", "phaseLabel", "phaseStart", "phaseEnd"],
-                groups: ["siteCode", "groupID", "groupLabel", "relationship", "relatedGroupID"],
-                subgroups: ["siteCode", "subGroupID", "subGrouplabel", "relationship", "relatedSubGroupID"],
-                contexts: ["siteCode", "contextNo", "contextType", "relationship", "relatedContextNo"],                
-            },*/
+            ],           
             hasHeader: true,
             previewRows: 5,
             selectedFile: null,
@@ -94,29 +281,7 @@ export default {
 
 		}
     },    
-	computed: {
-        /*fileData() {
-            return ((this.parserResult || {}).data || [])
-        },
-        fileErrors() {
-            return ((this.parserResult || {}).errors || [])
-        },
-        fileMeta() {
-            return ((this.parserResult || {}).meta || {})
-        },*/  
-        
-        /* 
-        Parse selectedFile CSV data to papaParse JSON columns format
-        example input: 
-        siteCode,contextNo,contextType,stratRelationship,relatedContextNo
-        "XSM10","12345","layer","above","23456"
-        "XSM10","23456","pit","below","12345"
-        example output:
-        [
-            { siteCode: "XSM10", contextNo: "12345", contextType: "layer", stratRelationship: "above", relatedContextNo: "23456" },
-            { siteCode: "XSM10", contextNo: "23456", contextType: "pit", stratRelationship: "below", relatedContextNo: "12345" },
-        ]
-        */
+	computed: { 
         parserPreview() {
             const self = this
             const config = {
@@ -160,34 +325,8 @@ export default {
         handleClose(){
             this.selectedFile = null
             this.fileContents = ""
-        },     
+        },         
         
-        /* Convert pre-parsed CSV fields (as JSON columns) to graph format
-            input = [{
-                siteCode: "XSM10",
-                contextNo: "12345",
-                contextType: "layer",
-                stratRelationship: "above",
-                relatedContextNo: "23456"
-            },
-            {
-                siteCode: "XSM10",
-                contextNo: "23456",
-                contextType: "pit",
-                stratRelationship: "below",
-                relatedContextNo: "12345"
-            }]
-            output = {
-                nodes: [
-                    { id: "context-12345", class: "context", identifier: "12345", type: "layer", siteCode: "XSM10" },
-                    { id: "context-23456", class: "context", identifier: "23456", type: "pit", siteCode: "XSM10" },
-                ],
-                edges: [
-                    { id: "context-12345-23456", source: "context-12345", target: "context-23456", type: "above" },
-                    { id: "context-23456-12345", source: "context-23456", target: "context-12345", type: "below" },
-                ]
-            }
-        */
         contextDataToGraph(data) { 
             const clean = s => (s || "").toString().trim()
             
@@ -265,18 +404,6 @@ export default {
                 edges: [...uniqueEdges.values()]    // Map values as array          
             }
         }        
-    },
-	// lifecycle hooks
-	beforeCreate() {},
-	created() {},
-	beforeMount() {},
-	mounted() {},
-	beforeUpdate() {},
-	updated() {},
-	beforeDestroy() {},
-	destroyed() {}
+    }*/
 }
 </script>
-
-<style scoped>
-</style>

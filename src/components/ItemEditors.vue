@@ -10,23 +10,12 @@
 				</b-badge>
 			</template>
 			<ItemEditor :itemClass="nc"/>
-		</b-tab> 
-
-		<!--
-		<b-tab>
-			<template v-slot:title>
-				<span>Problems</span>
-				<b-badge pill variant="outline" class="border secondary pb-1 m-0 ml-2">
-					<span>0</span>
-				</b-badge>
-			</template>
-		</b-tab>
-		-->
+		</b-tab>		
 		<b-tab>
 			<template v-slot:title>
 				<span>Edges</span>
 				<b-badge variant="outline" class="border secondary pb-1 m-0 ml-2">
-					<span>{{ $store.getters.edges.length }}</span>
+					<span>{{ store.getters.edges.length }}</span>
 				</b-badge>
 			</template>
 			<ItemEditor itemClass="edge"/>
@@ -34,10 +23,7 @@
 
 		<b-tab>
 			<template v-slot:title>
-				<span>Validation</span>
-				<!--<b-badge variant="outline" class="border secondary pb-1 m-0 ml-2">
-					<span>{{ 0 }}</span>
-				</b-badge>-->
+				<span>Validation</span>				
 			</template>
 			<Validation/>
 		</b-tab>
@@ -46,77 +32,54 @@
 </template>
 
 <script>
-import PhaserCommon from '@/mixins/PhaserCommon.js'
+import { ref, computed, watch, inject } from "@vue/composition-api" // Vue 2 only. for Vue 3 use "from '@vue'"
+//import PhaserCommon from '@/global/PhaserCommon.js'
 import ItemEditor from '@/components/ItemEditor'
 import Validation from '@/components/Validation'
-import {NodeClass} from '@/mixins/constants.js'
+import { NodeClass, capitalize } from '@/global/PhaserCommon.js'
 
 export default {
-	name: 'ItemEditors',
 	components: {
 		ItemEditor,
 		Validation
 	},
-	mixins: [ PhaserCommon ],
-	props: {},
-	data() {
-		return {
-			tabIndex: 0
-		}
-	},
-	computed: {
-		selectedID() {
-			return this.$store.getters.selectedID
-		},
-		nodeClasses() {
-			return Object.values(NodeClass)
+	setup() {
+		const store = inject('store')	
+		const tabIndex = ref(0)
+		const selectedID = computed(() => store.getters.selectedID)
+		const nodeClasses = computed(() => Object.values(NodeClass)) 
 			//.filter(nc => nc !== NodeClass.FIND && nc !== NodeClass.SAMPLE) //deprecated these
-		}		
-	},
-	watch: {
-		selectedID(newValue) {			
-			// display the tab containing the selected item
-			let node = this.$store.getters.nodeByID(newValue)
-			if(node) {
-				let nc = node.data?.class || NodeClass.PHASE
-				switch(nc) {
-					case NodeClass.PHASE: this.tabIndex = 0;break;
-					case NodeClass.GROUP: this.tabIndex = 1;break;
-					case NodeClass.SUBGROUP: this.tabIndex = 2;break;
-					case NodeClass.CONTEXT: this.tabIndex = 3;break;
-					case NodeClass.DATING: this.tabIndex = 4;break;
-					case NodeClass.PERIOD: this.tabIndex = 5;break;					
-					default: break;
-				}
-			}
-			else
-				this.tabIndex = 5
-		}
-	},
-	methods: {
-		itemCount(nc) {
+
+		const itemCount = nc => {
 			switch(nc) {
-				case NodeClass.PHASE: return this.$store.getters.phases.length
-				case NodeClass.GROUP: return this.$store.getters.groups.length
-				case NodeClass.SUBGROUP: return this.$store.getters.subgroups.length
-				case NodeClass.CONTEXT: return this.$store.getters.contexts.length
-				case NodeClass.DATING: return this.$store.getters.datings.length
-				case NodeClass.PERIOD: return this.$store.getters.periods.length
+				case NodeClass.PHASE: return store.getters.phases.length
+				case NodeClass.GROUP: return store.getters.groups.length
+				case NodeClass.SUBGROUP: return store.getters.subgroups.length
+				case NodeClass.CONTEXT: return store.getters.contexts.length
+				case NodeClass.DATING: return store.getters.datings.length
+				case NodeClass.PERIOD: return store.getters.periods.length
 				default: return 0
 			}
 		}
-	},
-	// lifecycle hooks
-	beforeCreate() {},
-	created() {},
-	beforeMount() {},
-	mounted() {},
-	beforeUpdate() {},
-	updated() {},
-	beforeDestroy() {},
-	destroyed() {}
+
+		watch(selectedID, (newValue) => {			
+			// display the tab containing the selected item
+			let node = store.getters.nodeByID(newValue)
+			if(node) {
+				let nc = node.data?.class || NodeClass.PHASE
+				switch(nc) {
+					case NodeClass.PHASE: tabIndex.value = 0;break;
+					case NodeClass.GROUP: tabIndex.value = 1;break;
+					case NodeClass.SUBGROUP: tabIndex.value = 2;break;
+					case NodeClass.CONTEXT: tabIndex.value = 3;break;
+					case NodeClass.DATING: tabIndex.value = 4;break;
+					case NodeClass.PERIOD: tabIndex.value = 5;break;					
+					default: break;
+				}
+			}
+		})
+
+		return { store, tabIndex, selectedID, nodeClasses, itemCount, capitalize }
+	}
 }
 </script>
-
-<style scoped>
-</style>

@@ -37,13 +37,13 @@
 		<b-row>
 			<b-col>
 				<b-table show-empty style="height: 250px;"
-					id="datatable"
+					:id="`datatable-${itemClass}`"
 					sort-icon-left
 					hover outlined selectable small 
 					:no-border-collapse="true"
 					sticky-header="300px" 
 					select-mode="single"
-					primary-key="id"
+					primary-key="data.id"
 					:items="items" 
 					:fields="fields"
 					:filter="filter"
@@ -69,17 +69,13 @@
 			</b-col>
 		</b-row>
 	</b-container>
-	
 </template>
 
 <script>
-import PhaserCommon from '@/mixins/PhaserCommon.js'
-import {NodeClass} from '@/mixins/constants.js'
+import { ref, computed, watch, inject } from '@vue/composition-api' // Vue 2 only. for Vue 3 use "from '@vue'"
+import { NodeClass } from '@/global/PhaserCommon.js'
 
 export default {
-	name: 'ItemTable',
-	components: { },
-	mixins: [ PhaserCommon ],
 	props: {		
 		itemClass: {
 			type: String,
@@ -88,41 +84,52 @@ export default {
 			validator: value => [...Object.values(NodeClass), "edge"].includes(value)
 		}
 	},
-	data() { 
-		return {			
-			filter: "",
-			selectedID: "",
-			sortBy: "data.label",
-			sortDesc: false			
-		}
-	},
-	computed: {
-		items() {
-			switch(this.itemClass) {
+	setup(props, context) {
+		const store = inject('store')
+		const filter = ref("")
+		const sortBy = ref("data.label")
+		const sortDesc = ref(false)
+
+		// select row if node selected somewhere else in the app (e.g. on the diagram)
+		const selectedID = computed(() => store.getters.selectedID)
+        watch(selectedID, (newValue) => {			
+			// TODO: scroll to ensure selected row is visible in the table
+			let el = document.getElementById(`datatable-${props.itemClass}__row_${newValue}`)			
+			if(el) { 
+				el.click() // simulates a click on the row to highlight
+				el.scrollIntoView({behavior: "smooth", block: "center", inline: "nearest"}) // scroll the selected row 
+				el.scrollIntoViewIfNeeded(true)
+				// (TODO: should only do this if manually clicked)
+			}
+        })
+ 
+		const items = computed(() => {
+			switch(props.itemClass) {
 				case NodeClass.PHASE:
-					return this.$store.getters.phases
+					return store.getters.phases
 				case NodeClass.GROUP:
-					return this.$store.getters.groups
+					return store.getters.groups
 				case NodeClass.SUBGROUP:
-					return this.$store.getters.subgroups
+					return store.getters.subgroups
 				case NodeClass.CONTEXT:
-					return this.$store.getters.contexts
+					return store.getters.contexts
 				case NodeClass.FIND:
-					return this.$store.getters.finds
+					return store.getters.finds
 				case NodeClass.SAMPLE:
-					return this.$store.getters.samples
+					return store.getters.samples
 				case NodeClass.DATING:
-					return this.$store.getters.datings
+					return store.getters.datings
 				case NodeClass.PERIOD:
-					return this.$store.getters.periods
+					return store.getters.periods
 				case "edge":
-					return this.$store.getters.edges
+					return store.getters.edges
 				default:
 					return []
 			}
-		},			
-		columns() { 
-			switch(this.itemClass) {
+		})
+
+		const columns = computed(() => { 
+			switch(props.itemClass) {
 				case NodeClass.PHASE: return ["label", "enteredMinYear", "enteredMaxYear", "enteredDiff", "derivedMinYear", "derivedMaxYear", "duration", "period"]
 				case NodeClass.GROUP: return ["label", "type", "parent", "derivedMinYear", "derivedMaxYear", "duration", "period"]
 				case NodeClass.SUBGROUP: return ["label", "type", "parent", "derivedMinYear", "derivedMaxYear", "duration", "period"]
@@ -132,110 +139,105 @@ export default {
 				case "edge": return ["source", "type", "target", "derivedMinYear", "derivedMaxYear", "duration"]
 				default: return []				
 			}			
-		},
-		fields() {
-			return [				
-				/*{
-					key: "data.id",
-					label: "id",
-					sortable: true					
-				},*/
+		})
+
+		const fields = computed(() => {
+			return [			
 				// displaying label as if identifier
-				... (this.columns.includes('label')) ? [{
+				... (columns.value.includes('label')) ? [{
 					key: "data.label",
 					label: "id",
 					sortable: true					
 				}] : [],
-				... (this.columns.includes('period')) ? [{
+				... (columns.value.includes('period')) ? [{
 					// virtual column with custom formatter
 					key: 'period',
 					label: 'period',
 					sortByFormatted: true,
-					formatter: this.tablePeriodFormatter,
+					formatter: tablePeriodFormatter,
 					sortable: true					
 				}] : [],
-				... (this.columns.includes('source')) ? [{
+				... (columns.value.includes('source')) ? [{
 					key: "data.source",
 					label: "source",
 					sortByFormatted: true,
-					formatter: this.tableSourceIdFormatter,
+					formatter: tableSourceIdFormatter,
 					sortable: true					
 				}] : [],  
-				... (this.columns.includes('type')) ? [{
+				... (columns.value.includes('type')) ? [{
 					key: "data.type",
 					label: "type",
 					sortable: true					
 				}] : [],  
-				... (this.columns.includes('target')) ? [{
+				... (columns.value.includes('target')) ? [{
 					key: "data.target",
 					label: "target",
 					sortByFormatted: true,
-					formatter: this.tableTargetIdFormatter,
+					formatter: tableTargetIdFormatter,
 					sortable: true					
 				}] : [],   
-				... (this.columns.includes('parent')) ? [{
+				... (columns.value.includes('parent')) ? [{
 					key: "data.parent",
 					label: "within",
 					sortByFormatted: true,
-					formatter: this.tableParentFormatter,
+					formatter: tableParentFormatter,
 					sortable: true					
                 }] : [],                
-				... (this.columns.includes('enteredMinYear')) ? [{
+				... (columns.value.includes('enteredMinYear')) ? [{
 					// virtual column with custom formatter
 					key: 'minyear',
 					label: 'entered min year',
 					sortByFormatted: true,
-					formatter: this.tableMinYearFormatter,
+					formatter: tableMinYearFormatter,
 					sortable: true,
 					class: "text-right"
 				}] : [],
-				... (this.columns.includes('enteredMaxYear')) ? [{
+				... (columns.value.includes('enteredMaxYear')) ? [{
 					// virtual column with custom formatter
 					key: 'maxyear',
 					label: 'entered max year',
 					sortByFormatted: true,
-					formatter: this.tableMaxYearFormatter,
+					formatter: tableMaxYearFormatter,
 					sortable: true,
 					class: "text-right"
 					}] : [],
-				... (this.columns.includes('enteredDiff')) ? [{
+				... (columns.value.includes('enteredDiff')) ? [{
 					// virtual column with custom formatter
 					key: 'entereddiff',
 					label: 'duration',
 					sortByFormatted: true,
-					formatter: this.enteredDiffFormatter,
+					formatter: enteredDiffFormatter,
 					sortable: true,
 					class: "text-right"
 				}] : [],				
-				... (this.columns.includes('derivedMinYear')) ? [{
+				... (columns.value.includes('derivedMinYear')) ? [{
 					// virtual column with custom formatter
 					key: 'derivedminyear',
 					label: 'derived min year',
 					sortByFormatted: true,
-					formatter: this.derivedMinYearFormatter,
+					formatter: derivedMinYearFormatter,
 					sortable: true,
 					class: "text-right"
-				}] : [],
-				
-				... (this.columns.includes('derivedMaxYear')) ? [{
+				}] : [],				
+				... (columns.value.includes('derivedMaxYear')) ? [{
 					// virtual column with custom formatter
 					key: 'derivedmaxyear',
 					label: 'derived max year',
 					sortByFormatted: true,
-					formatter: this.derivedMaxYearFormatter,
+					formatter: derivedMaxYearFormatter,
 					sortable: true,
 					class: "text-right"
 				}] : [],
-				... (this.columns.includes('duration')) ? [{
+				... (columns.value.includes('duration')) ? [{
 					// virtual column with custom formatter
 					key: 'duration',
 					label: 'duration',
 					sortByFormatted: true,
-					formatter: this.durationFormatter,
+					formatter: durationFormatter,
 					sortable: true,
 					class: "text-right"
 				}] : [],				
-				... (this.columns.includes('included')) ? [{
+				... (columns.value.includes('included')) ? [{
 						key: "data.included",
 						label: "included",	
 						formatter: value => value ? "✓" : "✗",				
@@ -257,111 +259,113 @@ export default {
 					label: ""
 				}
 			]		
-		}
-	},
-	mounted() {},
-	methods: {				
-		insertItem() {
-			let self = this
-			switch(self.itemClass) {
+		})
+
+		const insertItem = () => {
+			switch(props.itemClass) {
 				case NodeClass.PHASE: 
-					self.$store.dispatch('insertPhase'); break;
+					store.dispatch('insertPhase'); break;
 				case NodeClass.GROUP: 
-					self.$store.dispatch('insertGroup'); break;
+					store.dispatch('insertGroup'); break;
 				case NodeClass.SUBGROUP: 
-					self.$store.dispatch('insertSubGroup'); break;
+					store.dispatch('insertSubGroup'); break;
 				case NodeClass.CONTEXT: 
-					self.$store.dispatch('insertContext'); break;
+					store.dispatch('insertContext'); break;
 				case NodeClass.DATING: 
-					self.$store.dispatch('insertDating'); break;	
+					store.dispatch('insertDating'); break;	
 				case NodeClass.PERIOD: 
-					self.$store.dispatch('insertPeriod'); break;				
+					store.dispatch('insertPeriod'); break;				
 			}
-		},
+		}
 
-		updateItem(item) {
+		const updateItem = (item) => {
 			if(item) {
-				if(this.itemClass == "edge")
-					this.$store.dispatch('updateEdge', item)
+				if(props.itemClass == "edge")
+					store.dispatch('updateEdge', item)
 				else
-					this.$store.dispatch('updateNode', item)
+					store.dispatch('updateNode', item)
 			}
+		}
 
-		},
-			
-		deleteItem(item) {
-			let self = this
-			self.$bvModal.msgBoxConfirm(`Delete ${ this.itemClass } "${item.data.label}" - are you sure?`)
+		const deleteItem = (item) => {
+			const msg = `Delete ${ props.itemClass } "${item.data.label}" - are you sure?`
+			context.root.$bvModal.msgBoxConfirm(msg)
 				.then(value => { 
 					if(value) { 
-						this.$emit('itemDeleted', item.data.id)
-						if(this.itemClass == "edge")
-							this.$store.dispatch('deleteEdge', item)
+						context.emit('item-deleted', item.data.id)
+						if(props.itemClass == "edge")
+							store.dispatch('deleteEdge', item)
 						else
-							this.$store.dispatch('deleteNode', item)
+							store.dispatch('deleteNode', item)
 					}
 				})		
-		},
-		
-		/*selectItem(item) {
-			this.selectedID = item.data.id
-		},*/
-		
-		rowSelected(items) {
+		}
+
+		const rowSelected = (items) => {
 			if(items.length > 0) {
-				this.$emit('itemSelected', items[0])				
+				context.emit('item-selected', items[0])				
 			}	
-		},
-		tableSourceIdFormatter(value, key, item) {
-			return(this.$store.getters.nodeLabel(item.data.source, true))
-		},
-		tableTargetIdFormatter(value, key, item) {
-			return(this.$store.getters.nodeLabel(item.data.target, true))
-		},
-		// display node parent as label not id
-		tableParentFormatter(value, key, item) {
-			return(this.$store.getters.nodeLabel(item.data.parent, true))
-		},	
-		tablePeriodFormatter(value, key, item) {
-			return(this.$store.getters.nodeLabel(item.data.period, false))
-		},
-		tableMinYearFormatter(value, key, item) {
+		}
+
+		// table formatters
+		const tableSourceIdFormatter = (value, key, item) => store.getters.nodeLabel(item.data.source, true)		
+		const tableTargetIdFormatter = (value, key, item) => store.getters.nodeLabel(item.data.target, true)
+		const tableParentFormatter = (value, key, item) => store.getters.nodeLabel(item.data.parent, true) // displays node parent as label not id		
+		const tablePeriodFormatter = (value, key, item) => store.getters.nodeLabel(item.data.period, false)
+
+		const tableMinYearFormatter = (value, key, item) => {
 			let dating = item.data.dating
             let year = dating.minYear
             let tolv = dating.minYearTolValue 						
             let tolu = dating.minYearTolUnit
-            return this.tableYearFormat(year, tolv, tolu)
-        },
-        tableMaxYearFormatter(value, key, item) {
+            return tableYearFormat(year, tolv, tolu)
+        }
+
+        const tableMaxYearFormatter = (value, key, item) => {
 			let dating = item.data.dating
             let year = dating.maxYear
             let tolv = dating.maxYearTolValue 						
             let tolu = dating.maxYearTolUnit
-            return this.tableYearFormat(year, tolv, tolu)
-        },
-        tableYearFormat(year, tolv, tolu) {
+            return tableYearFormat(year, tolv, tolu)
+        }
+
+        const tableYearFormat = (year, tolv, tolu) => {
             if(year == null || year == "")
 				return ""
 			else if(tolv == 0)
 				return Number(year) //`${year}`
 			else
 				return `${year}±${tolv}${tolu == "years" ? "y" : "%"}`
-        },
-		derivedMinYearFormatter(value, key, item) { 
-			return this.$store.getters.derivedDates(item.data.id).minYear 
-		},
-		derivedMaxYearFormatter(value, key, item) { 
-			return this.$store.getters.derivedDates(item.data.id).maxYear 
-		},
-		durationFormatter(value, key, item) {
-			return this.$store.getters.derivedDuration(item.data.id) 
-		},
-		enteredDiffFormatter(value, key, item) {
-			return this.$store.getters.enteredDuration(item.data.id) 
-			//let dating = this.$store.getters.enteredNodeDates(item.data.id)
-			//let dating = item.data.dating
-            //return (dating.maxYear !== null && dating.minYear !== null) ? (dating.maxYear - dating.minYear) + 1 : null
-		},
+        }
+
+		const derivedMinYearFormatter = (value, key, item) => store.getters.derivedDates(item.data.id).minYear 		
+		const derivedMaxYearFormatter = (value, key, item) => store.getters.derivedDates(item.data.id).maxYear 		
+		const durationFormatter = (value, key, item) => store.getters.derivedDuration(item.data.id) 		
+		const enteredDiffFormatter = (value, key, item) => store.getters.enteredDuration(item.data.id) 
+			
+		return {			
+			filter,
+			//selectedID,
+			sortBy,
+			sortDesc,
+			items,
+			columns,
+			fields,
+			insertItem,
+			updateItem,
+			deleteItem,
+			rowSelected,
+			tableSourceIdFormatter,
+			tableTargetIdFormatter,
+			tableParentFormatter,
+			tablePeriodFormatter,
+			tableMinYearFormatter,
+			tableMaxYearFormatter,
+			derivedMinYearFormatter,
+			derivedMaxYearFormatter,
+			durationFormatter,
+			enteredDiffFormatter
+		}
 	}
 } 
 </script>
@@ -373,6 +377,5 @@ export default {
 .action:hover {
 	color:red;
 }
-
 </style>
 

@@ -19,7 +19,7 @@ export default new Vuex.Store({
     plugins: [ createPersistedState({ storage: window.localStorage, paths: ["graph"] }) ],
 	state: {
         appName: "Phaser",  // application name
-        appVersion: "1.6",  // application version
+        appVersion: "1.7",  // application version
         selectedID: "",     // ID of currently selected node        
         about: {            // dataset metadata - not used yet..
             title: "My example project",

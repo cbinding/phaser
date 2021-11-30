@@ -107,31 +107,23 @@ import FileImport from '@/components/FileImport'
 import PeriodsImport from '@/components/PeriodsImport'
 import HelpAbout from '@/components/HelpAbout'
 import moment from 'moment'
-import PhaserCommon from '@/mixins/PhaserCommon.js'
+import EventBus from '@/global/EventBus.js'
+//import PhaserCommon from '@/global/PhaserCommon.js'
 
 export default {
-	name: 'MenuBar',
 	components: {
 		FileImport,
 		//FileOpenFromURL,
 		PeriodsImport,
 		HelpAbout
 	},
-	mixins: [ PhaserCommon ],
-	props: { },
-	data: function() {
-		return { }
-	},
-	computed: {	},
-	methods: { 
-		openFileDialog() {
-			// programmatically display the file dialog
-			document.getElementById("fileOpen").click() 
-		},		
 
-		clearAll() {
-			let self = this
-			self.$bvModal.msgBoxConfirm('This will clear all current data, are you sure?',{
+	setup(props, context) {
+		// programmatically display the file dialog
+		const openFileDialog = () => document.getElementById("fileOpen").click()
+
+		const clearAll = () => {
+			context.root.$bvModal.msgBoxConfirm('This will clear all current data, are you sure?',{
 				//title: 'New file',
 				size: 'sm',
 				buttonSize: 'sm',
@@ -140,36 +132,31 @@ export default {
 				cancelTitle: 'No',
 			}).then(value => {
 				if(value) { 
-					self.$store.dispatch('clearAll') 
-					this.$root.$emit('diagramClear')
+					context.root.$store.dispatch('clearAll') 
+					context.emit('diagram-clear')
 				}
 			})	
-		},
-		
-		fileLoad(file) {
-			const self = this            
+		}
+
+		const fileLoad = (file) => {
 			if(!file) return
 			
             const reader = new FileReader()
             reader.onload = function(e) { 
                 const fileContents = JSON.parse(e.target.result)
-                self.$store.dispatch('loadMatrixData', fileContents)				
+                context.root.$store.dispatch('loadMatrixData', fileContents)				
             }
             reader.readAsText(file)
-		},
+		}
 
-		fileOpenFromURL() {
-
-		},
-
-		fileSave() {
-			const data = { elements: this.$store.getters.elements }
+		const fileSave = () => {
+			const data = { elements: context.root.$store.getters.elements }
 			const fileName = `phaser-${ moment().format("YYYYMMDDHHmmss") }.json`
-            this.saveToFile(JSON.stringify(data), fileName)
-		},
+            saveToFile(JSON.stringify(data), fileName)
+		}
 
 		// this function from https://forum.vuejs.org/t/saving-form-data/38714
-        saveToFile(jsonData, fileName) {
+        const saveToFile = (jsonData, fileName) => {
             let blob = new Blob([jsonData], { type: 'text/plain;charset=utf-8;' })
             if (navigator.msSaveBlob) { // IE 10+
                 navigator.msSaveBlob(blob, fileName)
@@ -186,32 +173,30 @@ export default {
                     document.body.removeChild(link)
                 }
             }
-        },
-		exportPartPNG() {
-			// event bus - phaser diagram handles this
-			this.$root.$emit('diagramExportPartPNG')			
-		},
-		exportFullPNG() {
-			// event bus - phaser diagram handles this
-			this.$root.$emit('diagramExportFullPNG')			
-		},
-		zoomIn() {
-			// event bus - phaser diagram handles this
-			this.$root.$emit('diagramZoomIn') 
-		},
-		zoomOut() {
-			// event bus - phaser diagram handles this
-			this.$root.$emit('diagramZoomOut') 
-		},
-		zoomFit() {
-			// event bus - phaser diagram handles this
-			this.$root.$emit('diagramZoomFit') 
-		},
-		redoLayout(name="dagre") {
-			// event bus - phaser diagram handles this
-			this.$root.$emit('diagramRedoLayout', name) 
+        }
+
+		// event bus calls - phaser diagram component has handlers for these			
+		const exportPartPNG = () => EventBus.$emit('diagram-export-part-png')			
+		const exportFullPNG = () => EventBus.$emit('diagram-export-full-png')			
+		const zoomIn = () => { EventBus.$emit("diagram-zoom-in"); }	
+		const zoomOut = () => EventBus.$emit('diagram-zoom-out') 		
+		const zoomFit = () => EventBus.$emit('diagram-zoom-fit') 		
+		const redoLayout = (name="dagre") => EventBus.$emit('diagram-redo-layout', name)
+		
+		return {
+			openFileDialog, 
+			clearAll,
+			fileLoad,
+			fileSave,
+			saveToFile,
+			exportPartPNG,
+			exportFullPNG,
+			zoomIn,
+			zoomOut,
+			zoomFit,
+			redoLayout
 		}
-	}
+	}	
 }
 </script>
 

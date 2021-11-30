@@ -1,12 +1,21 @@
+//import '@babel/polyfill'
+//import 'mutationobserver-shim'
 // Base Vue Imports
 import Vue from 'vue'
-import { BootstrapVue, BootstrapVueIcons } from 'bootstrap-vue'
+
+// to use vue 3 composition API in vue 2:
+import VueCompositionApi from '@vue/composition-api'
+Vue.use(VueCompositionApi)
+
+//import './plugins/bootstrap-vue'
 //import Popper from 'vue-popperjs'
 
 // app imports
 import App from '@/App.vue' 
+import { BootstrapVue, BootstrapVueIcons } from 'bootstrap-vue'
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
+
 //import 'vue-popperjs/dist/vue-popper.css'
 //import router from '@/router' //import router.js into main.js
 import store from '@/store/storeCY'   // for VUEX data
@@ -51,9 +60,15 @@ const router = new VueRouter({
     routes
 });
 */
+//import { useStore } from 'vuex'
+//import { createApp } from 'vue'
+//createApp({provide: {store}, store, ...App}).mount('#app')
+//createApp({provide: {store}}).mount('#app')
+//app.use(store)
 
 new Vue({
-    // router: router,
-    store: store, // vuex store - see ./store/storeCY.js
+    //router: router,
+    provide: {store},
+    //store: store, // vuex store - see ./store/storeCY.js
     render: h => h(App) 
 }).$mount('#app')

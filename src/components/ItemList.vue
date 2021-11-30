@@ -6,17 +6,17 @@
 			class="shadow-sm overflow-auto m-1" 
 			style="height: 175px;"   
 			:disabled="disabled">
-			<b-list-group-item v-for="(item, index) in itemsSorted" :key="index">{{item}}</b-list-group-item>
+			<b-list-group-item 
+				v-for="(item, index) in itemsSorted" 
+				:key="index">{{item}}</b-list-group-item>
 		</b-list-group>
 	</b-form-group>
 </template>
 
 <script>
+import { computed } from '@vue/composition-api' // Vue 2 only. for Vue 3 use "from '@vue'"
 
 export default {
-	name: 'ItemList',
-	components: { },
-	mixins: [  ],
 	props: {
 		disabled: {
 			type: Boolean,
@@ -34,30 +34,13 @@ export default {
             default: () => []
         }	
 	},
-	data() {
-		return {}
-	},
-	computed: {
-        itemsSorted() {
-            return this.items
-                .slice()
+	setup(props) {
+        const itemsSorted = computed(() => {
+			return props.items
+				.slice()
                 .sort((a,b) => a > b ? 1 : -1)
-        }
-    },
-	
-	methods: {},
-	// lifecycle hooks
-	beforeCreate() {},
-	created() {},
-	beforeMount() {},
-	mounted() {},
-	beforeUpdate() {},
-	updated() {},
-	beforeDestroy() {},
-	destroyed() {}
+		})	
+		return { itemsSorted }
+	}	
 }
 </script>
-
-<style scoped>
-
-</style>

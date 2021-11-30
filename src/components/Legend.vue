@@ -1,8 +1,7 @@
 <template>
     <b-card no-body 
         v-b-toggle.legendItems             
-        class="card text-secondary shadow" 
-        style="{ cursor: 'pointer' }">
+        class=" legend card text-secondary shadow">
         <div class="card-header px-3 py-1">
             <b-icon-key class="mr-2"/>Key</div>
             <b-collapse id="legendItems" class="card-body m-0 px-3 py-1">               
@@ -40,34 +39,20 @@
 <script>
 
 export default {
-	name: 'Legend',
-	components: {},
-	mixins: [],
-	props: {},
-	data() {
-        return {
-            items: [
-                { label: "Phase", fillColor: "transparent", borderColor: "red", dashed: true },
-                { label: "Group", fillColor: "honeydew", borderColor: "green" },
-                { label: "Sub-Group", fillColor: "aliceblue", borderColor: "blue" },
-                { label: "Context", fillColor: "white", borderColor: "black" },
-                { label: "Selected", fillColor: "gold", borderColor: "black" },
-            ],
-        }
-    },
-	computed: {},
-	methods: {},
-	// lifecycle hooks
-	beforeCreate() {},
-	created() {},
-	beforeMount() {},
-	mounted() {},
-	beforeUpdate() {},
-	updated() {},
-	beforeDestroy() {},
-	destroyed() {}
+    // using composition API syntax 23/11/2021
+    setup() {	
+        const items = [
+            { label: "Phase", fillColor: "transparent", borderColor: "red", dashed: true },
+            { label: "Group", fillColor: "honeydew", borderColor: "green" },
+            { label: "Sub-Group", fillColor: "aliceblue", borderColor: "blue" },
+            { label: "Context", fillColor: "white", borderColor: "black" },
+            { label: "Selected", fillColor: "gold", borderColor: "black" },
+        ]
+        return { items }
+    }
 }
 </script>
 
 <style scoped>
+    .legend { cursor: 'pointer' }
 </style>

@@ -1,6 +1,10 @@
 <template>
     <div class="m-2">
-		<ItemTable :itemClass="itemClass" class="mb-2" @itemSelected="itemSelected" @itemDeleted="itemDeleted"/>
+		<ItemTable 
+			:itemClass="itemClass" 
+			class="mb-2" 
+			@item-selected="itemSelected" 
+			@item-deleted="itemDeleted"/>
 		
 		<b-form-row v-if="fields.includes('redolayout')">		
 			<b-col style="text-align: right">
@@ -61,7 +65,7 @@
 					label="Period" 
 					:disabled="disabled"
 					v-model="((selectedItem || {}).data || {}).period"  
-					:options="$store.getters.periodOptions" 
+					:options="periodOptions" 
 					@change="periodChanged"/>
 			
 				<ItemLookup v-if="fields.includes('type')"
@@ -102,66 +106,11 @@
 					label="Contains" 
 					:disabled="true" 
 					:items="itemContains"/>
-
-				<!--<b-form-group v-if="fields.includes('contains')" 
-					label="Contains"				
-					label-for="itemContains" size="sm">
-					<b-list-group 
-						class="shadow-sm overflow-auto m-1" 
-						style="height: 175px;"   
-						:disabled="true">
-						<b-list-group-item v-for="(item, index) in itemContains" :key="index">{{item}}</b-list-group-item>
-					</b-list-group>
-				</b-form-group>	-->
-
-				<!--<b-form-group v-if="fields.includes('containsGroups')" 
-					label="Contains groups"				
-					label-for="containsGroups">
-					<b-form-input
-						:disabled="true"
-						class="shadow-sm"
-						:value="containsGroups"/>
-				</b-form-group>
-
-				<b-form-group v-if="fields.includes('containsSubGroups')" 
-					label="Contains subgroups"				
-					label-for="containsSubGroups">
-					<b-form-input
-						:disabled="true"
-						class="shadow-sm"
-						:value="containsSubGroups"/>
-				</b-form-group>
-
-				<b-form-group v-if="fields.includes('containsContexts')" 
-					label="Contains contexts"				
-					label-for="containsContexts">
-					<b-form-input
-						:disabled="true"
-						class="shadow-sm"
-						:value="containsContexts"/>
-				</b-form-group>	
-
-				<b-form-group v-if="fields.includes('containsDatings')" 
-					label="Contains datings"				
-					label-for="containsDatings">
-					<b-form-input
-						:disabled="true"
-						class="shadow-sm"
-						:value="containsDatings"/>
-				</b-form-group>	-->
+				
 				<ItemList v-if="fields.includes('periodContains')"	 			
 					label="Contains" 
 					:disabled="true" 
 					:items="periodContains"/>
-
-				<!--<b-form-group v-if="fields.includes('periodContains')" 
-					label="Period contains"				
-					label-for="periodContains">
-					<b-form-input
-						:disabled="true"
-						class="shadow-sm"
-						:value="nodesForPeriod"/>
-				</b-form-group>-->	
 			</b-col>
 		</b-form-row> 
 
@@ -185,6 +134,10 @@
 
 		<b-form-row>	
 			<b-col>		
+				<!--<DatingYearRange v-if="fields.includes('yearrange')"  
+					:disabled="disabled" 
+					:dating="((selectedItem || {}).data || {}).dating"
+					@change="datingChanged"/>-->
 				<DatingYearRange v-if="fields.includes('yearrange')"  
 					:disabled="disabled" 
 					:dating="((selectedItem || {}).data || {}).dating"
@@ -240,15 +193,18 @@
 </template>
 
 <script>
-import {NodeClass} from '@/mixins/constants.js'
+import { ref, computed, inject } from "@vue/composition-api" // Vue 2 only. for Vue 3 use "from '@vue'"
+import { NodeClass } from '@/global/PhaserCommon.js'
 import ItemTable from '@/components/ItemTable'
 import ItemLookup from '@/components/ItemLookup'
 //import DatingYearRange from '@/components/DatingYearRange'
 import Stratigraphy from '@/components/Stratigraphy'
+//import DatingYearRange from '@/components/DatingYearRange'
 import DatingYearRange from '@/components/DatingYearRange'
 import SciDating from '@/components/SciDating'
 import ItemLabel from '@/components/ItemLabel'
 import ItemList from '@/components/ItemList'
+import EventBus from "@/global/EventBus.js"
 
 export default {
 	name: 'ItemEditor',
@@ -257,13 +213,13 @@ export default {
 		ItemLookup,
 		//DatingYearRange,
 		Stratigraphy,
+		//DatingYearRange,
 		DatingYearRange,
 		SciDating,
 		ItemLabel,
 		ItemList
 		
 	},
-	mixins: [ ],
 	props: {
 		itemClass: {
 			type: String,
@@ -272,16 +228,15 @@ export default {
 			validator: value => [...Object.values(NodeClass), "edge"].includes(value) 
 		}
 	},
-	data() { 
-        return { 
-            selectedItem: null
-        } 
-    },
-	computed: {
-		disabled() { return this.selectedItem == null },
-		position() { return this.selectedItem?.position },
-		fields() { 
-			switch(this.itemClass) {
+	setup(props) {
+		const store = inject('store')
+		const selectedItem = ref(null)
+		const disabled = computed(() => selectedItem.value == null)
+		const position = computed(() => selectedItem?.position)
+		const periodOptions = store.getters.periodOptions
+
+		const fields = computed(() => { 
+			switch(props.itemClass) {
 				case NodeClass.PHASE: return ["label", "description", "contains", "containsGroups", "containsSubGroups", "containsContexts", "yearrange", "redolayout", "period"]
 				case NodeClass.GROUP: return ["label", "type", "parent", "contains", "containsSubGroups", "containsContexts", "description", "redolayout", "cud", "period"]
 				case NodeClass.SUBGROUP: return ["label", "type", "parent", "contains", "containsContexts", "description", "redolayout", "cud", "period"]
@@ -290,38 +245,46 @@ export default {
 				case NodeClass.PERIOD: return ["label", "uri", "description", "periodContains", "yearrange"]
 				default: return []
 			}			
-		},
-		parentLookupOptions() { 
-			switch(this.itemClass) {
-				case NodeClass.GROUP: return this.$store.getters.phaseOptionsGrouped
-				case NodeClass.SUBGROUP: return this.$store.getters.groupOptionsGrouped
-				case NodeClass.CONTEXT: return this.$store.getters.contextParentOptions			
-				case NodeClass.DATING: return this.$store.getters.contextOptionsGrouped	
+		})
+
+		const parentLookupOptions = computed(() => { 
+			switch(props.itemClass) {
+				case NodeClass.GROUP: return store.getters.phaseOptionsGrouped
+				case NodeClass.SUBGROUP: return store.getters.groupOptionsGrouped
+				case NodeClass.CONTEXT: return store.getters.contextParentOptions			
+				case NodeClass.DATING: return store.getters.contextOptionsGrouped	
 				default: return []
 			}			
-		}, 
-		typeLookupOptions() { 
-			switch(this.itemClass) {
-				case NodeClass.PHASE: return this.$store.getters.phaseTypeOptions
-				case NodeClass.GROUP: return this.$store.getters.groupTypeOptions
-				case NodeClass.SUBGROUP: return this.$store.getters.groupTypeOptions
-				case NodeClass.CONTEXT: return this.$store.getters.contextTypeOptions
-				case NodeClass.DATING: return this.$store.getters.datingTypeOptions
+		})
+
+		const typeLookupOptions = computed(() => { 
+			switch(props.itemClass) {
+				case NodeClass.PHASE: return store.getters.phaseTypeOptions
+				case NodeClass.GROUP: return store.getters.groupTypeOptions
+				case NodeClass.SUBGROUP: return store.getters.groupTypeOptions
+				case NodeClass.CONTEXT: return store.getters.contextTypeOptions
+				case NodeClass.DATING: return store.getters.datingTypeOptions
 				default: return []
 			}
-		},
-		itemContains() { 
-			let id = this.selectedItem?.data?.id || ""
+		})
+
+		const itemContains = computed(() => {
+			let id = ""			
+			if(selectedItem.value)
+				id = selectedItem.value.data?.id || ""
 			if(id !== "")
-				return this.$store.getters.descendantsOfID(id)
+				return store.getters.descendantsOfID(id)
 					.map(n => `(${n.data.class}) ${n.data.label}`)					
 			else
 				return [] 
-		},
-		periodContains(){
-			let id = this.selectedItem?.data?.id
-			if(id) {
-				return this.$store.getters.nodes
+		})
+
+		const periodContains = computed(() => { 
+			let id = ""			
+			if(selectedItem.value)
+				id = selectedItem?.value.data?.id || ""
+			if(id !== "") {
+				return store.getters.nodes
 					.filter(n => n.data.period == id)
 					.map(n => `(${n.data.class}) ${n.data.label}`)
 					//.sort((a,b) => a - b) // ensures numeric values still sorted correctly
@@ -329,152 +292,118 @@ export default {
 			}
 			else
 				return []
-		},
-		/*containsGroups() { 
-			let id = this.selectedItem?.data?.id
-			if(id) {
-				return this.$store.getters.descendantsOfID(id)
-					.filter(n => n.data.class == NodeClass.GROUP)
-					.map(n => n.data.label)
-					.sort((a,b) => a - b) // ensures numeric values still sorted correctly
-					.join(", ")
-			}
-			else
-				return "" 
-		},
-		containsSubGroups() { 
-			let id = this.selectedItem?.data?.id
-			if(id) {
-				return this.$store.getters.descendantsOfID(id)
-					.filter(n => n.data.class == NodeClass.SUBGROUP)
-					.map(n => n.data.label)
-					.sort((a,b) => a - b) // ensures numeric values still sorted correctly
-					.join(", ")
-			}
-			else
-				return "" 
-		},
-		containsContexts() { 
-			let id = this.selectedItem?.data?.id
-			if(id) {
-				return this.$store.getters.descendantsOfID(id)
-					.filter(n => n.data.class == NodeClass.CONTEXT)
-					.map(n => n.data.label)
-					.sort((a,b) => a - b) // ensures numeric values still sorted correctly
-					.join(", ")
-			}
-			else
-				return "" 
-		},
-		containsDatings() { 
-			let id = this.selectedItem?.data?.id
-			if(id) {
-				return this.$store.getters.descendantsOfID(id)
-					.filter(n => n.data.class == NodeClass.DATING)
-					.map(n => n.data.label)
-					.sort((a,b) => a - b) // ensures numeric values still sorted correctly
-					.join(", ")
-			}
-			else
-				return "" 
-		}*/
-	},
-	methods: {
-        itemSelected(item) {
-            this.selectedItem = item
-			//this.$store.dispatch('setSelectedID', ((this.selectedItem || {}).data || {}).id)
-			this.$store.dispatch('setSelectedID', this.selectedItem?.data?.id)
+		})
 
-        },
-		itemDeleted(id) {
+		const itemSelected = (item) => {
+            selectedItem.value = item
+			//this.$store.dispatch('setSelectedID', ((this.selectedItem || {}).data || {}).id)
+			store.dispatch('setSelectedID', selectedItem?.value.data?.id)
+
+        }
+
+		const itemDeleted = (id) => {
 			//if(((this.selectedItem || {}).data || {}).id == id)
-			if(this.selectedItem?.data?.id == id)
-				this.selectedItem = null
-		},
-		labelChanged() {
-			this.itemChanged()
-		},
-		uriChanged() {
-			this.itemChanged()
-		},
-		descriptionChanged() {
-			this.itemChanged()
-		},
-		/*phaseChanged(value) {
-			if(this.selectedItem) {
-				this.selectedItem.data.inphase = value
-				this.changed()
+			if(selectedItem.value) {
+				if(selectedItem.value.data.id == id)
+					selectedItem.value = null
 			}
-		},*/
-		redoCompoundNodeLayout() {
+		}
+
+		const labelChanged = () => itemChanged()
+		const uriChanged = () => itemChanged()
+		const descriptionChanged = () => itemChanged()
+		
+		const redoCompoundNodeLayout = () => {
 			// comunicate this to cytoscape diagram via event bus
-			if(this.selectedItem) {
-				this.$root.$emit('redoCompoundNodeLayout', this.selectedItem)
+			if(selectedItem.value) {
+				EventBus.$emit('redo-compound-node-layout', selectedItem.value)
 			}
-		},
-		parentChanged(value) {
-			if(this.selectedItem) {
+		}
+
+		const parentChanged = (value) => {
+			if(selectedItem.value) {
 				// new parent group for context chosen
-				if(this.selectedItem.data.parent != value) {
-					this.selectedItem.data.parent = value
+				if(selectedItem.value.data.parent != value) {
+					selectedItem.value.data.parent = value
 					// comunicate this change to cytoscape diagram via event bus
-					this.$root.$emit('nodeParentChanged', this.selectedItem) 
+					EventBus.$emit('node-parent-changed', selectedItem.value) 
 					// also flag the change to parent control
-					this.itemChanged()
+					itemChanged()
 				}	
 			}
-		},		
-		typeChanged(value) {
-			if(this.selectedItem) {
-				this.selectedItem.data.type = value
-				this.itemChanged()
+		}
+
+		const typeChanged = (value) => {
+			if(selectedItem.value) {
+				selectedItem.value.data.type = value
+				itemChanged()
 			}
-		},
-		datingChanged(dating) {	
-			if(this.selectedItem) {
-				this.selectedItem.data.dating = dating
-				this.itemChanged()
+		}
+
+		const datingChanged = (dating) => {	
+			if(selectedItem.value) {
+				selectedItem.value.data.dating = dating
+				itemChanged()
 			}
-		},
-		includeChanged(value) {	
-			if(this.selectedItem) {
-				this.selectedItem.data.included = value
-				this.itemChanged()
+		}
+
+		const includeChanged = (value) => {	
+			if(selectedItem.value) {
+				selectedItem.value.data.included = value
+				itemChanged()
 			}
-		},
-		associationChanged(value) {	
-			if(this.selectedItem) {
-				this.selectedItem.data.association = value
-				this.itemChanged()
+		}
+
+		const associationChanged = (value) => {	
+			if(selectedItem.value) {
+				selectedItem.value.data.association = value
+				itemChanged()
 			}
-		},
-		cudChanged(value) {	
-			if(this.selectedItem) {
-				this.selectedItem.data.cud = value
-				this.itemChanged()
+		}
+
+		const cudChanged = (value) => {	
+			if(selectedItem.value) {
+				selectedItem.value.data.cud = value
+				itemChanged()
 			}
-		},
-		periodChanged(value) {	
-			if(this.selectedItem) {
-				this.selectedItem.data.period = value
-				this.itemChanged()
+		}
+
+		const periodChanged = (value) => {	
+			if(selectedItem.value) {
+				selectedItem.value.data.period = value
+				itemChanged()
 			}
-		},
-		itemChanged() {
-            this.$store.dispatch('updateNode', this.selectedItem)
-		},	        
-    },
-	// lifecycle hooks
-	beforeCreate() {},
-	created() {},
-	beforeMount() {},
-	mounted() {},
-	beforeUpdate() {},
-	updated() {},
-	beforeDestroy() {},
-	destroyed() {}
+		}
+
+		const itemChanged = () => {
+            store.dispatch('updateNode', selectedItem.value)
+		}	     
+
+		return { 
+			selectedItem, 
+			disabled, 
+			position, 
+			fields, 
+			parentLookupOptions,
+			typeLookupOptions, 
+			itemContains,
+			periodContains,
+			periodOptions,
+			itemSelected,
+			itemDeleted,
+			labelChanged,
+			uriChanged,
+			descriptionChanged,
+			redoCompoundNodeLayout,
+			parentChanged,
+			typeChanged,
+			datingChanged,
+			includeChanged,
+			associationChanged,
+			cudChanged,
+			periodChanged,
+			itemChanged
+		}
+	}
 }
 </script>
-
-<style scoped>
-</style>

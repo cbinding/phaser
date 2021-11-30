@@ -4,8 +4,8 @@
             <b-col> 
                 <b-form-group 
                     valid-feedback=""
-                    :invalid-feedback="minYearInvalid"
-                    :state="minYearValidation">            
+                    :invalid-feedback="validationMessage"
+                    :state="validateMinYear">            
                     <b-form-group class="my-2"
                         label="Minimum (earliest) Year"
                         label-for="minYearInput">
@@ -18,29 +18,19 @@
                             :value="local.minYear" 
                             @change="changed('minYear', $event)"/>
                     </b-form-group>
-                    <b-input-group v-if="showTolerances" prepend="±" class="shadow-sm">
-                        <b-form-input number  
-                            min="0"                            
-                            :disabled="disabled"
-                            placeholder="tolerance"
-                            type="number" 
-                            :value="local.minYearTolValue"
-                            @change="changed('minYearTolValue', $event)"/>
-                        <b-input-group-append>
-                            <b-form-select 
-                                :value="local.minYearTolUnit"
-                                :options="tolTypes" 
-                                :disabled="disabled" 
-                                @change="changed('minYearTolUnit', $event)"/>
-                        </b-input-group-append>
-                    </b-input-group>                
+                    <DatingYearTolerance v-if="showTolerances"
+                        :disabled="disabled"
+                        :tolerance-value="local.minYearTolValue" 
+                        :tolerance-unit="local.minYearTolUnit"             
+                        @change-value="changed('minYearTolValue', $event)"
+                        @change-unit="changed('minYearTolUnit', $event)" />                                  
                 </b-form-group>
             </b-col> 
             <b-col>
                 <b-form-group  
                     valid-feedback=""
-                    :invalid-feedback="maxYearInvalid"
-                    :state="maxYearValidation">
+                    :invalid-feedback="validationMessage"
+                    :state="validateMaxYear">
                     <b-form-group class="my-2"
                         label="Maximum (latest) year"
                         label-for="maxYearInput">
@@ -53,22 +43,12 @@
                             :value="local.maxYear"
                             @change="changed('maxYear', $event)"/>
                     </b-form-group>
-                    <b-input-group v-if="showTolerances" prepend="±" class="shadow-sm" >
-                        <b-form-input number 
-                            min="0"
-                            :disabled="disabled"
-                            placeholder="tolerance"
-                            type="number" 
-                            :value="local.maxYearTolValue"
-                            @change="changed('maxYearTolValue', $event)"/>
-                        <b-input-group-append>
-                            <b-form-select 
-                                :value="local.maxYearTolUnit"
-                                :options="tolTypes" 
-                                :disabled="disabled" 
-                                @change="changed('maxYearTolUnit', $event)"/>
-                        </b-input-group-append>
-                    </b-input-group>
+                    <DatingYearTolerance v-if="showTolerances"
+                        :disabled="disabled"
+                        :tolerance-value="local.maxYearTolValue" 
+                        :tolerance-unit="local.maxYearTolUnit"             
+                        @change-value="changed('maxYearTolValue', $event)"
+                        @change-unit="changed('maxYearTolUnit', $event)" />                     
                 </b-form-group>
             </b-col>       
        </b-form-row>         
@@ -76,15 +56,13 @@
 </template>
 
 <script>
-//import PhaserCommon from '@/mixins/PhaserCommon.js'
-//import DatingYearTolerance from '@/components/YearTolerance.vue'
+import { computed } from '@vue/composition-api' // Vue 2 only. for Vue 3 use "from '@vue'"
+import DatingYearTolerance from '@/components/DatingYearTolerance.vue'
 
-export default {
-	name: 'DatingYearRange',
+export default {	
 	components: {
-        //DatingYearTolerance
-	},
-	mixins: [ ],
+        DatingYearTolerance
+	},	
 	props: { 
         disabled: {
             type: Boolean,
@@ -101,81 +79,52 @@ export default {
             required: false,
             default: true
         }		
-    },    
-	data() {
-		return {
-            tolTypes: [{ value: 'percent', text: '%' }, { value: 'years', text: 'years' }]            
-		}
-	},
-	computed: { 
-        local() {
+    },  	
+    setup(props, context) {
+        const local = computed(() => {
             return {
-                minYear: Number((this.dating || {}).minYear),  
-                maxYear: Number((this.dating || {}).maxYear),  
-                minYearTolValue: Number((this.dating || {}).minYearTolValue),  
-                maxYearTolValue: Number((this.dating || {}).maxYearTolValue),  
-                minYearTolUnit: (this.dating || {}).minYearTolUnit || "years",
-                maxYearTolUnit: (this.dating || {}).maxYearTolUnit || "years"
+                minYear: Number((props.dating || {}).minYear),  
+                maxYear: Number((props.dating || {}).maxYear),  
+                minYearTolValue: Number((props.dating || {}).minYearTolValue),  
+                maxYearTolValue: Number((props.dating || {}).maxYearTolValue),  
+                minYearTolUnit: (props.dating || {}).minYearTolUnit || "years",
+                maxYearTolUnit: (props.dating || {}).maxYearTolUnit || "years"
             }
-        },               
-        currentYear() {
-            return new Date().getFullYear()
-        },
-        minYearValidation() {
-            return (!Number.isNaN(Number(this.local.minYear)))
-                && this.local.minYear <= this.local.maxYear
-                && this.local.minYear <= this.currentYear
-        },
-        maxYearValidation() {
-            return (!Number.isNaN(Number(this.local.maxYear)))
-                && this.local.minYear <= this.local.maxYear
-                && this.local.maxYear <= this.currentYear
-        },
-        minYearInvalid() {  
-            if(Number.isNaN(Number(this.local.minYear)))
+        })
+        const currentYear = computed(() => new Date().getFullYear())
+        const validateMinYear = computed(() => {
+            return (!Number.isNaN(Number(local.value.minYear)))
+                && local.value.minYear <= local.value.maxYear
+                && local.value.minYear <= currentYear.value
+        })
+        const validateMaxYear = computed(() => {
+            return (!Number.isNaN(Number(local.value.maxYear)))
+                && local.value.minYear <= local.value.maxYear
+                && local.value.maxYear <= currentYear.value
+        }) 
+        const validationMessage = computed(() => {
+            if(Number.isNaN(Number(local.value.minYear)))
                 return "Please enter a valid year"
-            else if(this.local.minYear > this.local.maxYear) 
+            if(Number.isNaN(Number(local.value.maxYear)))
+                return "Please enter a valid year"
+            else if(local.value.minYear > local.value.maxYear) 
                 return "Min year cannot exceed max year"
-            else if(this.local.minYear > this.currentYear)
+            else if(local.value.minYear > currentYear.value)
                 return "Min year cannot exceed current year"
             else
                 return "something else wrong"
-        },
-        maxYearInvalid() {  
-            if(Number.isNaN(Number(this.local.maxYear)))
-                return "Please enter a valid year"
-            else if(this.local.minYear > this.local.maxYear) 
-                return "Min year cannot exceed max year"
-            else if(this.local.maxYear > this.currentYear)
-                return "Max year cannot exceed current year"
-            else
-                return "something else wrong"
-        }     
-	},
-	methods: {  
-        changed(key, value) {
-        //changed() {
-            /*let newDating = {
-                minYear: Number.parseInt((this.dating || {}).minYear) || 0,  
-                maxYear: Number.parseInt((this.dating || {}).maxYear) || 0,  
-                minYearTolValue: Number.parseInt((this.dating || {}).minYearTolValue) || 0,  
-                maxYearTolValue: Number.parseInt((this.dating || {}).maxYearTolValue) || 0,  
-                minYearTolUnit: ((this.dating || {}).minYearTolUnit || "years").toString().trim(),
-                maxYearTolUnit: ((this.dating || {}).maxYearTolUnit || "years").toString().trim(),                                
-            } */
-            this.$emit('change', { ...this.dating, [key]: value })
-            //this.$emit('change', newDating);	
-        },
-    },
-	// lifecycle hooks
-	beforeCreate() {},
-	created() {},
-	beforeMount() {},
-	mounted() {},
-	beforeUpdate() {},
-	updated() {},
-	beforeDestroy() {},
-	destroyed() {}
+        })            
+        const changed = (key, value) => {
+            context.emit('change', { ...props.dating, [key]: value })
+        }  
+        return {
+			local, 
+            validateMinYear, 
+            validateMaxYear,  
+            validationMessage,             
+            changed
+        }   
+    }	
 }
 </script>
 

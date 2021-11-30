@@ -4,7 +4,7 @@ import Vuex from "vuex"
 // import VuexPersist from 'vuex-persist'
 import createPersistedState from "vuex-persistedstate"
 import _merge from "lodash/merge"
-import {NodeClass} from "@/mixins/constants.js"
+import {NodeClass} from "@/global/PhaserCommon.js"
 
 Vue.use(Vuex)
 
@@ -33,7 +33,7 @@ export default new Vuex.Store({
             version: "1.0",           
         },  
         graph: {
-            nodeMap: new Map(),
+            nodeMap: new Map(), // Maps currently not reactive in vue, use plain object instead?
             edgeMap: new Map(),
             //nodes: [],
             //edges: []
@@ -280,7 +280,7 @@ export default new Vuex.Store({
 
         // hierarchical querying functionality
         childrenOfIDs: (state, getters) => ids => getters.nodes.filter(n => ids.includes(n.data.parent)),
-        childrenOfID: (state, getters) => id => getters.childrenOfIDs([id]),    
+        childrenOfID: (state, getters) => id => getters.childrenOfIDs([id]),
         
         descendantsOfIDs: (state, getters) => ids => {
             let descendants = []

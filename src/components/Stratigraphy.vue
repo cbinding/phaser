@@ -10,7 +10,7 @@
 						placeholder="source" 
 						type="text"
 						name="itemID" 
-						:value="$store.getters.nodeLabel(sourceID)"/>
+						:value="store.getters.nodeLabel(sourceID)"/>
 						<!--v-model.trim="((selectedItem || {}).data || {}).id"/>-->
 				</b-form-group>
 			</b-col>
@@ -63,7 +63,7 @@
 								class="bg-white text-dark border border-secondary shadow-sm"
 								:disabled="disabled">
 								<!--<span>{{ $store.getters.nodeByID(item.data.target).data.label || item.data.target }}</span>-->
-								<span>{{ $store.getters.nodeLabel(item.data.target) }}</span>
+								<span>{{ store.getters.nodeLabel(item.data.target) }}</span>
 								<b-icon-x-circle class="action ml-2" @click.stop="removeItem(item)"/>
 							</b-badge>
 						</li>
@@ -77,13 +77,14 @@
 </template>
 
 <script>
-import PhaserCommon from '@/mixins/PhaserCommon.js'
+import { ref, computed, inject } from '@vue/composition-api' // Vue 2 only. for Vue 3 use "from '@vue'"
+//import PhaserCommon from '@/global/PhaserCommon.js'
 import ItemLookup from '@/components/ItemLookup'
+import _capitalize  from 'lodash/capitalize'
 
 export default {
-	name: 'Stratigraphy2',
 	components: { ItemLookup },
-	mixins: [ PhaserCommon ],
+	//mixins: [ PhaserCommon ],
 	props: {
 		disabled: {
 			type: Boolean,
@@ -96,61 +97,55 @@ export default {
 			default: ""
 		}
 	},
-	data() {
-		return {
-			edgeTypes: ["above", "below", "equal"],
-			selectedTargetID: "",	
-			selectedEdgeType: "above"		
-		}
-	},
-	computed: {
-		strat() { return this.$store.getters.edgesBySource(this.sourceID) },
-		above() { return this.strat.filter(e => e.data.type == "above") },
-		below() { return this.strat.filter(e => e.data.type == "below") },
-		equal() { return this.strat.filter(e => e.data.type == "equal") },
-		options() { return this.$store.getters.contextOptionsGrouped },	
-		available() { 
+	setup(props) {
+		const store = inject('store')
+		const edgeTypes = ["above", "below", "equal"]
+		const selectedTargetID = ref("")
+		const selectedEdgeType = ref("above")
+
+		const strat = computed(() => store.getters.edgesBySource(props.sourceID)) 
+		const options = computed(() => store.getters.contextOptionsGrouped)
+		const available = computed(() => {
 			// target IDs for strat relationships. Exclude existing targets or current source ID
-			const currentTargets = this.strat.map(item => item.data.target).concat([this.sourceID])
-			const currentOptions = this.options.length > 0 ? this.options[0].options || [] : []			
-			return currentOptions.filter(option => !currentTargets.includes(option.value))			
-		}
-	},
-	methods: {
-		items(edgeType){
+			const currentTargets = strat.value.map(item => item.data?.target).concat([props.sourceID])
+			const currentOptions = options.value.length > 0 ? options.value[0].options || [] : []
+			return currentOptions.filter(option => !currentTargets.includes(option.value))
+		})
+		const items = (edgeType) => {
 			switch(edgeType) {
-				case "above": return this.above
-				case "below": return this.below
-				case "equal": return this.equal
+				case "above": return strat.value.filter(e => e.data.type == "above")
+				case "below": return strat.value.filter(e => e.data.type == "below") // TODO: reciprocals not showing...
+				case "equal": return strat.value.filter(e => e.data.type == "equal") // TODO: no equals relationships 
 				default: return []
 			}
-		},
-		addItem() {			
+		}
+		const addItem = () => {
 			let edge = { 
 				data: { 
-					source: this.sourceID, 
-					target: this.selectedTargetID, 
-					type: this.selectedEdgeType 
+					source: props.sourceID, 
+					target: selectedTargetID.value,
+					type: selectedEdgeType.value
 				} 
 			}
-			this.$store.dispatch('insertEdge', edge)	
-		},
-		removeItem(item) {
-			this.$store.dispatch('deleteEdge', item)			
-		},
-		targetChanged(value) {
-			this.selectedTargetID = value			
+			store.dispatch('insertEdge', edge)
 		}
-	},
-	// lifecycle hooks
-	beforeCreate() {},
-	created() {},
-	beforeMount() {},
-	mounted() {},
-	beforeUpdate() {},
-	updated() {},
-	beforeDestroy() {},
-	destroyed() {}
+		const removeItem = (item) => store.dispatch('deleteEdge', item)			
+		const targetChanged = (value) => selectedTargetID.value = value
+		const capitalize = (str) => _capitalize(str)
+
+		return {
+			store,
+			items, 
+			addItem,
+			removeItem,
+			edgeTypes, 
+			selectedEdgeType, 
+			selectedTargetID, 
+			available, 
+			targetChanged,
+			capitalize
+		}
+	}
 }
 </script>
 

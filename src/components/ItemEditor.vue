@@ -50,6 +50,7 @@
 
 				<ItemLabel v-if="fields.includes('label')" 
 					:disabled="disabled" 
+					label="Identifier"
 					:placeholder="`${itemClass}`" 
 					v-model.lazy="((selectedItem || {}).data || {}).label" 
 					@input="labelChanged"/>
@@ -64,9 +65,18 @@
 				<ItemLookup v-if="fields.includes('period')"
 					label="Period" 
 					:disabled="disabled"
+					placeholder="period" 
 					v-model="((selectedItem || {}).data || {}).period"  
-					:options="periodOptions" 
+					:options="periodLookupOptions" 
 					@change="periodChanged"/>
+
+				<ItemLookup v-if="fields.includes('meetsPhase')"
+					label="Meets" 
+					:disabled="disabled"
+					placeholder="meets phase" 
+					v-model="((selectedItem || {}).data || {}).meets"  
+					:options="phaseLookupOptions" 
+					@change="phaseMeetsChanged"/>
 			
 				<ItemLookup v-if="fields.includes('type')"
 					label="Type" 
@@ -133,12 +143,8 @@
 		</b-form-row>
 
 		<b-form-row>	
-			<b-col>		
-				<!--<DatingYearRange v-if="fields.includes('yearrange')"  
-					:disabled="disabled" 
-					:dating="((selectedItem || {}).data || {}).dating"
-					@change="datingChanged"/>-->
-				<DatingYearRange v-if="fields.includes('yearrange')"  
+			<b-col>						
+				<DatingYearRangeCE v-if="fields.includes('yearrange')"  
 					:disabled="disabled" 
 					:dating="((selectedItem || {}).data || {}).dating"
 					@change="datingChanged"/>
@@ -187,24 +193,21 @@
 					:disabled="disabled"/>
 			</b-col>
 		</b-form-row>
-
-		<!--<div>{{ `[x: ${(position || {}).x}, y: ${(position || {}).y}]`}}</div>-->
 	</div>		
 </template>
 
 <script>
-import { ref, computed, inject } from "@vue/composition-api" // Vue 2 only. for Vue 3 use "from '@vue'"
-import { NodeClass } from '@/global/PhaserCommon.js'
+import { ref, unref, computed, inject } from "@vue/composition-api" // Vue 2 only. for Vue 3 use "from '@vue'"
+import { NodeClass } from '@/global/PhaserCommon'
 import ItemTable from '@/components/ItemTable'
 import ItemLookup from '@/components/ItemLookup'
-//import DatingYearRange from '@/components/DatingYearRange'
 import Stratigraphy from '@/components/Stratigraphy'
 //import DatingYearRange from '@/components/DatingYearRange'
-import DatingYearRange from '@/components/DatingYearRange'
+import DatingYearRangeCE from '@/components/DatingYearRangeCE'
 import SciDating from '@/components/SciDating'
 import ItemLabel from '@/components/ItemLabel'
 import ItemList from '@/components/ItemList'
-import EventBus from "@/global/EventBus.js"
+import EventBus from "@/global/EventBus"
 
 export default {
 	name: 'ItemEditor',
@@ -214,7 +217,7 @@ export default {
 		//DatingYearRange,
 		Stratigraphy,
 		//DatingYearRange,
-		DatingYearRange,
+		DatingYearRangeCE,
 		SciDating,
 		ItemLabel,
 		ItemList
@@ -231,10 +234,9 @@ export default {
 	setup(props) {
 		const store = inject('store')
 		const selectedItem = ref(null)
-		const disabled = computed(() => selectedItem.value == null)
-		const position = computed(() => selectedItem?.position)
-		const periodOptions = store.getters.periodOptions
-
+		const disabled = computed(() => selectedItem.value === null)
+		
+		// This determines which editing controls are visible
 		const fields = computed(() => { 
 			switch(props.itemClass) {
 				case NodeClass.PHASE: return ["label", "description", "contains", "containsGroups", "containsSubGroups", "containsContexts", "yearrange", "redolayout", "period"]
@@ -247,8 +249,12 @@ export default {
 			}			
 		})
 
+		// options for use in lookups
+		const periodLookupOptions = computed(() => store.getters.periodOptions)
+		const phaseLookupOptions = computed(() => store.getters.phaseOptions)
 		const parentLookupOptions = computed(() => { 
 			switch(props.itemClass) {
+				// phases wont have a parent
 				case NodeClass.GROUP: return store.getters.phaseOptionsGrouped
 				case NodeClass.SUBGROUP: return store.getters.groupOptionsGrouped
 				case NodeClass.CONTEXT: return store.getters.contextParentOptions			
@@ -256,7 +262,6 @@ export default {
 				default: return []
 			}			
 		})
-
 		const typeLookupOptions = computed(() => { 
 			switch(props.itemClass) {
 				case NodeClass.PHASE: return store.getters.phaseTypeOptions
@@ -268,21 +273,22 @@ export default {
 			}
 		})
 
+		// hierarchical containment relationships - list all descendants of selected item
 		const itemContains = computed(() => {
 			let id = ""			
 			if(selectedItem.value)
 				id = selectedItem.value.data?.id || ""
 			if(id !== "")
-				return store.getters.descendantsOfID(id)
-					.map(n => `(${n.data.class}) ${n.data.label}`)					
+				return store.getters.descendantsOfID(id).map(n => `(${n.data.class}) ${n.data.label}`)					
 			else
 				return [] 
 		})
 
+		// list all items that reference this period
 		const periodContains = computed(() => { 
 			let id = ""			
-			if(selectedItem.value)
-				id = selectedItem?.value.data?.id || ""
+			if(selectedItem.value && selectedItem.value.data?.class == NodeClass.PERIOD)
+				id = selectedItem.value.data?.id || ""
 			if(id !== "") {
 				return store.getters.nodes
 					.filter(n => n.data.period == id)
@@ -296,15 +302,15 @@ export default {
 
 		const itemSelected = (item) => {
             selectedItem.value = item
+			//console.log(selectedItem)
 			//this.$store.dispatch('setSelectedID', ((this.selectedItem || {}).data || {}).id)
-			store.dispatch('setSelectedID', selectedItem?.value.data?.id)
-
+			store.dispatch('setSelectedID', unref(selectedItem).data?.id)
         }
 
 		const itemDeleted = (id) => {
 			//if(((this.selectedItem || {}).data || {}).id == id)
 			if(selectedItem.value) {
-				if(selectedItem.value.data.id == id)
+				if(selectedItem.value.data?.id == id)
 					selectedItem.value = null
 			}
 		}
@@ -316,7 +322,7 @@ export default {
 		const redoCompoundNodeLayout = () => {
 			// comunicate this to cytoscape diagram via event bus
 			if(selectedItem.value) {
-				EventBus.$emit('redo-compound-node-layout', selectedItem.value)
+				EventBus.$emit('diagram-redo-compound-layout', unref(selectedItem))
 			}
 		}
 
@@ -326,7 +332,7 @@ export default {
 				if(selectedItem.value.data.parent != value) {
 					selectedItem.value.data.parent = value
 					// comunicate this change to cytoscape diagram via event bus
-					EventBus.$emit('node-parent-changed', selectedItem.value) 
+					EventBus.$emit('node-parent-changed', unref(selectedItem)) 
 					// also flag the change to parent control
 					itemChanged()
 				}	
@@ -375,20 +381,28 @@ export default {
 			}
 		}
 
+		// TODO: should add/amend an edge here, not a property?
+		const phaseMeetsChanged = (value) => {	
+			if(selectedItem.value) {
+				selectedItem.value.data.meets = value
+				itemChanged()
+			}
+		}
+
 		const itemChanged = () => {
-            store.dispatch('updateNode', selectedItem.value)
+            store.dispatch('updateNode', unref(selectedItem))
 		}	     
 
 		return { 
 			selectedItem, 
 			disabled, 
-			position, 
 			fields, 
 			parentLookupOptions,
-			typeLookupOptions, 
+			typeLookupOptions,
+			phaseLookupOptions,
 			itemContains,
 			periodContains,
-			periodOptions,
+			periodLookupOptions,
 			itemSelected,
 			itemDeleted,
 			labelChanged,
@@ -402,6 +416,7 @@ export default {
 			associationChanged,
 			cudChanged,
 			periodChanged,
+			phaseMeetsChanged,
 			itemChanged
 		}
 	}

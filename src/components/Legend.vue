@@ -9,11 +9,12 @@
                 <b-list-group-item v-for="(item, index) in items" :key="index" class="m-0 p-0 border-0">
                     <svg height="15" width="30">
                         <rect x="1" y="1" 
-                            width="28" height="11" 
-                            stroke-width="1" 
+                            width="26" height="11" 
+                            stroke-width="2" 
                             :fill="item.fillColor" 
                             :stroke="item.borderColor"
-                            :stroke-dasharray="item.dashed ? '2 2' : ''"/>                                
+                            :stroke-dasharray="item.dashed ? '2 2' : ''"/>     
+                        <text x="7" y="10" :fill="item.textColor" font-size="9">123</text>                           
                     </svg>
                     <span class="ml-1">{{item.label}}</span>
                 </b-list-group-item>                        
@@ -39,14 +40,14 @@
 <script>
 
 export default {
-    // using composition API syntax 23/11/2021
     setup() {	
         const items = [
-            { label: "Phase", fillColor: "transparent", borderColor: "red", dashed: true },
-            { label: "Group", fillColor: "honeydew", borderColor: "green" },
-            { label: "Sub-Group", fillColor: "aliceblue", borderColor: "blue" },
-            { label: "Context", fillColor: "white", borderColor: "black" },
-            { label: "Selected", fillColor: "gold", borderColor: "black" },
+            { label: "Phase", fillColor: "transparent", borderColor: "red", textColor: "red", dashed: true },
+            { label: "Group", fillColor: "honeydew", borderColor: "green", textColor: "green"  },
+            { label: "Sub-Group", fillColor: "aliceblue", borderColor: "blue", textColor: "blue" },
+            { label: "Context (undated)", fillColor: "white", borderColor: "black", textColor: "black"  },
+            { label: "Context (dated)", fillColor: "black", borderColor: "black", textColor: "white" },
+            { label: "Selected", fillColor: "gold", borderColor: "black", textColor: "black" },
         ]
         return { items }
     }

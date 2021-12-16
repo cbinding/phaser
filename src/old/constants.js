@@ -3,8 +3,6 @@ export const NodeClass = Object.freeze({
     GROUP: "group",
     SUBGROUP: "subgroup",
     CONTEXT: "context",
-    //FIND: "find",
-    //SAMPLE: "sample",
     DATING: "dating",
     PERIOD: "period"
 })

@@ -36,7 +36,7 @@
 					<b-dropdown-item-button v-b-modal.modalFileImport>
 						<b-icon-box-arrow-in-left class="mr-2" />
 						<span>Import context stratigraphy (CSV)...</span>
-						<FileImport />						
+						<CsvImport />						
 					</b-dropdown-item-button>					
 					<b-dropdown-item-button disabled>
 						<b-icon-box-arrow-right class="mr-2" />
@@ -70,6 +70,12 @@
 						<b-icon-diagram-3 class="mr-2" />
 						<span>Redo Layout</span>
 					</b-dropdown-item-button>
+					<!--<b-dropdown-divider/>	
+					<b-dropdown-item-button v-b-modal.modalTemporalRelationships>
+						<b-icon-calendar-range class="mr-2" />
+						<span>Temporal Relationships...</span>
+						<TemporalRelationships />
+					</b-dropdown-item-button>-->
 					<!--
 					<b-dropdown-item-button @click="redoLayout('elk')">
 						<b-icon-diagram-3 class="mr-2" />
@@ -96,33 +102,39 @@
 		</b-collapse>
 		<!--<b-navbar-brand href="#" id="brand" tag="h1" class="mb-0 primary">The Matrix</b-navbar-brand>-->
 		<b-navbar-brand href="#" v-b-modal.modalAbout>
-			<img src="phaser-spacedout-logo.png" height="25" alt="PHASER"/>
+			<img src="phaser-spacedout-logo.png" width="94" height="25" alt="PHASER"/>
 		</b-navbar-brand>
 	</b-navbar>	
 </template>
 
 <script>
-import FileImport from '@/components/FileImport'
+import { inject } from '@vue/composition-api' // Vue 2 only. for Vue 3 use "from '@vue'"
+import CsvImport from '@/components/CsvImport'
 //import FileOpenFromURL from '@/components/FileOpenFromURL'
 import PeriodsImport from '@/components/PeriodsImport'
 import HelpAbout from '@/components/HelpAbout'
-import moment from 'moment'
+//import moment from 'moment'
 import EventBus from '@/global/EventBus.js'
-//import PhaserCommon from '@/global/PhaserCommon.js'
+import { timestamp } from '@/global/PhaserCommon'
+
+//npm run seeimport TemporalRelationships from '@/components/TemporalRelationships'
 
 export default {
 	components: {
-		FileImport,
+		CsvImport,
 		//FileOpenFromURL,
 		PeriodsImport,
-		HelpAbout
+		HelpAbout,
+		//TemporalRelationships
 	},
 
 	setup(props, context) {
+		const store = inject('store')  
 		// programmatically display the file dialog
 		const openFileDialog = () => document.getElementById("fileOpen").click()
 
 		const clearAll = () => {
+			// todo - this works but is deprecated, needs correct syntax
 			context.root.$bvModal.msgBoxConfirm('This will clear all current data, are you sure?',{
 				//title: 'New file',
 				size: 'sm',
@@ -132,7 +144,7 @@ export default {
 				cancelTitle: 'No',
 			}).then(value => {
 				if(value) { 
-					context.root.$store.dispatch('clearAll') 
+					store.dispatch('clearAll') 
 					context.emit('diagram-clear')
 				}
 			})	
@@ -144,14 +156,20 @@ export default {
             const reader = new FileReader()
             reader.onload = function(e) { 
                 const fileContents = JSON.parse(e.target.result)
-                context.root.$store.dispatch('loadMatrixData', fileContents)				
+                store.dispatch('loadMatrixData', fileContents)				
             }
             reader.readAsText(file)
 		}
 
 		const fileSave = () => {
-			const data = { elements: context.root.$store.getters.elements }
-			const fileName = `phaser-${ moment().format("YYYYMMDDHHmmss") }.json`
+			const data = { 
+				elements: {
+					nodes: store.getters.nodes,
+					edges: store.getters.edges
+				}
+			}
+			// const fileName = `phaser-${ moment().format("YYYYMMDDHHmmss") }.json`
+			const fileName = `phaser-${ timestamp() }.json`
             saveToFile(JSON.stringify(data), fileName)
 		}
 
@@ -178,7 +196,7 @@ export default {
 		// event bus calls - phaser diagram component has handlers for these			
 		const exportPartPNG = () => EventBus.$emit('diagram-export-part-png')			
 		const exportFullPNG = () => EventBus.$emit('diagram-export-full-png')			
-		const zoomIn = () => { EventBus.$emit("diagram-zoom-in"); }	
+		const zoomIn = () => EventBus.$emit("diagram-zoom-in")	
 		const zoomOut = () => EventBus.$emit('diagram-zoom-out') 		
 		const zoomFit = () => EventBus.$emit('diagram-zoom-fit') 		
 		const redoLayout = (name="dagre") => EventBus.$emit('diagram-redo-layout', name)

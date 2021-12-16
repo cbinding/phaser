@@ -73,7 +73,7 @@
 
 <script>
 import { ref, computed, watch, inject } from '@vue/composition-api' // Vue 2 only. for Vue 3 use "from '@vue'"
-import { NodeClass } from '@/global/PhaserCommon.js'
+import { NodeClass } from '@/global/PhaserCommon'
 
 export default {
 	props: {		
@@ -90,7 +90,7 @@ export default {
 		const sortBy = ref("data.label")
 		const sortDesc = ref(false)
 
-		// select row if node selected somewhere else in the app (e.g. on the diagram)
+		// select row if node is selected somewhere else in the app (e.g. on the diagram)
 		const selectedID = computed(() => store.getters.selectedID)
         watch(selectedID, (newValue) => {			
 			// TODO: scroll to ensure selected row is visible in the table
@@ -99,7 +99,7 @@ export default {
 				el.click() // simulates a click on the row to highlight
 				el.scrollIntoView({behavior: "smooth", block: "center", inline: "nearest"}) // scroll the selected row 
 				el.scrollIntoViewIfNeeded(true)
-				// (TODO: should only do this if manually clicked)
+				// (TODO: should only do this if manually clicked?)
 			}
         })
  
@@ -113,10 +113,6 @@ export default {
 					return store.getters.subgroups
 				case NodeClass.CONTEXT:
 					return store.getters.contexts
-				case NodeClass.FIND:
-					return store.getters.finds
-				case NodeClass.SAMPLE:
-					return store.getters.samples
 				case NodeClass.DATING:
 					return store.getters.datings
 				case NodeClass.PERIOD:
@@ -136,7 +132,7 @@ export default {
 				case NodeClass.CONTEXT: return ["label", "type", "parent", "derivedMinYear", "derivedMaxYear", "duration", "period"]	
 				case NodeClass.DATING: return ["label", "type", "parent", "enteredMinYear", "enteredMaxYear", "enteredDiff", "included", "period"]
 				case NodeClass.PERIOD: return ["label", "enteredMinYear", "enteredMaxYear", "enteredDiff"]
-				case "edge": return ["source", "type", "target", "derivedMinYear", "derivedMaxYear", "duration"]
+				case "edge": return ["source", "type", "target", "derivedMinDuration", "derivedMaxDuration"]
 				default: return []				
 			}			
 		})
@@ -236,6 +232,24 @@ export default {
 					formatter: durationFormatter,
 					sortable: true,
 					class: "text-right"
+				}] : [],
+				... (columns.value.includes('derivedMinDuration')) ? [{
+					// virtual column with custom formatter
+					key: 'derivedminduration',
+					label: 'min duration',
+					sortByFormatted: true,
+					formatter: derivedMinDurationFormatter,
+					sortable: true,
+					class: "text-right"
+				}] : [],				
+				... (columns.value.includes('derivedMaxDuration')) ? [{
+					// virtual column with custom formatter
+					key: 'derivedmaxduration',
+					label: 'max duration',
+					sortByFormatted: true,
+					formatter: derivedMaxDurationFormatter,
+					sortable: true,
+					class: "text-right"
 				}] : [],				
 				... (columns.value.includes('included')) ? [{
 						key: "data.included",
@@ -289,7 +303,7 @@ export default {
 
 		const deleteItem = (item) => {
 			const msg = `Delete ${ props.itemClass } "${item.data.label}" - are you sure?`
-			context.root.$bvModal.msgBoxConfirm(msg)
+			context.root.$bvModal.msgBoxConfirm(msg)							
 				.then(value => { 
 					if(value) { 
 						context.emit('item-deleted', item.data.id)
@@ -314,7 +328,7 @@ export default {
 		const tablePeriodFormatter = (value, key, item) => store.getters.nodeLabel(item.data.period, false)
 
 		const tableMinYearFormatter = (value, key, item) => {
-			let dating = item.data.dating
+			let dating = item.data?.dating || {}
             let year = dating.minYear
             let tolv = dating.minYearTolValue 						
             let tolu = dating.minYearTolUnit
@@ -322,7 +336,7 @@ export default {
         }
 
         const tableMaxYearFormatter = (value, key, item) => {
-			let dating = item.data.dating
+			let dating = item.data?.dating || {}
             let year = dating.maxYear
             let tolv = dating.maxYearTolValue 						
             let tolu = dating.maxYearTolUnit
@@ -342,6 +356,9 @@ export default {
 		const derivedMaxYearFormatter = (value, key, item) => store.getters.derivedDates(item.data.id).maxYear 		
 		const durationFormatter = (value, key, item) => store.getters.derivedDuration(item.data.id) 		
 		const enteredDiffFormatter = (value, key, item) => store.getters.enteredDuration(item.data.id) 
+
+		const derivedMinDurationFormatter = (value, key, item) => store.getters.derivedMinDuration(item.data.id) 	
+		const derivedMaxDurationFormatter = (value, key, item) => store.getters.derivedMaxDuration(item.data.id) 	
 			
 		return {			
 			filter,
@@ -363,6 +380,8 @@ export default {
 			tableMaxYearFormatter,
 			derivedMinYearFormatter,
 			derivedMaxYearFormatter,
+			derivedMinDurationFormatter,
+			derivedMaxDurationFormatter,
 			durationFormatter,
 			enteredDiffFormatter
 		}

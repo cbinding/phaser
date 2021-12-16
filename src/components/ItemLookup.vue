@@ -34,7 +34,7 @@
 
 <script>
 import { computed } from "@vue/composition-api" // Vue 2 only. for Vue 3 use "from '@vue'"
-import { uniqueId } from '@/global/PhaserCommon.js'
+import { uniqueId } from '@/global/PhaserCommon'
 
 export default {	
 	props: {
@@ -59,7 +59,7 @@ export default {
         value: {
             type: String
         },
-        // Adds option '(none)' to the lookup options if true
+        // Adds option '(none)' to the start of the lookup options if true
         optionNone: {
             type: Boolean,
             required: false,
@@ -80,7 +80,8 @@ export default {
 		}		
 	},
     setup(props, context) {
-        const optionsId = computed(() => uniqueId("datalist-"))
+        //const optionsId = computed(() => uniqueId("datalist-"))
+        const optionsId = uniqueId("datalist-")
 
         const optionsForSelect = computed(() => {
             return props.options

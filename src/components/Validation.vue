@@ -80,16 +80,17 @@
 </template>
 
 <script>
-import { ref } from '@vue/composition-api' // Vue 2 only. for Vue 3 use "from '@vue'"
-import { NodeClass, rangeAfter } from "@/global/PhaserCommon.js"
+import { ref, shallowRef, inject } from '@vue/composition-api' // Vue 2 only. for Vue 3 use "from '@vue'"
+import { NodeClass, nodeLabel, rangeAfter, isValidRange, isContext } from "@/global/PhaserCommon"
 
 export default {	
-	setup(props, context) {
+	setup() {
+		const store = inject('store')  
 		const isBusy = ref(false)
 		const filter = ref("")
         const sortBy = ref("test")
 		const sortDesc = ref(false)
-		const items = ref([])
+		const items = shallowRef([])
 
 		const fields = [			
 			{
@@ -168,7 +169,8 @@ export default {
 			testSubgroupAllocatedToPeriod()
 
 			// run context tests
-			testContextAboveContext() 	
+			testContextAboveContext() 
+			testContextPositionAboveContextPosition()	
 			testContextAllocatedToPhase()	
 			testContextAllocatedToPeriod()
 			testContextHasType()
@@ -179,12 +181,12 @@ export default {
 		}
 			
 		const testNodeDescendantIsContext = (node) => {
-			let descendants = context.root.$store.getters.descendantsOfID(node?.data?.id)
+			let descendants = store.getters.descendantsOfID(node?.data?.id)
 			return descendants.some(node => node.data?.class == NodeClass.CONTEXT)			
 		}
 
 		const testNodeAllocatedToPhase = (node) => {
-			let ancestors = context.root.$store.getters.ancestorsOfNode(node)			
+			let ancestors = store.getters.ancestorsOfNode(node)			
 			return ancestors.some(item => item.data.class == NodeClass.PHASE)		
 		}
 
@@ -192,11 +194,12 @@ export default {
 				
 		const testPhaseContainsAtLeastOneContext = () => {
 			let test = { results: [], optional: false, testName: "Phases must contain at least one context" }
-			context.root.$store.getters.phases.forEach(phase => {
+			store.getters.phases.forEach(phase => {
 				let passed = testNodeDescendantIsContext(phase)
+				let label = nodeLabel(phase, true)
 				test.results.push({
 					passed: passed,			
-					description: `Phase "${phase.data.label}" ${passed ? "contains" : "does not contain"} contexts`	
+					description: `"${label}" ${passed ? "contains" : "does not contain"} contexts`	
 				})								
 			})
 			items.value.push(test)				
@@ -204,11 +207,12 @@ export default {
 
 		const testPhaseDefinesDateRange = () => {
 			let test = { results: [], optional: true, testName: "Phases should define a date range" }
-			context.root.$store.getters.phases.forEach(phase => {
-				let passed = phase.data.dating.minYear && phase.data.dating.maxYear				
+			store.getters.phases.forEach(phase => {
+				let passed = phase.data.dating.minYear && phase.data.dating.maxYear	
+				let label = nodeLabel(phase, true)			
 				test.results.push({
 					passed: passed,				
-					description: `Phase "${phase.data.label}" ${passed ? "defines" : "does not define"} a date range`	
+					description: `"${label}" ${passed ? "defines" : "does not define"} a date range`	
 				})					
 			})
 			items.value.push(test)	
@@ -216,11 +220,12 @@ export default {
 
 		const testPhaseAllocatedToPeriod = () => {
 			let test = { results: [], optional: true, testName: "Phases should be allocated to a period" }
-			context.root.$store.getters.phases.forEach(phase => {	
+			store.getters.phases.forEach(phase => {	
 				let passed = testNodeAllocatedToPeriod(phase)	
+				let label = nodeLabel(phase, true)
 				test.results.push({
 					passed: passed,				
-					description: `Phase "${phase.data.label}" is ${passed ? "" : "not"} allocated to a period`		
+					description: `"${label}" is ${passed ? "" : "not"} allocated to a period`		
 				})				
 			})
 			items.value.push(test)				
@@ -228,11 +233,12 @@ export default {
 
 		const testGroupContainsAtLeastOneContext = () => {
 			let test = { results: [], optional: false, testName: "Groups must contain at least one context" }
-			context.root.$store.getters.groups.forEach(group => {
+			store.getters.groups.forEach(group => {
 				let passed = testNodeDescendantIsContext(group)
+				let label = nodeLabel(group, true)
 				test.results.push({
 					passed: passed,				
-					description: `Group "${group.data.label}" ${passed ? "contains" : "does not contain"} contexts`
+					description: `"${label}" ${passed ? "contains" : "does not contain"} contexts`
 				})						
 			})
 			items.value.push(test)
@@ -240,11 +246,12 @@ export default {
 
 		const testGroupAllocatedToPhase = () => {
 			let test = { results: [], optional: false, testName: "Groups must be allocated to a phase" }
-			context.root.$store.getters.groups.forEach(group => {				
-				let passed = testNodeAllocatedToPhase(group)	
+			store.getters.groups.forEach(group => {				
+				let passed = testNodeAllocatedToPhase(group)
+				let label = nodeLabel(group, true)	
 				test.results.push({
 					passed: passed,				
-					description: `Group "${group.data.label}" is ${passed ? "" : "not"} allocated to a phase`
+					description: `"${label}" is ${passed ? "" : "not"} allocated to a phase`
 				})							
 			})
 			items.value.push(test)
@@ -252,11 +259,12 @@ export default {
 
 		const testGroupAllocatedToPeriod = () => {
 			let test = { results: [], optional: true, testName: "Groups should be allocated to a period" }
-			context.root.$store.getters.groups.forEach(group => {							
+			store.getters.groups.forEach(group => {							
 				let passed = testNodeAllocatedToPeriod(group)
+				let label = nodeLabel(group, true)
 				test.results.push({
 					passed: passed,				
-					description: `Group "${group.data.label}" is ${passed ? "" : "not"} allocated to a period`
+					description: `"${label}" is ${passed ? "" : "not"} allocated to a period`
 				})						
 			})
 			items.value.push(test)	
@@ -264,11 +272,12 @@ export default {
 
 		const testSubgroupContainsAtLeastOneContext = () => {
 			let test = { results: [], optional: false, testName: "Subgroups must contain at least one context" }
-			context.root.$store.getters.subgroups.forEach(subgroup => {								
+			store.getters.subgroups.forEach(subgroup => {								
 				let passed = testNodeDescendantIsContext(subgroup)
+				let label = nodeLabel(subgroup, true)
 				test.results.push({
 					passed: passed,				
-					description: `Sub-Group "${subgroup.data.label}" ${passed ? "contains" : "does not contain"} contexts`
+					description: `"${label}" ${passed ? "contains" : "does not contain"} contexts`
 				})	
 			})
 			items.value.push(test)		
@@ -276,12 +285,13 @@ export default {
 
 		const testSubgroupParentMustBeGroup = () => {
 			let test = { results: [], optional: false, testName: "Subgroups must be allocated to a group" }
-			context.root.$store.getters.subgroups.forEach(subgroup => {
-				let parent = context.root.$store.getters.nodeByID(subgroup.data.parent)				
+			store.getters.subgroups.forEach(subgroup => {
+				let parent = store.getters.nodeByID(subgroup.data.parent)				
 				let passed = parent?.data?.class == NodeClass.GROUP
+				let label = nodeLabel(subgroup, true)
 				test.results.push({
 					passed: passed,				
-					description: `Subgroup "${subgroup.data.label}" is ${passed ? "": "not"} allocated to a group`
+					description: `"${label}" is ${passed ? "": "not"} allocated to a group`
 				})				
 			})
 			items.value.push(test)			
@@ -289,11 +299,12 @@ export default {
 
 		const testSubgroupAllocatedToPhase = () => {
 			let test = { results: [], optional: false, testName: "Subgroups must be allocated to a phase" }
-			context.root.$store.getters.subgroups.forEach(subgroup => {								
+			store.getters.subgroups.forEach(subgroup => {								
 				let passed = testNodeAllocatedToPhase(subgroup)
+				let label = nodeLabel(subgroup, true)
 				test.results.push({
 					passed: passed,				
-					description: `Subgroup "${subgroup.data.label}" is ${passed ? "" : "not"} allocated to a phase`
+					description: `"${label}" is ${passed ? "" : "not"} allocated to a phase`
 				})					
 			})
 			items.value.push(test)
@@ -301,11 +312,12 @@ export default {
 
 		const testSubgroupAllocatedToPeriod = () => {
 			let test = { results: [], optional: true, testName: "Subgroups should be allocated to a period" }
-			context.root.$store.getters.subgroups.forEach(subgroup => {				
+			store.getters.subgroups.forEach(subgroup => {				
 				let passed = testNodeAllocatedToPeriod(subgroup)
+				let label = nodeLabel(subgroup, true)
 				test.results.push({
 					passed: passed,				
-					description: `Subgroup "${subgroup.data.label}" is ${passed ? "" : "not"} allocated to a period`
+					description: `"${label}" is ${passed ? "" : "not"} allocated to a period`
 				})					
 			})
 			items.value.push(test)				
@@ -313,29 +325,56 @@ export default {
 
 		const testContextAboveContext = () => {
 			let test = { results: [], optional: false, testName: "Context stratigraphy supported by dating evidence?" }
-			context.root.$store.getters.edges
-				.filter(edge => edge.type = "above")
+			store.getters.edges
+				.filter(edge => edge.data.type == "above")
 				.forEach(edge => {
-					let rangeA = context.root.$store.getters.derivedDates(edge.data.source)	
-					let rangeB = context.root.$store.getters.derivedDates(edge.data.target)								
-					let labelA = context.root.$store.getters.nodeLabel(edge.data.source)
-					let labelB = context.root.$store.getters.nodeLabel(edge.data.target)
-					let passed = rangeAfter(rangeA, rangeB)	
-					test.results.push({
-						passed: passed,				
-						description: `"${labelA}" above "${labelB}" is ${passed ? "" : "not"} supported by dating evidence`
-				})					
-			})
+					let rangeA = store.getters.derivedDates(edge.data.source)	
+					let rangeB = store.getters.derivedDates(edge.data.target)								
+					let labelA = store.getters.nodeLabel(edge.data.source)
+					let labelB = store.getters.nodeLabel(edge.data.target)
+					if(isValidRange(rangeA) && isValidRange(rangeB)) {
+						let passed = rangeAfter(rangeA, rangeB)	
+						
+						test.results.push({
+							passed: passed,				
+							description: `"${labelA}" above "${labelB}" is ${passed ? "supported" : "contradicted"} by dating evidence`
+						})
+					}
+				})
+			items.value.push(test)
+		}
+
+		const testContextPositionAboveContextPosition = () => {
+			let test = { results: [], optional: false, testName: "Context positions in diagram reflect stratigraphy?" }
+			store.getters.edges
+				.filter(edge => edge.data.type == "above")
+				.forEach(edge => {
+					let sourceNode = store.getters.nodeByID(edge.data.source)
+					let targetNode = store.getters.nodeByID(edge.data.target)
+
+					if(isContext(sourceNode) && isContext(targetNode)) {
+						let labelA = nodeLabel(sourceNode, true)
+						let labelB = nodeLabel(targetNode, true)
+
+						let passed = sourceNode.position.y < targetNode.position.y
+
+						test.results.push({
+							passed: passed,				
+							description: `"${labelA}" ${passed ? "is" : "should be"} above "${labelB}" in the diagram`
+						})
+					}
+				})
 			items.value.push(test)
 		}
 
 		const testContextAllocatedToPhase = () => {
 			let test = { results: [], optional: false, testName: "Contexts must be allocated to a phase" }
-			context.root.$store.getters.contexts.forEach(context => {				
-				let passed = testNodeAllocatedToPhase(context)		
+			store.getters.contexts.forEach(context => {				
+				let passed = testNodeAllocatedToPhase(context)
+				let label = nodeLabel(context, true)		
 				test.results.push({
 					passed: passed,				
-					description: `Context "${context.data.label}" is ${passed ? "" :  "not"} allocated to a phase`
+					description: `"${label}" is ${passed ? "" :  "not"} allocated to a phase`
 				})						
 			})
 			items.value.push(test)
@@ -343,11 +382,12 @@ export default {
 
 		const testContextAllocatedToPeriod = () => {
 			let test = { results: [], optional: true, testName: "Contexts should be allocated to a period" }
-			context.root.$store.getters.contexts.forEach(context => {				
+			store.getters.contexts.forEach(context => {				
 				let passed = testNodeAllocatedToPeriod(context)
+				let label = nodeLabel(context, true)
 				test.results.push({
 					passed: passed,				
-					description: `Context "${context.data.label}" is ${passed ? "" :  "not"} allocated to period`
+					description: `"${label}" is ${passed ? "" :  "not"} allocated to period`
 				})						
 			})
 			items.value.push(test)	
@@ -355,11 +395,12 @@ export default {
 
 		const testContextHasType = () => {
 			let test = { results: [], optional: true, testName: "Contexts should have a type" }
-			context.root.$store.getters.contexts.forEach(context => {				
-				let passed = (context.data?.type || "").trim()  !== "" ? true : false		
+			store.getters.contexts.forEach(context => {				
+				let passed = (context.data?.type || "").trim()  !== "" ? true : false	
+				let label = nodeLabel(context, true)	
 				test.results.push({
 					passed: passed,				
-					description: `Context "${context.data.label}" ${passed ? "has" : "does not have"} a type`
+					description: `"${label}" ${passed ? "has" : "does not have"} a type`
 				})								
 			})
 			items.value.push(test)	
@@ -367,11 +408,12 @@ export default {
 
 		const testPeriodDefinesDateRange = () => {
 			let test = { results: [], optional: true, testName: "Periods should define a date range" }
-			context.root.$store.getters.periods.forEach(period => {				
+			store.getters.periods.forEach(period => {				
 				let passed = period.data?.dating?.minYear !== null && period.data?.dating?.maxYear !== null	
+				let label = nodeLabel(period, true)
 				test.results.push({
 					passed: passed,				
-					description: `Period "${period.data.label}" does ${passed ? "" : "not"} define a date range`
+					description: `"${label}" does ${passed ? "" : "not"} define a date range`
 				})							
 			})
 			items.value.push(test)

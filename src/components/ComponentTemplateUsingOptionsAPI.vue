@@ -6,8 +6,8 @@
 </template>
 
 <script>
-import PhaserCommon from '@/global/PhaserCommon.js'
-import MyComponent from '@/components/MyComponent.vue'
+import PhaserCommon from '@/global/PhaserCommon'
+import MyComponent from '@/components/MyComponent'
 
 export default {
 	name: 'ComponentTemplate',

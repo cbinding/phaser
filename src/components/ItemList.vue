@@ -36,8 +36,7 @@ export default {
 	},
 	setup(props) {
         const itemsSorted = computed(() => {
-			return props.items
-				.slice()
+			return props.items.slice()
                 .sort((a,b) => a > b ? 1 : -1)
 		})	
 		return { itemsSorted }

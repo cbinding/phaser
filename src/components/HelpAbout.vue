@@ -1,8 +1,8 @@
 <template>
 	<b-modal centered id="modalAbout" title="About">
 		<div class="text-center">
-			<img src="phaser-spacedout-logo.png" class="mb-3">
-			<p>Version {{ version }}</p>				
+			<img src="phaser-spacedout-logo.png" width="444" height="118" class="mb-3">
+			<p>Version {{ store.getters.appVersion }}</p>				
 			<p>A stratigraphic matrix editing tool</p>
 			<p>Created as part of the MATRIX project</p>
 			<a target="_blank" href="https://stratigraphic.github.io/matrix/">https://stratigraphic.github.io/matrix/</a>
@@ -16,9 +16,7 @@ import { inject } from "@vue/composition-api" // Vue 2 only. for Vue 3 use "from
 export default {
 	setup() {
 		const store = inject('store')		
-		//const version = context.root.$store.getters.appVersion
-		const version = store.getters.appVersion
-		return { version }
+		return { store }
 	}
 }
 </script>

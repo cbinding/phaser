@@ -78,9 +78,8 @@
 
 <script>
 import { ref, computed, inject } from '@vue/composition-api' // Vue 2 only. for Vue 3 use "from '@vue'"
-//import PhaserCommon from '@/global/PhaserCommon.js'
 import ItemLookup from '@/components/ItemLookup'
-import _capitalize  from 'lodash/capitalize'
+import { capitalize } from '@/global/PhaserCommon'
 
 export default {
 	components: { ItemLookup },
@@ -131,7 +130,7 @@ export default {
 		}
 		const removeItem = (item) => store.dispatch('deleteEdge', item)			
 		const targetChanged = (value) => selectedTargetID.value = value
-		const capitalize = (str) => _capitalize(str)
+		//const capitalize = (str) => capitalize(str)
 
 		return {
 			store,

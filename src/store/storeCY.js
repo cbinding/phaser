@@ -3,7 +3,7 @@ import Vuex from "vuex"
 // import VuexPersist from 'vuex-persist'
 import createPersistedState from "vuex-persistedstate"
 import _merge from "lodash/merge"
-import { NodeClass, str2hex } from "@/global/PhaserCommon.js"
+import { NodeClass, utf8_to_hex } from "@/global/PhaserCommon"
 
 Vue.use(Vuex)
 
@@ -19,7 +19,7 @@ export default new Vuex.Store({
     plugins: [ createPersistedState({ storage: window.localStorage, paths: ["graph"] }) ],
 	state: {
         appName: "Phaser",  // application name
-        appVersion: "1.6",  // application version
+        appVersion: "1.7",  // application version
         selectedID: "",     // ID of currently selected node        
         about: {            // dataset metadata - not used yet..
             title: "My example project",
@@ -218,12 +218,7 @@ export default new Vuex.Store({
         // ID of currently selected node - for UI
         selectedID: state => state.selectedID,
 
-        // options for lookup controls        
-        //phaseTypes: state => state.types.phaseTypes,
-        //groupTypes: state => state.types.groupTypes,
-        //contextTypes: state => state.types.contextTypes,        
-        //findTypes: state => state.types.findTypes,
-        //sampleTypes: state => state.types.sampleTypes,
+        // options for lookup controls
         groupTypeOptions: state => state.types.groupTypes.map(s => { return { value: s, text: s }}),
         contextTypeOptions: state => state.types.contextTypes.map(s => { return { value: s, text: s }}),
         datingTypeOptions: state => state.types.datingTypes.map(s => { return { value: s, text: s }}),
@@ -257,7 +252,8 @@ export default new Vuex.Store({
         periodOptionsGrouped: (state, getters) => (getters.periodOptions.length == 0) ? 
             [] : [{ label: "Periods", options: getters.periodOptions }],
             
-        // context parent could be subgroup, group or phase. May have same label, so grouping options to disambiguate
+        // context parent could be a subgroup, group or phase. 
+        // May have same label, so grouping options to disambiguate
         contextParentOptions: (state, getters) => [
             ...getters.phaseOptionsGrouped,
             ...getters.groupOptionsGrouped,
@@ -304,9 +300,7 @@ export default new Vuex.Store({
         derivedEdges: (state, getters) => {           
             
             const newEdges = new Map()
-            getters.edges
-                .filter(edge => edge.data.type == "above")
-                .forEach(edge => {
+            getters.edges.filter(edge => edge.data.type == "above").forEach(edge => {
                 // get ancestry of source and target nodes (as sets of IDs)
                 let sourceAncestry = new Set(getters.ancestorsOfID(edge.data.source).map(node => node.data.id))                    
                 let targetAncestry = new Set(getters.ancestorsOfID(edge.data.target).map(node => node.data.id))
@@ -326,7 +320,7 @@ export default new Vuex.Store({
                 // are 'above' all elements in targetAncestry 
                 sourceAncestry.forEach(sourceID => {
                     targetAncestry.forEach(targetID => {
-                        let edgeID = `edge-${str2hex(sourceID)}-${str2hex(targetID)}`
+                        let edgeID = `edge-${utf8_to_hex(sourceID)}-${utf8_to_hex(targetID)}`
                         if(!newEdges.has(edgeID)) {
                             newEdges.set(edgeID, { 
                                 data: { 
@@ -729,7 +723,7 @@ export default new Vuex.Store({
             // ensure item to add has all required properties  
             let newEdge = _merge({}, getters.newEdge, edge)
             if(!newEdge.data.id) 
-                newEdge.data.id = `edge-${str2hex(newEdge.data.source || 'source')}-${str2hex(newEdge.data.target || 'target')}`
+                newEdge.data.id = `edge-${utf8_to_hex(newEdge.data.source || 'source')}-${utf8_to_hex(newEdge.data.target || 'target')}`
             commit('UPDATE_EDGE', newEdge)            
         },
         insertEdges({commit, dispatch}, edges) {

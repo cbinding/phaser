@@ -25,6 +25,9 @@ import {
 	onDeactivated
 } from '@vue/composition-api' // Vue 2 only. for Vue 3 use "from '@vue'"
 
+// declare functions that don't use instance outside of component declaration 
+const clamp = (num, min, max) => Math.min(Math.max(num, min), max) 
+	
 export default {
 	props: {
 		def: { 
@@ -43,9 +46,9 @@ export default {
 			default: 10
 		}
 	},
+
 	// executed before component creation, after props are resolved
 	setup(props) {
-		const clamp = (num, min, max) => Math.min(Math.max(num, min), max) // internal only, not returned
 		
 		// reactive data value. Becomes ref object with 'value' property
 		const counter = ref(clamp(props.def, props.min, props.max))		

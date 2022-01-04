@@ -15,7 +15,7 @@
         <vue-splitter :margin="10" :defaultPercent="60">
             <div slot="left-pane">
                 <b-col>
-                <MatrixDiagramCY/>
+                    <MatrixDiagramCY/>
                 </b-col>
             </div>
             <div slot="right-pane">

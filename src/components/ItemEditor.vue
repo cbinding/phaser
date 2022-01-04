@@ -1,6 +1,6 @@
 <template>
     <div class="m-2">
-		<ItemTable 
+		<ItemTableWithPagination 
 			:itemClass="itemClass" 
 			class="mb-2" 
 			@item-selected="itemSelected" 
@@ -199,7 +199,8 @@
 <script>
 import { ref, unref, computed, inject } from "@vue/composition-api" // Vue 2 only. for Vue 3 use "from '@vue'"
 import { NodeClass } from '@/global/PhaserCommon'
-import ItemTable from '@/components/ItemTable'
+//import ItemTable from '@/components/ItemTable'
+import ItemTableWithPagination from '@/components/ItemTableWithPagination' // temp performance test
 import ItemLookup from '@/components/ItemLookup'
 import Stratigraphy from '@/components/Stratigraphy'
 //import DatingYearRange from '@/components/DatingYearRange'
@@ -212,7 +213,8 @@ import EventBus from "@/global/EventBus"
 export default {
 	name: 'ItemEditor',
 	components: {
-		ItemTable,
+		//ItemTable,
+		ItemTableWithPagination,
 		ItemLookup,
 		//DatingYearRange,
 		Stratigraphy,

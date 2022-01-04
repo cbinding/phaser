@@ -37,7 +37,12 @@
 						<b-icon-box-arrow-in-left class="mr-2" />
 						<span>Import context stratigraphy (CSV)...</span>
 						<CsvImport />						
-					</b-dropdown-item-button>					
+					</b-dropdown-item-button>
+					<b-dropdown-item-button v-b-modal.modalFileImport disabled>
+						<b-icon-box-arrow-in-left class="mr-2" />
+						<span>Import dating records (CSV)...</span>
+						<CsvImport />						
+					</b-dropdown-item-button>			
 					<b-dropdown-item-button disabled>
 						<b-icon-box-arrow-right class="mr-2" />
 						<span>Export context stratigraphy (CSV)...</span>

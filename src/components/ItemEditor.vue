@@ -1,11 +1,11 @@
 <template>
-    <div class="m-2">
-		<ItemTableWithPagination 
+	<b-container fluid class="p-2">
+		<ItemTable
 			:itemClass="itemClass" 
 			class="mb-2" 
 			@item-selected="itemSelected" 
 			@item-deleted="itemDeleted"/>
-		
+					
 		<b-form-row v-if="fields.includes('redolayout')">		
 			<b-col style="text-align: right">
 				<b-button pill
@@ -103,7 +103,7 @@
 					@change="cudChanged"/>				
 			</b-col>
 			<b-col>
-				<ItemLookup v-if="fields.includes('parent')"
+				<ItemLookup2 v-if="fields.includes('parent')"
 					label="Within" 
 					:disabled="disabled"
 					class="shadow-sm"
@@ -112,10 +112,31 @@
 					:options="parentLookupOptions" 
 					@change="parentChanged"/>	
 
-				<ItemList v-if="fields.includes('contains')"	 			
+				<!--<ItemList v-if="fields.includes('contains')"	 			
 					label="Contains" 
 					:disabled="true" 
-					:items="itemContains"/>
+					:items="itemContains"/>-->
+
+				<b-form-group 
+					v-if="fields.includes('contains')"
+					label="Contains" 
+					label-for="itemContains">
+					<b-list-group 
+						name="itemContains"
+						class="shadow-sm overflow-auto" 
+						style="height: 200px;"   
+						:disabled="disabled">
+						<b-list-group-item 
+							class="px-2 py-1 m-0"
+							v-for="(item, index) in itemContains" 
+							:key="index">
+							<a href="#" @click="store.dispatch('setSelectedID', item.data.id)">{{ store.getters.labelByID(item.data.id, true) }}</a>
+						</b-list-group-item>
+					</b-list-group>
+				</b-form-group>
+
+
+
 				
 				<ItemList v-if="fields.includes('periodContains')"	 			
 					label="Contains" 
@@ -186,43 +207,56 @@
 			</b-col>	
 		</b-form-row>
 			
-		<b-form-row>	
+		<b-form-row v-if="fields.includes('stratigraphy')">	
 			<b-col>
-				<Stratigraphy v-if="fields.includes('stratigraphy')" 
+				<Stratigraphy v-once  
 					:sourceID="((selectedItem || {}).data || {}).id"
 					:disabled="disabled"/>
 			</b-col>
 		</b-form-row>
-	</div>		
+
+		<!--<b-form-row v-if="fields.includes('temporal')">
+			<b-col>
+				<TemporalRelationshipsTable 
+					:elementID="((selectedItem || {}).data || {}).id"
+					:disabled="disabled"/>
+			</b-col>
+		</b-form-row>-->
+		
+	</b-container>		
 </template>
 
 <script>
 import { ref, unref, computed, inject } from "@vue/composition-api" // Vue 2 only. for Vue 3 use "from '@vue'"
 import { NodeClass } from '@/global/PhaserCommon'
 //import ItemTable from '@/components/ItemTable'
-import ItemTableWithPagination from '@/components/ItemTableWithPagination' // temp performance test
+import ItemTable from '@/components/ItemTable'
 import ItemLookup from '@/components/ItemLookup'
+import ItemLookup2 from '@/components/ItemLookup2'
 import Stratigraphy from '@/components/Stratigraphy'
 //import DatingYearRange from '@/components/DatingYearRange'
 import DatingYearRangeCE from '@/components/DatingYearRangeCE'
 import SciDating from '@/components/SciDating'
 import ItemLabel from '@/components/ItemLabel'
 import ItemList from '@/components/ItemList'
+//import TemporalRelationshipsTable from "@/components/TemporalRelationshipsTable"
 import EventBus from "@/global/EventBus"
 
 export default {
 	name: 'ItemEditor',
 	components: {
 		//ItemTable,
-		ItemTableWithPagination,
+		ItemTable,
 		ItemLookup,
+		ItemLookup2,
 		//DatingYearRange,
 		Stratigraphy,
 		//DatingYearRange,
 		DatingYearRangeCE,
 		SciDating,
 		ItemLabel,
-		ItemList
+		ItemList,
+		//TemporalRelationshipsTable
 		
 	},
 	props: {
@@ -241,10 +275,10 @@ export default {
 		// This determines which editing controls are visible
 		const fields = computed(() => { 
 			switch(props.itemClass) {
-				case NodeClass.PHASE: return ["label", "description", "contains", "containsGroups", "containsSubGroups", "containsContexts", "yearrange", "redolayout", "period"]
-				case NodeClass.GROUP: return ["label", "type", "parent", "contains", "containsSubGroups", "containsContexts", "description", "redolayout", "cud", "period"]
-				case NodeClass.SUBGROUP: return ["label", "type", "parent", "contains", "containsContexts", "description", "redolayout", "cud", "period"]
-				case NodeClass.CONTEXT: return ["label", "type", "parent", "contains", "containsDatings", "description", "stratigraphy", "cud", "period"]	
+				case NodeClass.PHASE: return ["label", "description", "contains", "containsGroups", "containsSubGroups", "containsContexts", "yearrange", "redolayout", "period", "temporal"]
+				case NodeClass.GROUP: return ["label", "type", "parent", "contains", "containsSubGroups", "containsContexts", "description", "redolayout", "cud", "period", "temporal"]
+				case NodeClass.SUBGROUP: return ["label", "type", "parent", "contains", "containsContexts", "description", "redolayout", "cud", "period", "temporal"]
+				case NodeClass.CONTEXT: return ["label", "type", "parent", "contains", "containsDatings", "description", "stratigraphy", "cud", "period", "temporal"]	
 				case NodeClass.DATING: return ["label", "type", "parent", "description", "scidating", "included", "association", "period"]
 				case NodeClass.PERIOD: return ["label", "uri", "description", "periodContains", "yearrange"]
 				default: return []
@@ -281,7 +315,7 @@ export default {
 			if(selectedItem.value)
 				id = selectedItem.value.data?.id || ""
 			if(id !== "")
-				return store.getters.descendantsOfID(id).map(n => `(${n.data.class}) ${n.data.label}`)					
+				return store.getters.descendantsOfID(id) //.map(n => `(${n.data.class}) ${n.data.label}`)					
 			else
 				return [] 
 		})
@@ -396,6 +430,7 @@ export default {
 		}	     
 
 		return { 
+			store,
 			selectedItem, 
 			disabled, 
 			fields, 
@@ -424,3 +459,8 @@ export default {
 	}
 }
 </script>
+<style scoped>
+a:hover {
+	color:red;
+}
+</style>

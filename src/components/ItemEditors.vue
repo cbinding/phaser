@@ -3,7 +3,7 @@
 		v-model="tabIndex" 
 		class="my-1" 
 		align="left" 
-		active-nav-item-class="font-weight-bold">
+		active-nav-item-class="font-weight-bold">		
 		<b-tab v-for="nc in [...nodeClasses, 'edge']" :key="nc" class="my-2">
 			<template v-slot:title>
 				<span>{{ capitalize(nc) }}s</span>
@@ -16,25 +16,40 @@
 			<ItemEditor :itemClass="nc"/>
 		</b-tab>		
 		<b-tab>
-			<template v-slot:title>
-				<span>Validation</span>				
-			</template>
-			<Validation/>
+			<template v-slot:title>Validation</template>
+			<ValidationAsync/>
 		</b-tab>
-		
+		<b-tab>
+			<template v-slot:title>Temporal</template>
+			<TemporalRelationships/>			
+		</b-tab>
+		<b-tab lazy>
+			<template v-slot:title>Metadata</template>
+			<MetaEditor/>
+		</b-tab>	
+		<b-tab>
+			<template v-slot:title>Search (experimental)</template>
+			<SearchControls/>			
+		</b-tab>
     </b-tabs>
 </template>
 
 <script>
 import { ref, computed, watch, inject } from "@vue/composition-api" // Vue 2 only. for Vue 3 use "from '@vue'"
 import ItemEditor from '@/components/ItemEditor'
-import Validation from '@/components/Validation'
+import ValidationAsync from '@/components/ValidationAsync'
+import MetaEditor from '@/components/MetaEditor'
+import SearchControls from '@/components/SearchControls'
+import TemporalRelationships from '@/components/TemporalRelationships'
 import { NodeClass, capitalize } from '@/global/PhaserCommon'
 
 export default {
 	components: {
 		ItemEditor,
-		Validation
+		ValidationAsync,
+		MetaEditor,
+		SearchControls,
+		TemporalRelationships,
 	},
 	setup() {
 		const store = inject('store')	

@@ -59,7 +59,19 @@
 								:alt="`delete ${itemClass}`"							
 								@click.stop="deleteItem(row.item)"/>		
 						</div>				
-					</template>					
+					</template>
+					<template #cell(source)="row">
+						<a href="#" @click="store.dispatch('setSelectedID', row.item.data.source)">{{ store.getters.labelByID(row.item.data.source, true) }}</a>
+					</template>	
+					<template #cell(target)="row">
+						<a href="#" @click="store.dispatch('setSelectedID', row.item.data.target)">{{ store.getters.labelByID(row.item.data.target, true) }}</a>
+					</template>	
+					<template #cell(parent)="row">
+						<a href="#" @click="store.dispatch('setSelectedID', row.item.data.parent)">{{ store.getters.labelByID(row.item.data.parent, true) }}</a>
+					</template>	
+					<template #cell(included)="row">
+						<span :class="row.item.data.included ? 'text-success' : 'text-danger'">{{ row.item.data.included ? "✓" : "✗" }}</span>
+					</template>				
 				</b-table>
 				<!--<div class="text-right">
 					<b-icon-plus-circle
@@ -77,9 +89,9 @@
 					:total-rows="rowCount"
 					:per-page="perPage"
 					aria-controls="my-table"
-    ></b-pagination>
-
-    <p class="mt-3">Current Page: {{ currentPage }}</p>
+					:first-number="true"
+					:last-number="true"/>
+					<!--<p class="mt-3">Current Page: {{ currentPage }}</p>-->
 			</b-col>
 		</b-row>
 	</b-container>
@@ -103,13 +115,13 @@ export default {
 		const filter = ref("")
 		const sortBy = ref("data.label")
 		const sortDesc = ref(false)
-		const perPage = 10
+		const perPage = 25
 		const currentPage = ref(1)
 
 		// select row if node is selected somewhere else in the app (e.g. on the diagram)
 		const selectedID = computed(() => store.getters.selectedID)
         watch(selectedID, (newValue) => {			
-			// TODO: scroll to ensure selected row is visible in the table
+			// scroll to ensure selected row is visible in the table
 			let el = document.getElementById(`datatable-${props.itemClass}__row_${newValue}`)			
 			if(el) { 
 				el.click() // simulates a click on the row to highlight
@@ -164,11 +176,18 @@ export default {
 					formatter: tablePeriodFormatter,
 					sortable: true					
 				}] : [],
-				... (columns.value.includes('source')) ? [{
+				/*... (columns.value.includes('source')) ? [{
 					key: "data.source",
 					label: "source",
 					sortByFormatted: true,
 					formatter: tableSourceIdFormatter,
+					sortable: true					
+				}] : [], */
+				... (columns.value.includes('source')) ? [{
+					key: "source",
+					label: "source",
+					sortByFormatted: true,
+					//formatter: tableSourceIdFormatter,
 					sortable: true					
 				}] : [],  
 				... (columns.value.includes('type')) ? [{
@@ -177,17 +196,17 @@ export default {
 					sortable: true					
 				}] : [],  
 				... (columns.value.includes('target')) ? [{
-					key: "data.target",
+					key: "target",
 					label: "target",
 					sortByFormatted: true,
-					formatter: tableTargetIdFormatter,
+					//formatter: tableTargetIdFormatter,
 					sortable: true					
 				}] : [],   
 				... (columns.value.includes('parent')) ? [{
-					key: "data.parent",
+					key: "parent",
 					label: "within",
 					sortByFormatted: true,
-					formatter: tableParentFormatter,
+					//formatter: tableParentFormatter,
 					sortable: true					
                 }] : [],                
 				... (columns.value.includes('enteredMinYear')) ? [{
@@ -263,9 +282,9 @@ export default {
 					class: "text-right"
 				}] : [],				
 				... (columns.value.includes('included')) ? [{
-						key: "data.included",
+						key: "included",
 						label: "included",	
-						formatter: value => value ? "✓" : "✗",				
+						//formatter: value => value ? "✓" : "✗",				
 						sortable: true,
 						class: "text-center"				
 				}] : [],     
@@ -333,10 +352,10 @@ export default {
 		}
 
 		// table formatters to display node labels instead of IDs
-		const tableSourceIdFormatter = (value, key, item) => store.getters.nodeLabel(item.data.source, true)		
-		const tableTargetIdFormatter = (value, key, item) => store.getters.nodeLabel(item.data.target, true)
-		const tableParentFormatter = (value, key, item) => store.getters.nodeLabel(item.data.parent, true) 	
-		const tablePeriodFormatter = (value, key, item) => store.getters.nodeLabel(item.data.period, false)
+		//const tableSourceIdFormatter = (value, key, item) => store.getters.labelByID(item.data.source, true)		
+		//const tableTargetIdFormatter = (value, key, item) => store.getters.labelByID(item.data.target, true)
+		//const tableParentFormatter = (value, key, item) => store.getters.labelByID(item.data.parent, true) 	
+		const tablePeriodFormatter = (value, key, item) => store.getters.labelByID(item.data.period, false)
 
 		// table formatters for years
 		const tableYearFormat = (year, tolv, tolu) => {
@@ -370,7 +389,8 @@ export default {
 		const derivedMinDurationFormatter = (value, key, item) => store.getters.derivedMinDuration(item.data.id) 	
 		const derivedMaxDurationFormatter = (value, key, item) => store.getters.derivedMaxDuration(item.data.id) 	
 			
-		return {			
+		return {
+			store,			
 			filter,
 			//selectedID,
 			sortBy,
@@ -385,9 +405,9 @@ export default {
 			updateItem,
 			deleteItem,
 			rowSelected,
-			tableSourceIdFormatter,
-			tableTargetIdFormatter,
-			tableParentFormatter,
+			//tableSourceIdFormatter,
+			//tableTargetIdFormatter,
+			//tableParentFormatter,
 			tablePeriodFormatter,
 			tableMinYearFormatter,
 			tableMaxYearFormatter,
@@ -405,6 +425,9 @@ export default {
 .action { 
 	cursor: pointer;
 	color:dodgerblue;
+}
+a:hover {
+	color:red;
 }
 .action:hover {
 	color:red;

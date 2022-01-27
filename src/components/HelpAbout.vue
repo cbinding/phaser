@@ -1,5 +1,5 @@
 <template>
-	<b-modal centered id="modalAbout" title="About">
+	<b-modal v-once centered id="modalAbout" :title="`About ${ store.getters.appName }`">
 		<div class="text-center">
 			<img src="phaser-spacedout-logo.png" width="444" height="118" class="mb-3">
 			<p>Version {{ store.getters.appVersion }}</p>				

@@ -4,6 +4,7 @@
             :label="this.label"
             label-for="itemSelector">
             <b-form-select 
+                variant="primary"					
                 :disabled="disabled"
                 name="itemSelector" 
                 class="shadow-sm"
@@ -16,6 +17,7 @@
             :label="this.label"
             label-for="itemInput">
             <b-form-input text
+                size="sm"
                 :disabled="disabled"
 				name="itemInput" 
                 class="shadow-sm" 

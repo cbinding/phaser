@@ -1,29 +1,29 @@
 import Vue from "vue"
 import Vuex from "vuex"
 //import { createStore } from 'vuex'
-import createPersistedState from "vuex-persistedstate"
-import { NodeClass, nodeLabel, utf8_to_hex } from "@/global/PhaserCommon"
+//import createPersistedState from "vuex-persistedstate"
+import createPersistedState from "vuex-persist-indexeddb"
+import { NodeClass, utf8_to_hex, clean } from "@/global/PhaserCommon"
 import _merge from "lodash/merge"
 Vue.use(Vuex)
 
-const plugins = [ createPersistedState({ storage: window.localStorage, paths: ["nodes", "edges"] }) ]
+//const plugins = [ createPersistedState({ storage: window.localStorage, paths: ["nodes", "edges"] }) ]
+const plugins = [ createPersistedState({ paths: ["about", "nodes", "edges"] }) ]
 
 const state = {        
     appName: "Phaser",  // application name
-    appVersion: "1.8",  // application version
+    appVersion: "1.10", // application version
     selectedID: "",     // ID of currently selected node        
-    /* about: {            // dataset metadata - not used yet..
-        title: "My example project",
-        description: "VUEX data for Cytoscape graph elements structure",
-        creator: "Ceri Binding, University of South Wales",
-        contact: "ceri.binding@southwales.ac.uk",
-        created: "2021-01-07",
-        modified: "2021-03-19", 
-        license: "https://creativecommons.org/licenses/by/4.0/",
-        version: "20210319",           
-    },*/
+    about: {            // dataset metadata - see MetaEditor
+        title: "",      // expecting string e.g. "My example project"
+        description: "",
+        creator: "",    // expecting string e.g. "Ceri Binding, University of South Wales"
+        contact: "",    // expecting email e.g. "ceri.binding@southwales.ac.uk"
+        license: "",    // expecting URL e.g. "https://creativecommons.org/licenses/by/4.0/"
+        version: "",    // expecting string e.g. 1.2.3, 20210113 etc.        
+    },
     nodes: {},
-    edges: {},    
+    edges: {},  
     types: Object.freeze({            
         groupTypes: [
             "Building", 
@@ -175,7 +175,6 @@ const state = {
     .map(n => { return { value: n.data.id, text: nodeLabel(n, true) }})
     .sort((a, b) => a.text > b.text ? 1 : -1)*/
 // for use in node lookups
-const nodeOption = n => { return { value: n.data.id, text: nodeLabel(n, true) }}
 const nodeOptionSort = (a, b) => a.text > b.text ? 1 : -1
 
 // for use in type lookups
@@ -185,6 +184,8 @@ const getters = {
     appName: state => state.appName,        // application name - for UI display
     appVersion: state => state.appVersion,  // application version - for UI display
     selectedID: state => state.selectedID,  // currently selected node id - for UI
+
+    about: state => state.about,
 
     // basic generic elements of graph structure 
     nodes: state => Object.values(state.nodes).filter(n => n), // filters out nulls (deleted items)
@@ -206,10 +207,34 @@ const getters = {
     periods: (state, getters) => getters.nodes.filter(node => node.data.class === NodeClass.PERIOD),
 
     // labels as used in lookups
-    nodeLabel: (state, getters) => (id, includeClass=false) => nodeLabel(getters.nodeByID(id), includeClass),
-    
+    labelByID: (state, getters) => (id, includeClass=false) => {
+        if(getters.isNode(id)) {
+            let node = getters.nodeByID(id)
+            return getters.nodeLabel(node, includeClass)
+        }
+        else if(getters.isEdge(id)) { 
+            let edge = getters.edgeByID(id)       
+            return getters.edgeLabel(edge, includeClass)
+        }
+        else return id
+    },
+    nodeLabel: () => (node, includeClass=false) => {
+        if(!node) return ""
+        let nodeClass = clean(node.data?.class)
+        let nodeLabel = clean(node.data?.label) 
+        return includeClass ? `(${nodeClass}) ${nodeLabel}` : nodeLabel
+    },
+    edgeLabel: (state, getters) => (edge, includeClass=false) => {        
+        if(!edge) return ""
+        let sourceLabel = getters.labelByID(edge.data?.source, includeClass) 
+        let targetLabel = getters.labelByID(edge.data?.target, includeClass) 
+        let connection = clean(edge.data?.type)
+        return `${sourceLabel} ${connection} ${targetLabel}`        
+        
+    },
     // whether node with given ID has any descendant dating records (used for colour coding in diagram)
-    hasDating: (state, getters) => id => getters.descendantsOfID(id).filter(n => n.data.class === NodeClass.DATING).length > 0,
+    hasDating: (state, getters) => id => getters.descendantsOfID(id)
+        .filter(n => n.data.class === NodeClass.DATING).length > 0,
 
     // options for lookup controls    
     groupTypeOptions: () => typeOptions(state.types.groupTypes),
@@ -223,10 +248,18 @@ const getters = {
     //nodeOptions: (state, getters) => nodes => nodes
         //.map(n => { return { value: n.data.id, text: `(${n.data.class}) ${n.data.label}` }})
         //.sort((a, b) => a.text > b.text ? 1 : -1),
-    phaseOptions: (state, getters) => getters.phases.map(nodeOption).sort(nodeOptionSort), //nodeOptions(getters.phases),
-    groupOptions: (state, getters) => getters.groups.map(nodeOption).sort(nodeOptionSort), //nodeOptions(getters.groups),
-    subgroupOptions: (state, getters) => getters.subgroups.map(nodeOption).sort(nodeOptionSort), //nodeOptions(getters.subgroups),
-    contextOptions: (state, getters) => getters.contexts.map(nodeOption).sort(nodeOptionSort), //nodeOptions(getters.contexts),
+    phaseOptions: (state, getters) => getters.phases
+        .map(n => { return { value: n.data.id, text: getters.nodeLabel(n, true) }})
+        .sort(nodeOptionSort), //nodeOptions(getters.phases),
+    groupOptions: (state, getters) => getters.groups
+        .map(n => { return { value: n.data.id, text: getters.nodeLabel(n, true) }})
+        .sort(nodeOptionSort), //nodeOptions(getters.groups),
+    subgroupOptions: (state, getters) => getters.subgroups
+        .map(n => { return { value: n.data.id, text: getters.nodeLabel(n, true) }})
+        .sort(nodeOptionSort), //nodeOptions(getters.subgroups),
+    contextOptions: (state, getters) => getters.contexts
+        .map(n => { return { value: n.data.id, text: getters.nodeLabel(n, true) }})
+        .sort(nodeOptionSort), //nodeOptions(getters.contexts),
     periodOptions: (state, getters) => getters.periods
         .map(n => { return { value: n.data.id, text: `${n.data.label}` }})
         .sort(nodeOptionSort), //nodeOptions(getters.periods),
@@ -268,21 +301,30 @@ const getters = {
 
     // hierarchical selectors
     childrenOfIDs: (state, getters) => ids => getters.nodes.filter(n => ids.includes(n.data.parent)),
-    childrenOfID: (state, getters) => id => getters.childrenOfIDs([id]),    
+    childrenOfID: (state, getters) => id => getters.nodes.filter(n => n.data.parent == id),
+    
+    // not sure if required yet..
+    //childrenOfNode: (state, getters) => node => getters.nodes.filter(n => n.data.parent == node.data.id),
+    //descendantsOfNode
 
     descendantsOfIDs: (state, getters) => ids => {
         let descendants = []
         let childNodes = getters.childrenOfIDs(ids)
         let iteration = 0 // to break possible self referential loops
         while(childNodes.length > 0 && iteration < 5) {
-            descendants = descendants.concat(childNodes)
+            //descendants = descendants.concat(childNodes)
+            descendants.push(...childNodes)
             childNodes = getters.childrenOfIDs(childNodes.map(n => n.data.id))
-            iteration++                
-        }           
+            iteration++
+        }
         return descendants
     },
     descendantsOfID: (state, getters) => id => getters.descendantsOfIDs([id]),
 
+    ancestorsOfID: (state, getters) => id => {
+        let node = getters.nodeByID(id)
+        return getters.ancestorsOfNode(node)
+    },
     ancestorsOfNode: (state, getters) => node => {
         let ancestors = []
         let iteration = 0 // to break possible self referential loops
@@ -292,23 +334,20 @@ const getters = {
 
         while(parent && iteration < 5) { 
             ancestors.push(parent)
-            parent = getters.nodeByID(parent.data?.parent)                 
+            parent = getters.nodeByID(parent.data?.parent)
             iteration++   
         }
         return ancestors
     },
-    ancestorsOfID: (state, getters) => id => {
-        let node = getters.nodeByID(id)
-        return getters.ancestorsOfNode(node)
-    },        
+    
 
     // hierarchically derived stratigraphic links between elements
-    derivedEdges: (state, getters) => {           
+    derivedEdges: (state, getters) => {
         
         const newEdges = new Map()
         getters.edges.filter(edge => edge.data.type == "above").forEach(edge => {
             // get ancestry of source and target nodes (as sets of IDs)
-            let sourceAncestry = new Set(getters.ancestorsOfID(edge.data.source).map(node => node.data.id))                    
+            let sourceAncestry = new Set(getters.ancestorsOfID(edge.data.source).map(node => node.data.id))
             let targetAncestry = new Set(getters.ancestorsOfID(edge.data.target).map(node => node.data.id))
 
             // add source and target IDs themselves
@@ -347,9 +386,11 @@ const getters = {
         //.filter(n => n.data.class == NodeClass.DATING && n.data.included), 
         
     // get actual min/max years accounting for any tolerance set
-    enteredDates: (state, getters) => id => {            
+    enteredDatesForID: (state, getters) => id => {
         let node = getters.nodeByID(id)
-        
+        return getters.enteredDatesForNode(node)
+    },
+    enteredDatesForNode: () => node => {        
         // get cleaned dating values
         let dating = node?.data?.dating || {}
         let cleaned = {
@@ -398,8 +439,8 @@ const getters = {
         if(!edge) 
             return { minYear: null, maxYear: null }
             
-        let sourceDates = getters.derivedDates(edge.data.source)
-        let targetDates = getters.derivedDates(edge.data.target)      
+        let sourceDates = getters.derivedNodeDates(edge.data.source)
+        let targetDates = getters.derivedNodeDates(edge.data.target)      
         
         return { 
             minYear: targetDates.maxYear ? targetDates.maxYear + 1: null, 
@@ -417,7 +458,7 @@ const getters = {
             //.filter(dating => dating) 
             .forEach(n => {
                 // extents of date range, accounting for any tolerance set
-                let dating = getters.enteredDates(n.data.id)                    
+                let dating = getters.enteredDatesForNode(n)                    
                 // less than the current minimum?
                 if(dating.minYear < minYear) minYear = dating.minYear
                 // more than the current maximum?
@@ -428,7 +469,7 @@ const getters = {
             minYear: minYear < Number.POSITIVE_INFINITY ? Math.round(minYear) : null, 
             maxYear: maxYear > Number.NEGATIVE_INFINITY ? Math.round(maxYear) : null
         }
-    },        
+    },            
 
     // duration for derived dates (accounting for any tolerance set)
     derivedDuration: (state, getters) => id => { 
@@ -441,8 +482,8 @@ const getters = {
         if(!edge) 
             return { minYear: null, maxYear: null }
             
-        let sourceDates = getters.derivedDates(edge.data.source)
-        let targetDates = getters.derivedDates(edge.data.target) 
+        let sourceDates = getters.derivedNodeDates(edge.data.source)
+        let targetDates = getters.derivedNodeDates(edge.data.target) 
 
         return (sourceDates.minYear !== null && targetDates.maxYear !== null) ? (sourceDates.minYear - targetDates.maxYear) : null
         
@@ -452,15 +493,15 @@ const getters = {
         if(!edge) 
             return { minYear: null, maxYear: null }
             
-        let sourceDates = getters.derivedDates(edge.data.source)
-        let targetDates = getters.derivedDates(edge.data.target)  
+        let sourceDates = getters.derivedNodeDates(edge.data.source)
+        let targetDates = getters.derivedNodeDates(edge.data.target)  
 
         return (sourceDates.maxYear !== null && targetDates.minYear !== null) ? (sourceDates.maxYear - targetDates.minYear) : null
     },
 
     // duration for entered dates (accounting for any tolerance set)
     enteredDuration: (state, getters) => id => { 
-        let dates = getters.enteredDates(id)
+        let dates = getters.enteredDatesForID(id)
         return (dates.maxYear !== null && dates.minYear !== null) ? (dates.maxYear - dates.minYear) + 1 : null
     }, 
 
@@ -568,7 +609,7 @@ const getters = {
 
     newDating: (state, getters) => { 
         const nc = NodeClass.DATING
-        // get next available context ID to use 
+        // get next available dating ID to use 
         let nextID = 1
         while(getters.isNode(`${nc}-${nextID}`)) nextID++ 
         const id = `${nc}-${nextID}`
@@ -598,7 +639,7 @@ const getters = {
 
     newPeriod: (state, getters) => { 
         const nc = NodeClass.PERIOD
-        // get next available context ID to use 
+        // get next available period ID to use 
         let nextID = 1
         while(getters.isNode(`${nc}-${nextID}`)) nextID++ 
         const id = `${nc}-${nextID}`
@@ -642,11 +683,15 @@ const actions = {
         await dispatch('clearAll', commit)
         //console.log("Loading matrix data...")
 
+        // load any metadata present
+        let about = data.about || {}
+        commit('SET_ABOUT', about)
+
         // cytoscape format - {elements: {nodes:[],edges:[]}}
         let elements = data.elements ? data.elements : data
         let nodes = elements.nodes || []
         let edges = elements.edges || []
-
+        
         const newNodes = nodes.map(n => {
             let newItem = null
             let nc = n.data?.class || ""            
@@ -691,13 +736,16 @@ const actions = {
 
     clearAll({commit}) {
         // mutations are synchronous so this is OK
+        commit('SET_ABOUT', { title: "", description: "", creator: "", contact: "", license: "", version: ""})
         commit('DELETE_NODES')
         commit('DELETE_EDGES')
         Promise.resolve() // See https://blog.usejournal.com/vue-js-best-practices-c5da8d7af48d
     },
     // update mutation will insert if node doesn't exist        
-    insertNode({commit}, node) { 
-        commit('UPDATE_NODE', node)            
+    insertNode({commit, dispatch}, node) { 
+        commit('UPDATE_NODE', node)
+        dispatch('setSelectedID', node.data.id, commit)  // not working?    
+        Promise.resolve()       
     },
     insertNodes({commit}, nodes) {
         nodes.forEach(node => commit('UPDATE_NODE', node))
@@ -746,7 +794,7 @@ const actions = {
     insertGroup({commit, dispatch, getters}, item={}) {
         // ensure item to add has all required properties        
         let node = _merge({}, getters.newGroup, item)
-        dispatch('insertNode', node, commit)  
+        dispatch('insertNode', node, commit)          
     },    
     insertSubGroup({commit, dispatch, getters}, item={}) {
         // ensure item to add has all required properties        
@@ -756,7 +804,7 @@ const actions = {
     insertContext({commit, dispatch, getters}, item={}) {
         // ensure item to add has all required properties        
         let node = _merge({}, getters.newContext, item)
-        dispatch('insertNode', node, commit)  
+        dispatch('insertNode', node, commit)          
     },          
     insertDating({commit, dispatch, getters}, item={}) {
         // ensure item to add has all required properties        
@@ -771,6 +819,11 @@ const actions = {
 }
 
 const mutations = { 
+    // make changes to the 'about' state
+    SET_ABOUT(state, about) {
+        // merge data with previous state
+        state.about = Object.assign({}, state.about, about)
+    },    
     // currently selected node ID - for visual indication
     SELECT_ID(state, id) {
         state.selectedID = id || ""

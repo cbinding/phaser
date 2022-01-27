@@ -10,7 +10,7 @@
 						placeholder="source" 
 						type="text"
 						name="itemID" 
-						:value="store.getters.nodeLabel(sourceID)"/>
+						:value="store.getters.labelByID(sourceID)"/>
 						<!--v-model.trim="((selectedItem || {}).data || {}).id"/>-->
 				</b-form-group>
 			</b-col>
@@ -63,7 +63,7 @@
 								class="bg-white text-dark border border-secondary shadow-sm"
 								:disabled="disabled">
 								<!--<span>{{ $store.getters.nodeByID(item.data.target).data.label || item.data.target }}</span>-->
-								<span>{{ store.getters.nodeLabel(item.data.target) }}</span>
+								<span>{{ store.getters.labelByID(item.data.target) }}</span>
 								<b-icon-x-circle class="action ml-2" @click.stop="removeItem(item)"/>
 							</b-badge>
 						</li>

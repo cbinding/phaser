@@ -326,8 +326,8 @@ export default {
                         'border-color': 'black',
                         'border-width': '4px',
                         'border-style': 'solid',
-                        'border-opacity': 1.0,                        
-                        //'background-fill': 'radial-gradient',
+                        'border-opacity': 1.0, 
+                         //'background-fill': 'radial-gradient',
                         //'background-gradient-stop-colors': 'aliceblue blue'
                     }
                 },                    
@@ -346,7 +346,10 @@ export default {
                 },
                 {                       
                     selector: `node[class="${NodeClass.CONTEXT}"]:selected`,
-                    style: { 'background-color': 'gold', 'color': 'black' }
+                    style: { 
+                        'background-color': 'gold', 
+                        'color': 'black'
+                    }
                 },
                 /*{  
                      // different shape based on type?                     
@@ -374,11 +377,10 @@ export default {
                 {                       
                     selector: `node[class="${NodeClass.PHASE}"]:selected`,
                     style: { 'background-color': 'gold','background-opacity': 1  }
-                },                                     
+                },                                                   
                 {
                     selector: `node[class="${NodeClass.GROUP}"]`,
-                     style: {
-                        //'padding': 15, 
+                    style: {
                         'label':  el => `${el.data('label') ? el.data('label') : el.data('id')}`, 
                         'text-opacity': 0.75,
                         'text-valign': 'top',
@@ -510,15 +512,15 @@ export default {
                 //.concat(store.getters.datings)    // don't display on graph               
         })
         //const nodes = computed(() => store.getters.nodes.filter(node => [NodeClass.PHASE, NodeClass.GROUP, NodeClass.SUBGROUP, NodeClass.CONTEXT].indexOf(node?.data?.class) !== -1))      
-        const edges = computed(() => store.getters.edges.filter(edge => edge.data.type == "above"))      
-                
+        const edges = computed(() => store.getters.edges.filter(edge => edge.data.type == "above"))
+
         const preConfig = (cyi) => {
             cyi.use(dagre) 
             //cyi.use(elk)
             //cyi.use(klay)
             cyi.use(gridGuide) 
             cyi.use(cyCanvas) 
-            cyi.use(panzoom)  
+            cyi.use(panzoom)
             //cyi.use(navigator) 
             //cyi.use(domnode)
             cyi.use(nodehtmllabel)

@@ -3,10 +3,11 @@
 		:label="label"				
 		label-for="itemContains">
 		<b-list-group 
-			class="shadow-sm overflow-auto m-1" 
-			style="height: 175px;"   
+			class="overflow-auto" 
+			style="height: 200px;"   
 			:disabled="disabled">
 			<b-list-group-item 
+				class="p-0 m-0" 
 				v-for="(item, index) in itemsSorted" 
 				:key="index">{{item}}</b-list-group-item>
 		</b-list-group>
@@ -43,3 +44,9 @@ export default {
 	}	
 }
 </script>
+<style scoped>
+.list-group-item {
+	height: 10px;
+    padding: 1px 1px;
+}
+</style>

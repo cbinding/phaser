@@ -10,7 +10,7 @@
 					</b-dropdown-item-button>
 					<b-dropdown-item-button  @click="openFileDialog">
 						<b-icon-upload class="mr-2" />
-						<span>Open...</span>						
+						<span>Open (JSON)...</span>						
 						<b-form-file plain 
 							id="fileOpen" 
 							style="display: none" 							
@@ -25,7 +25,7 @@
 					</b-dropdown-item-button>-->					
 					<b-dropdown-item-button @click="fileSave">
 						<b-icon-download class="mr-2" />
-						<span>Save...</span>						
+						<span>Save (JSON)...</span>						
 					</b-dropdown-item-button>					
 					<b-dropdown-divider/>
 					<b-dropdown-item-button v-b-modal.modalPeriodsImport>
@@ -33,15 +33,15 @@
 						<span>Import Perio.do collection...</span>	
 						<PeriodsImport />							
 					</b-dropdown-item-button>
-					<b-dropdown-item-button v-b-modal.modalFileImport>
+					<b-dropdown-item-button v-b-modal.modalCsvImport @click="setupModal('contexts')">
 						<b-icon-box-arrow-in-left class="mr-2" />
 						<span>Import context stratigraphy (CSV)...</span>
-						<CsvImport />						
+						<CsvImport :mode="csvImportMode" />						
 					</b-dropdown-item-button>
-					<b-dropdown-item-button v-b-modal.modalFileImport disabled>
+					<b-dropdown-item-button v-b-modal.modalCsvImport @click="setupModal('datings')">
 						<b-icon-box-arrow-in-left class="mr-2" />
 						<span>Import dating records (CSV)...</span>
-						<CsvImport />						
+						<!--<CsvImport :expectedFields="['identifier', 'type', 'withinContext', 'minYear', 'maxYear']" />-->						
 					</b-dropdown-item-button>			
 					<b-dropdown-item-button disabled>
 						<b-icon-box-arrow-right class="mr-2" />
@@ -99,7 +99,7 @@
 				<b-nav-item-dropdown text="Help">
 					<b-dropdown-item-button v-b-modal.modalAbout>
 						<b-icon-question-circle class="mr-2" />
-						<span>About...</span>
+						<span>{{ `About ${ store.getters.appName }...` }}</span>
 						<HelpAbout />					
 					</b-dropdown-item-button>
 				</b-nav-item-dropdown>
@@ -113,7 +113,7 @@
 </template>
 
 <script>
-import { inject } from '@vue/composition-api' // Vue 2 only. for Vue 3 use "from '@vue'"
+import { inject, ref } from '@vue/composition-api' // Vue 2 only. for Vue 3 use "from '@vue'"
 import CsvImport from '@/components/CsvImport'
 //import FileOpenFromURL from '@/components/FileOpenFromURL'
 import PeriodsImport from '@/components/PeriodsImport'
@@ -155,6 +155,9 @@ export default {
 			})	
 		}
 
+		const csvImportMode = ref("contexts")
+		const setupModal = (mode) => csvImportMode.value = mode
+
 		const fileLoad = (file) => {
 			if(!file) return
 			
@@ -168,6 +171,7 @@ export default {
 
 		const fileSave = () => {
 			const data = { 
+				about: store.getters.about,
 				elements: {
 					nodes: store.getters.nodes,
 					edges: store.getters.edges
@@ -207,6 +211,8 @@ export default {
 		const redoLayout = (name="dagre") => EventBus.$emit('diagram-redo-layout', name)
 		
 		return {
+			setupModal,
+			csvImportMode,
 			openFileDialog, 
 			clearAll,
 			fileLoad,
@@ -217,7 +223,8 @@ export default {
 			zoomIn,
 			zoomOut,
 			zoomFit,
-			redoLayout
+			redoLayout,
+			store
 		}
 	}	
 }

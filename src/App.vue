@@ -5,7 +5,7 @@
                 <MenuBar/>
             </b-col>
         </b-row>
-        <!--<b-row><b-col><DatingYearTester/></b-col></b-row>-->
+        <!--<b-row><b-col><ComponentTemplateUsingCompositionAPI/></b-col></b-row>-->
         <!--<b-row no-gutters id="header">
             <b-col>
                 <testStore2/>
@@ -15,7 +15,7 @@
         <vue-splitter :margin="10" :defaultPercent="60">
             <div slot="left-pane">
                 <b-col>
-                    <MatrixDiagramCY/>
+                   <MatrixDiagramCY/>
                 </b-col>
             </div>
             <div slot="right-pane">
@@ -39,6 +39,7 @@ import MenuBar from '@/components/MenuBar'
 import ItemEditors from '@/components/ItemEditors'
 import MatrixDiagramCY from '@/components/MatrixDiagramCY'
 import VueSplitter from "@rmp135/vue-splitter"
+//import ComponentTemplateUsingCompositionAPI from "@/components/ComponentTemplateUsingCompositionAPI"
 //import DatingYearTester from '@/components/DatingYearTester'
 //import testStore2 from '@/components/testStore2'
 export default { 
@@ -46,7 +47,8 @@ export default {
         MenuBar,
 		ItemEditors,
 		MatrixDiagramCY,
-		VueSplitter
+		VueSplitter,
+        //ComponentTemplateUsingCompositionAPI
         //DatingYearTester
         //testStore2
     },

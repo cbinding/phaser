@@ -2,30 +2,41 @@ import Vue from "vue"
 import Vuex from "vuex"
 //import { createStore } from 'vuex'
 //import createPersistedState from "vuex-persistedstate"
-import createPersistedState from "vuex-persist-indexeddb"
-import { NodeClass, utf8_to_hex, clean } from "@/global/PhaserCommon"
+//import createPersistedState from "vuex-persist-indexeddb"
+import { NodeClass, EdgeClass, EdgeType, utf8_to_hex, clean } from "@/global/PhaserCommon"
 import _merge from "lodash/merge"
+import _uniqueId from "lodash/uniqueId"
+import colors from "color-name"
+
 Vue.use(Vuex)
 
 //const plugins = [ createPersistedState({ storage: window.localStorage, paths: ["nodes", "edges"] }) ]
-const plugins = [ createPersistedState({ paths: ["about", "nodes", "edges"] }) ]
+
+// temporarily disable the persistence..
+//const plugins = [ createPersistedState({ paths: ["about", "nodes", "edges"] }) ]
 
 const state = {        
     appName: "Phaser",  // application name
-    appVersion: "1.10", // application version
-    selectedID: "",     // ID of currently selected node        
-    about: {            // dataset metadata - see MetaEditor
-        title: "",      // expecting string e.g. "My example project"
+    appVersion: "1.15", // application version    
+    selectedID: "",     // ID of currently selected node  
+    diagramLock: true,  // nodes cannot be moved on diagram   
+    about: {            // dataset metadata - see MetaEditor.vue
+        title: "",      // e.g. "My example project"
         description: "",
-        creator: "",    // expecting string e.g. "Ceri Binding, University of South Wales"
+        creator: "",    // e.g. "Ceri Binding, University of South Wales"
         contact: "",    // expecting email e.g. "ceri.binding@southwales.ac.uk"
         license: "",    // expecting URL e.g. "https://creativecommons.org/licenses/by/4.0/"
-        version: "",    // expecting string e.g. 1.2.3, 20210113 etc.        
+        version: "",    // e.g. 1.2.3, 20210113 etc.        
     },
-    nodes: {},
-    edges: {},  
+
+    // new - split into separate objects?
+    // phases: {}, groups: {}, subgroups: {}, contexts: {}, datings: {}, periods: {},
+
+    nodes: {},          // phases, groups, subgroups, contexts, datings, periods
+    edges: {},          // holds context stratigraphy (context ABOVE context)
+
     types: Object.freeze({            
-        groupTypes: [
+        groupTypes: [ // TODO: load from external JSON or CSV. Part of config?
             "Building", 
             "Corn-drying oven", 
             "Ditch overall", 
@@ -39,7 +50,7 @@ const state = {
             "Structure", 
             "Well"  
         ],
-        contextTypes: [ // TODO: load from external JSON. Part of config?
+        contextTypes: [ // TODO: load from external JSON or CSV. Part of config?
             "Animal disturbance",
             "Animal disturbance: fill",
             "Ard mark",
@@ -162,7 +173,7 @@ const state = {
             "Wheel rut",
             "Wheel rut: fill"
         ],
-        datingTypes: [
+        datingTypes: [ // TODO: load from external JSON or CSV. Part of config?
             "find",
             "sample",
             "manual"
@@ -181,24 +192,26 @@ const nodeOptionSort = (a, b) => a.text > b.text ? 1 : -1
 const typeOptions = (items) => items.map(s => { return { value: s, text: s }}) 
 
 const getters = { 
-    appName: state => state.appName,        // application name - for UI display
-    appVersion: state => state.appVersion,  // application version - for UI display
-    selectedID: state => state.selectedID,  // currently selected node id - for UI
+    appName: state => state.appName,                // application name - for UI display
+    appVersion: state => state.appVersion,          // application version - for UI display
+    selectedID: state => state.selectedID,          // currently selected node identifier
+    diagramLock: state => state.diagramLock,        // lock prevents inadvertently moving nodes
 
+    // metadata for current graph
     about: state => state.about,
 
-    // basic generic elements of graph structure 
-    nodes: state => Object.values(state.nodes).filter(n => n), // filters out nulls (deleted items)
-    edges: state => Object.values(state.edges).filter(e => e),
-    isNode: state => id => Object.hasOwn(state.nodes, id),   
-    isEdge: state => id => Object.hasOwn(state.edges, id),
-    nodeByID: state => id => state.nodes[id] || null, 
-    edgeByID: state => id => state.edges[id] || null,  
+    // basic generic graph structure elements
+    nodes: state => Object.values(state.nodes).filter(n => n),  // filters out nulls (deleted items)
+    edges: state => Object.values(state.edges).filter(e => e),  // filters out nulls (deleted items)
+    isNode: state => id => Object.hasOwn(state.nodes, id),      // validate a node identifier   
+    isEdge: state => id => Object.hasOwn(state.edges, id),      // validate an edge identifier  
+    nodeByID: state => id => state.nodes[id] || null,           // get node from identifier
+    edgeByID: state => id => state.edges[id] || null,           // get edge from identifier
 
     edgesBySource: (state, getters) => source => getters.edges.filter(e => e.data.source === source),
     edgesByTarget: (state, getters) => target => getters.edges.filter(e => e.data.target === target),
 
-    // specialized elements of graph structure
+    // node subsets - filtered by class
     phases: (state, getters) => getters.nodes.filter(node => node.data.class === NodeClass.PHASE),
     groups: (state, getters) => getters.nodes.filter(node => node.data.class === NodeClass.GROUP),
     subgroups: (state, getters) => getters.nodes.filter(node => node.data.class === NodeClass.SUBGROUP),
@@ -216,13 +229,17 @@ const getters = {
             let edge = getters.edgeByID(id)       
             return getters.edgeLabel(edge, includeClass)
         }
-        else return id
+        else return ""
     },
     nodeLabel: () => (node, includeClass=false) => {
         if(!node) return ""
-        let nodeClass = clean(node.data?.class)
         let nodeLabel = clean(node.data?.label) 
-        return includeClass ? `(${nodeClass}) ${nodeLabel}` : nodeLabel
+        if(includeClass) {
+            let nodeClass = clean(node.data?.class)
+            return `(${nodeClass}) ${nodeLabel}`
+        }
+        else
+            return nodeLabel
     },
     edgeLabel: (state, getters) => (edge, includeClass=false) => {        
         if(!edge) return ""
@@ -232,11 +249,25 @@ const getters = {
         return `${sourceLabel} ${connection} ${targetLabel}`        
         
     },
-    // whether node with given ID has any descendant dating records (used for colour coding in diagram)
-    hasDating: (state, getters) => id => getters.descendantsOfID(id)
-        .filter(n => n.data.class === NodeClass.DATING).length > 0,
+    classByID: (state, getters) => (id) => {
+        if(getters.isNode(id)) {
+            let node = getters.nodeByID(id)
+            return node?.data?.class || ""
+        }
+        else if(getters.isEdge(id)) { 
+            return EdgeClass.EDGE
+        }
+        else return ""
+    },
 
-    // options for lookup controls    
+    // whether node with given ID has any descendant dating records (used for colour coding in diagram)
+    // and whether any of those dating records are marked as 'included'
+    hasDating: (state, getters) => id => getters.descendantsOfID(id)
+        .filter(n => n.data.class === NodeClass.DATING && n.data.included).length > 0,
+    // if it's a context we can just check the dating records directly - should be faster...
+    contextHasDating: (state, getters) => id => getters.datings.filter(n => n.data.included && n.data.parent == id).length > 0,
+
+    // options for populating lookup controls    
     groupTypeOptions: () => typeOptions(state.types.groupTypes),
     contextTypeOptions: () => typeOptions(state.types.contextTypes),
     datingTypeOptions: () => typeOptions(state.types.datingTypes),
@@ -261,7 +292,7 @@ const getters = {
         .map(n => { return { value: n.data.id, text: getters.nodeLabel(n, true) }})
         .sort(nodeOptionSort), //nodeOptions(getters.contexts),
     periodOptions: (state, getters) => getters.periods
-        .map(n => { return { value: n.data.id, text: `${n.data.label}` }})
+        .map(n => { return { value: n.data.id, text: n.data.label }})
         .sort(nodeOptionSort), //nodeOptions(getters.periods),
     /*phaseOptions: (state, getters) => getters.phases
         .map(n => { return { value: n.data.id, text: `(${n.data.class}) ${n.data.label}` }})
@@ -345,7 +376,7 @@ const getters = {
     derivedEdges: (state, getters) => {
         
         const newEdges = new Map()
-        getters.edges.filter(edge => edge.data.type == "above").forEach(edge => {
+        getters.edges.filter(edge => edge.data.type == EdgeType.ABOVE).forEach(edge => {
             // get ancestry of source and target nodes (as sets of IDs)
             let sourceAncestry = new Set(getters.ancestorsOfID(edge.data.source).map(node => node.data.id))
             let targetAncestry = new Set(getters.ancestorsOfID(edge.data.target).map(node => node.data.id))
@@ -372,7 +403,7 @@ const getters = {
                                 id: edgeID, 
                                 source: sourceID, 
                                 target: targetID, 
-                                type: "above"
+                                type: EdgeType.ABOVE
                             }
                         })
                     }
@@ -505,18 +536,22 @@ const getters = {
         return (dates.maxYear !== null && dates.minYear !== null) ? (dates.maxYear - dates.minYear) + 1 : null
     }, 
 
-    newPhase: (state, getters) => { 
+    newPhase: (state, getters) => () => { 
         const nc = NodeClass.PHASE
-        // get next available phase ID to use
-        let nextID = 1
-        while(getters.isNode(`${nc}-${nextID}`)) nextID++ 
-        const id = `${nc}-${nextID}`
+        const id = _uniqueId()
+        //console.log(id)
+        // get unique phase ID to use        
+        //let nextID = 1
+        //while(getters.isNode(`${nc}-${nextID}`)) nextID++ 
+        //const id = `${nc}-${nextID}`
         // structure of a new phase
         return { 
-            data: { 
-                id: id, 
+            data: {
+                siteCode: "", 
+                id: `${nc}-${id}`, 
                 class: nc, 
-                label: nextID.toString(), 
+                label: id,
+                period: "", 
                 description: "",
                 dating: {
                     label: "",
@@ -535,22 +570,25 @@ const getters = {
         }
     },
 
-    newGroup: (state, getters) => { 
+    newGroup: (state, getters) => () => { 
         const nc = NodeClass.GROUP
+        const id = _uniqueId()
         // get next available group ID to use
-        let nextID = 1
-        while(getters.isNode(`${nc}-${nextID}`)) nextID++ 
-        const id = `${nc}-${nextID}`
+        //let nextID = 1
+        //while(getters.isNode(`${nc}-${nextID}`)) nextID++ 
+        //const id = `${nc}-${nextID}`
         // structure of a new group
         return { 
-            data: { 
-                id: id, 
+            data: {
+                siteCode: "",  
+                id: `${nc}-${id}`, 
                 class: nc, 
+                label: id, 
+                period: "", 
+                description: "",
                 parent: "", 
                 type: "", 
-                cud: "",
-                label: nextID.toString(), 
-                description: ""
+                cud: "",               
             }, 
             position: { 
                 x: 0, 
@@ -558,22 +596,25 @@ const getters = {
             } 
         }
     },
-
-    newSubGroup: (state, getters) => { 
+    
+    newSubGroup: (state, getters) => () => { 
         const nc = NodeClass.SUBGROUP
+        const id = _uniqueId()
         // get next available subgroup ID to use
-        let nextID = 1
-        while(getters.isNode(`${nc}-${nextID}`)) nextID++ 
-        const id = `${nc}-${nextID}`
+        //let nextID = 1
+        //while(getters.isNode(`${nc}-${nextID}`)) nextID++ 
+        //const id = `${nc}-${nextID}`
         // structure of a new subgroup
         return { 
-            data: { 
-                id: id, 
+            data: {
+                siteCode: "",  
+                id: `${nc}-${id}`, 
                 class: nc, 
+                label: id,                 
+                period: "", 
                 parent: "", 
                 type: "",
                 cud: "",  
-                label: nextID.toString(), 
                 description: ""                    
             }, 
             position: { 
@@ -583,21 +624,25 @@ const getters = {
         }
     },
 
-    newContext: (state, getters) => { 
+    newContext: (state, getters) => () => { 
         const nc = NodeClass.CONTEXT
+        const id = _uniqueId()
+        // get unique phase ID to use        
         // get next available context ID to use 
-        let nextID = 1
-        while(getters.isNode(`${nc}-${nextID}`)) nextID++ 
-        const id = `${nc}-${nextID}`
+        //let nextID = 1
+        //while(getters.isNode(`${nc}-${nextID}`)) nextID++ 
+        //const id = `${nc}-${nextID}`
         // structure of a new context
         return { 
             data: { 
-                id: id, 
+                siteCode: "", 
+                id: `${nc}-${id}`, 
                 class: nc, 
+                label: id,
+                period: "",
                 parent: "", 
                 type: "",
                 cud: "",  
-                label: nextID.toString(),
                 description: ""                    
             }, 
             position: { 
@@ -607,21 +652,24 @@ const getters = {
         }
     },
 
-    newDating: (state, getters) => { 
+    newDating: (state, getters) => () => { 
         const nc = NodeClass.DATING
+        const id = _uniqueId()
         // get next available dating ID to use 
-        let nextID = 1
-        while(getters.isNode(`${nc}-${nextID}`)) nextID++ 
-        const id = `${nc}-${nextID}`
+        //let nextID = 1
+        //while(getters.isNode(`${nc}-${nextID}`)) nextID++ 
+        //const id = `${nc}-${nextID}`
         // structure of a new dating
         return { 
             data: { 
-                id: id, 
+                siteCode: "", 
+                id: `${nc}-${id}`, 
                 class: nc, 
+                label: id, 
+                period: "",
                 parent: "",
                 type: "",                    
-                label: nextID.toString(), 
-                description: "",
+                 description: "",
                 included: true,
                 association: "direct",
                 dating: {
@@ -637,18 +685,20 @@ const getters = {
         } 
     },
 
-    newPeriod: (state, getters) => { 
+    newPeriod: (state, getters) => () => { 
         const nc = NodeClass.PERIOD
+        const id = _uniqueId()
         // get next available period ID to use 
-        let nextID = 1
-        while(getters.isNode(`${nc}-${nextID}`)) nextID++ 
-        const id = `${nc}-${nextID}`
+        //let nextID = 1
+        //while(getters.isNode(`${nc}-${nextID}`)) nextID++ 
+        //const id = `${nc}-${nextID}`
         // structure of a new dating
         return { 
             data: { 
-                id: id, 
+                siteCode: "", 
+                id: `${nc}-${id}`, 
                 class: nc, 
-                label: "", 
+                label: id, 
                 uri: "",
                 description: "",
                 dating: {
@@ -664,13 +714,22 @@ const getters = {
         } 
     },
 
-    newEdge: (state, getters) => {
+    newEdge: (state, getters) => () => {
+        const id = _uniqueId()
         // get next available edge ID to use 
-        let nextID = 1            
-        while(getters.isEdge(`edge-${nextID}`)) nextID++ 
-        const id = `edge-${nextID}` 
+        //let nextID = 1            
+        //while(getters.isEdge(`edge-${nextID}`)) nextID++ 
+        //const id = `edge-${nextID}` 
         // structure of a new edge
-        return { data: { id: id, class: "", source: "source", target: "target", type: "above" } }
+        return { 
+            data: { 
+                id: `${EdgeClass.EDGE}-${id}`, 
+                class: EdgeClass.EDGE, 
+                source: "", 
+                target: "", 
+                type: EdgeType.ABOVE
+            } 
+        }
     }
 }
 
@@ -679,58 +738,38 @@ const actions = {
     // loadGroupTypes(){},   // [part of config?] 
 	
     async loadMatrixData({commit, getters, dispatch}, data) {
-        // actions are asynchronous so ensure order of actions
+        // actions are asynchronous so ensure 
+        // clear is complete before proceeding
         await dispatch('clearAll', commit)
-        //console.log("Loading matrix data...")
-
-        // load any metadata present
+        
+        // store any metadata present
         let about = data.about || {}
         commit('SET_ABOUT', about)
 
-        // cytoscape format - {elements: {nodes:[],edges:[]}}
-        let elements = data.elements ? data.elements : data
+        // cytoscape format = { elements: { nodes:[], edges:[] } }
+        let elements = data.elements ? data.elements : data // for legacy structure
         let nodes = elements.nodes || []
         let edges = elements.edges || []
         
-        const newNodes = nodes.map(n => {
+        const newNodes = nodes.map(node => {
             let newItem = null
-            let nc = n.data?.class || ""            
+            let nc = node.data?.class || ""            
             switch(nc) {
-                case NodeClass.PHASE: newItem = getters.newPhase;break;
-                case NodeClass.GROUP: newItem = getters.newGroup;break;
-                case NodeClass.SUBGROUP: newItem = getters.newSubGroup;break;
-                case NodeClass.CONTEXT: newItem = getters.newContext;break;
-                case NodeClass.DATING: newItem = getters.newDating;break;
+                case NodeClass.PHASE: newItem = getters.newPhase();break;
+                case NodeClass.GROUP: newItem = getters.newGroup();break;
+                case NodeClass.SUBGROUP: newItem = getters.newSubGroup();break;
+                case NodeClass.CONTEXT: newItem = getters.newContext();break;
+                case NodeClass.DATING: newItem = getters.newDating();break;
+                case NodeClass.PERIOD: newItem = getters.newPeriod();break;
                 default: break;                
             }
-            if(newItem !== null) 
-                return _merge({}, newItem, n)
-            else
-                return null
-
-        }).map(n => n)
-        //console.log("got nodes...")
-        const newEdges = edges.map(edge => _merge({}, getters.newEdge, edge))
-        //console.log("got edges...")        
-        commit('BULK_LOAD_ELEMENTS', { nodes: newNodes, edges: newEdges }) 
-        //await dispatch('loadEdges', newEdges, commit) 
-        //let phases = nodes.filter(n => n.data?.class === NodeClass.PHASE).map(n => _merge({}, getters.newPhase, n))
-        //let groups = nodes.filter(n => n.data?.class === NodeClass.GROUP).map(n => _merge({}, getters.newGroup, n))
-        //let subgroups = nodes.filter(n => n.data?.class === NodeClass.SUBGROUP).map(n => _merge({}, getters.newSubGroup, n))
-        //let contexts = nodes.filter(n => n.data?.class === NodeClass.CONTEXT).map(n => _merge({}, getters.newContext, n))
-        //let datings = nodes.filter(n => n.data?.class === NodeClass.DATING).map(n => _merge({}, getters.newDating, n))
-        //let periods = nodes.filter(n => n.data?.class === NodeClass.PERIOD).map(n => _merge({}, getters.newPeriod, n))  
-
-        // not just insertNode, need to ensure each object has all appropriate required properties
-        //phases.forEach(item => dispatch('insertPhase', item, commit))  
-        //groups.forEach(item => dispatch('insertGroup', item, commit))
-        //subgroups.forEach(item => dispatch('insertSubGroup', item, commit))
-        //contexts.forEach(item => dispatch('insertContext', item, commit))   // but needs a bulk insert for speed, like insertEdges?
-        //datings.forEach(item => dispatch('insertDating', item, commit))    
-        //periods.forEach(item => dispatch('insertPeriod', item, commit))   
-
-        //await dispatch('insertNodes', nodes, commit)
-        //await dispatch('loadEdges',edges, commit) 
+            //return(newItem ? _merge({}, newItem, node) : null)
+            return(newItem ? _merge(newItem, node) : null)
+        }).map(node => node)
+        
+        const newEdges = edges.map(edge => _merge(getters.newEdge(), edge))
+        
+        commit('BULK_LOAD_ELEMENTS', { nodes: newNodes, edges: newEdges })         
     },
     //saveMatrixData(){},
 
@@ -744,7 +783,7 @@ const actions = {
     // update mutation will insert if node doesn't exist        
     insertNode({commit, dispatch}, node) { 
         commit('UPDATE_NODE', node)
-        dispatch('setSelectedID', node.data.id, commit)  // not working?    
+        //dispatch('setSelectedID', node.data.id, commit)  // not working?    
         Promise.resolve()       
     },
     insertNodes({commit}, nodes) {
@@ -754,27 +793,50 @@ const actions = {
 	updateNode({commit}, node) {
 		commit('UPDATE_NODE', node)
 	},
+    // this is only called from MatrixDiagram; 
+    // it should ONLY update the node POSITION
+    updateNodePosition({commit, getters}, node) {
+        let existing = getters.nodeByID(node?.data?.id)
+              
+        if(existing) {            
+            // can't update existing as it's frozen
+            const newNode = Object.assign({}, existing)
+            newNode.position = node.position            
+            commit('UPDATE_NODE', newNode)
+        }
+        Promise.resolve() 
+    },
     setSelectedID({commit}, id) {
-        commit('SELECT_ID', id)
+        commit('SET_SELECTED_ID', id)
+    },
+    setDiagramLock({commit}, value){
+        commit('SET_DIAGRAM_LOCK', value)
     },
 	deleteNode({commit, getters}, node) {
+        // set 'parent' of any children to null 
+        // so we no longer reference this node
+        getters.childrenOfID(node.data.id).forEach(node => {
+            const newNode = Object.assign({}, node)
+            newNode.data.parent = null
+            commit('UPDATE_NODE', newNode) 
+        })
+
         // delete any incoming or outgoing edges
         let outgoing = getters.edgesBySource(node.data.id)
         let incoming = getters.edgesByTarget(node.data.id)
         outgoing.concat(incoming).forEach(edge => commit('DELETE_EDGE', edge))
+
         // now delete the node itself
-		commit('DELETE_NODE', node)
+		commit('DELETE_NODE', node)        
     },         
     createEdge({commit, dispatch, getters}) {
-        let edge = getters.newEdge
+        let edge = getters.newEdge()
         dispatch('insertEdge', edge, commit)  
     },
-    insertEdge({commit, getters}, edge={}) {
+    insertEdge({commit, getters}, edge) {
         // ensure item to add has all required properties  
-        let newEdge = _merge({}, getters.newEdge, edge)
-        if(!newEdge.data.id) 
-            newEdge.data.id = `edge-${utf8_to_hex(newEdge.data.source || 'source')}-${utf8_to_hex(newEdge.data.target || 'target')}`
-        commit('UPDATE_EDGE', newEdge)            
+        //let newEdge = _merge(getters.newEdge(), edge)
+        commit('UPDATE_EDGE', edge)            
     },
     insertEdges({commit, dispatch}, edges) {
         edges.forEach(edge => dispatch('insertEdge', edge, commit))	
@@ -785,69 +847,40 @@ const actions = {
 	},
 	deleteEdge({commit}, edge) {
 		commit('DELETE_EDGE', edge)
-    },     
-    insertPhase({commit, dispatch, getters}, item={}) {
-        // ensure item to add has all required properties  
-        let node = _merge({}, getters.newPhase, item)
-        dispatch('insertNode', node, commit)  
-    },    
-    insertGroup({commit, dispatch, getters}, item={}) {
-        // ensure item to add has all required properties        
-        let node = _merge({}, getters.newGroup, item)
-        dispatch('insertNode', node, commit)          
-    },    
-    insertSubGroup({commit, dispatch, getters}, item={}) {
-        // ensure item to add has all required properties        
-        let node = _merge({}, getters.newSubGroup, item)
-        dispatch('insertNode', node, commit)  
-    },          
-    insertContext({commit, dispatch, getters}, item={}) {
-        // ensure item to add has all required properties        
-        let node = _merge({}, getters.newContext, item)
-        dispatch('insertNode', node, commit)          
-    },          
-    insertDating({commit, dispatch, getters}, item={}) {
-        // ensure item to add has all required properties        
-        let node = _merge({}, getters.newDating, item)
-        dispatch('insertNode', node, commit)  
-    },      
-    insertPeriod({commit, dispatch, getters}, item={}) {
-        // ensure item to add has all required properties        
-        let node = _merge({}, getters.newPeriod, item)
-        dispatch('insertNode', node, commit)  
-    }  	
+    }    
 }
 
 const mutations = { 
     // make changes to the 'about' state
     SET_ABOUT(state, about) {
-        // merge data with previous state
-        state.about = Object.assign({}, state.about, about)
+        // merge new data with existing state
+        const newValue = Object.assign({}, state.about, about)
+        state.about = Object.freeze(newValue)
     },    
     // currently selected node ID - for visual indication
-    SELECT_ID(state, id) {
+    SET_SELECTED_ID(state, id) {
         state.selectedID = id || ""
+    },
+    SET_DIAGRAM_LOCK(state, value) {
+        state.diagramLock = value
     },
     // for bulk data imports - faster
     BULK_LOAD_ELEMENTS: (state, elements) => {
-        const newNodes = Object.assign({}, state.nodes);
-        const newEdges = Object.assign({}, state.edges);
+        let newNodes = {}; // Object.assign({}, state.nodes);
+        let newEdges = {}; // Object.assign({}, state.edges);
 
         (elements.nodes || []).forEach(node => {            
             const id = node?.data?.id || null
             if(id !== null) {
-                //Object.freeze(node)
-                //Object.freeze(node.data)
-                //Object.freeze(node.position)
+                Object.freeze(node)
                 newNodes[id] = node
             }      
         });
-        //console.log(`BULK_LOAD_ELEMENTS: built nodes`);
-
+        
         (elements.edges || []).forEach(edge => {
             const id = edge?.data?.id || null
             if(id !== null) {
-                //Object.freeze(edge.data)
+                Object.freeze(edge)
                 newEdges[id] = edge
             }  
         });
@@ -858,21 +891,21 @@ const mutations = {
         Vue.set(state, "edges", newEdges)
         //console.log(`BULK_LOAD_ELEMENTS: edges set`)
     },
+
     UPDATE_NODE: (state, node) => {
         const id = node?.data?.id || null        
         if(id !== null) {
             // https://medium.com/@jiihu/how-to-improve-performance-of-vuex-store-c9e3cfb01f72
-            //const newNode = Object.assign({}, node)
-            //Object.freeze(newNode.data)
-            //Object.freeze(node.data)
-            //Object.freeze(node.position)
+            const newNode = Object.assign({}, node)
+            Object.freeze(newNode)
             // Vue.set ensures reactivity
-            Vue.set(state.nodes, id, node)             
+            Vue.set(state.nodes, id, newNode)
         }
     },
     DELETE_NODE: (state, node) => {
         const id = node?.data?.id || null
-        if(Object.hasOwn(state.nodes, id)) { // maybe don't need to check this?
+        if(id !== null) {
+        //if(Object.hasOwn(state.nodes, id)) { // maybe don't need to check this?
             // Vue.set ensures reactivity    
             Vue.set(state.nodes, id, null)   
         }    
@@ -884,16 +917,16 @@ const mutations = {
         const id = edge?.data?.id || null
         if(id !== null) {
             // https://medium.com/@jiihu/how-to-improve-performance-of-vuex-store-c9e3cfb01f72
-            //const newEdge = Object.assign({}, edge)
-            //Object.freeze(newEdge.data)
-            // Object.freeze(edge.data)
+            const newEdge = Object.assign({}, edge)
+            Object.freeze(newEdge)
             // Vue.set ensures reactivity
-            Vue.set(state.edges, id, edge) 
+            Vue.set(state.edges, id, newEdge) 
         }         
     },
     DELETE_EDGE(state, edge) {
         const id = edge?.data?.id || null
-        if(Object.hasOwn(state.edges, id)) { // maybe don't need to check this?
+        if(id !== null) {
+        //if(Object.hasOwn(state.edges, id)) { // maybe don't need to check this?
             // Vue.set ensures reactivity
             Vue.set(state.edges, id, null)      
         }  
@@ -905,7 +938,7 @@ const mutations = {
 
 //export default createStore({
 export default new Vuex.Store({
-    plugins,
+    //plugins,
     state,
     getters,
     actions,

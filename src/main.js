@@ -19,8 +19,6 @@ import 'bootstrap-vue/dist/bootstrap-vue.css'
 //import Buefy from 'buefy'
 //import 'buefy/dist/buefy.css'
 
-
-
 //import 'vue-popperjs/dist/vue-popper.css'
 //import router from '@/router' //import router.js into main.js
 //import store from '@/store/storeCY'   // for VUEX data
@@ -33,6 +31,14 @@ import VueCytoscape from 'vue-cytoscape'    // for matrix diagram
 
 import 'cytoscape-grid-guide'
 
+// typeahead control
+//import VueBootstrapTypeahead from 'vue-bootstrap-typeahead'
+// Don't forget to include the Bootstrap CSS/SCSS files!
+//import 'bootstrap/scss/bootstrap.scss'
+// Global registration
+//Vue.component('vue-bootstrap-typeahead', VueBootstrapTypeahead)
+//Vue.use(VueBootstrapTypeahead)
+
 //import VueKonva from 'vue-konva'            // not used, from alt diagram library test
 //import VueSplitter from 'vue-splitter-pane' // for main layout https://github.com/venkatperi/vue-splitter-pane
 //import {Splitpanes, Pane} from 'splitpanes'          // https://github.com/antoniandre/splitpanes
@@ -41,6 +47,7 @@ import 'cytoscape-grid-guide'
 // apply imported libraries
 Vue.use(BootstrapVue)       // for main UI components
 Vue.use(BootstrapVueIcons)  // for main UI icons
+
 //Vue.use(Buefy)
 //Vue.use(Popper)
 //Vue.use(VuePapaParse)       // for CSV I/O
@@ -56,12 +63,12 @@ Vue.config.productionTip = false
 import VueRouter from 'vue-router'
 Vue.use(VueRouter);
 import Home from '@/Components/Home'
-import Page1 from '@/Components/Page1'
-import Page2 from '@/Components/Page2'
+import Help from '@/Components/Help'
+
 const routes = [
     { path: '/', component: Home },
-    { path: '/page1/:id?', component: Page1 },
-    { path: '/page2', component: Page2 }
+    //{ path: '/help/:id?', component: Help1 },
+    { path: '/help', component: Help }
 ];
 const router = new VueRouter({
     mode: 'history',

@@ -12,14 +12,14 @@
             </b-col>
         </b-row>-->
         <!--<b-row><testMiniStore/></b-row>-->
-        <vue-splitter :margin="10" :defaultPercent="60">
+        <vue-splitter :margin="10" :defaultPercent="50">
             <div slot="left-pane">
                 <b-col>
                    <MatrixDiagramCY/>
                 </b-col>
             </div>
             <div slot="right-pane">
-                <ItemEditors/>
+                <ItemEditors :selectedID="store.getters.selectedID"/>
             </div>            
             <!--<slot name="left-pane">
                 <b-col>
@@ -54,9 +54,10 @@ export default {
     },
 	setup () {
         const store = inject('store')
+        
 		onMounted(() => document.title = `${store.getters.appName} v${store.getters.appVersion}`)
 
-        //return { DatingYearTester }
+        return { store }
 	}       
 }      
 </script>
@@ -66,9 +67,6 @@ html, body {
 	margin: 0;
 	padding: 0;
 	height: 100%; /* needed for container min-height */
-	/*background-color: gray;*/	
-	font-family: arial, sans-serif;
-	font-size: small;
-	/*color: #666;*/
+	font-size: small
 }
 </style>

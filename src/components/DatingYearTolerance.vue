@@ -1,6 +1,7 @@
 <template>
-	<b-input-group prepend="±" class="shadow-sm">
-        <b-form-input number  
+	<b-input-group prepend="±" class="shadow-sm" size="sm">
+        <b-form-input number 
+			size="sm" 
             min="0"                            
             :disabled="disabled"
             placeholder="tolerance"
@@ -9,6 +10,7 @@
             @change="valueChanged"/>
         <b-input-group-append>
             <b-form-select 
+				size="sm"
                 :value="toleranceUnit"
                 :options="tolUnits" 
                 :disabled="disabled" 

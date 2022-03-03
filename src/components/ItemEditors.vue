@@ -1,21 +1,29 @@
 <template>
 	<b-tabs 
-		v-model="tabIndex" 
+		v-model="tabIndex"
 		class="my-1" 
 		align="left" 
-		active-nav-item-class="font-weight-bold">		
-		<b-tab v-for="nc in [...nodeClasses, 'edge']" :key="nc" class="my-2">
+		active-nav-item-class="font-weight-bold"
+		@activate-tab="activated">		
+		<b-tab v-for="nc in nodeClasses"
+			:key="nc" 
+			class="my-2">
 			<template v-slot:title>
-				<span>{{ capitalize(nc) }}s</span>
-				<b-badge
-					variant="outline" 
-					class="border secondary pb-1 m-0 ml-2">
-					<span>{{ itemCount(nc) }}</span>					
-				</b-badge>
+				<NodeIcon :nodeClass="nc"/>
+				<span>{{ `${nc}s [${itemCount(nc)}]` }}</span>				
 			</template>
-			<ItemEditor :itemClass="nc"/>
-		</b-tab>		
-		<b-tab>
+			<!--<keep-alive>-->
+				<ItemEditor :selectedID="selectedID" :itemClass="nc"/>
+			<!--</keep-alive>-->
+		</b-tab>
+		<b-tab
+			:key="EdgeClass.EDGE" 
+			class="my-2">
+			<template v-slot:title>{{ `stratigraphy [${itemCount(EdgeClass.EDGE)}]` }}</template>
+			<ItemEditor :selectedID="selectedID" :itemClass="EdgeClass.EDGE"/>
+		</b-tab>
+
+		<b-tab lazy>
 			<template v-slot:title>Validation</template>
 			<ValidationAsync/>
 		</b-tab>
@@ -28,20 +36,27 @@
 			<MetaEditor/>
 		</b-tab>	
 		<b-tab>
-			<template v-slot:title>Search (experimental)</template>
+			<template v-slot:title>Search<br>(experimental)</template>
 			<SearchControls/>			
+		</b-tab>
+		<b-tab>
+			<template v-slot:title>Group Matrix<br>(experimental)</template>
+			<GroupMatrixTable/>					
 		</b-tab>
     </b-tabs>
 </template>
 
 <script>
-import { ref, computed, watch, inject } from "@vue/composition-api" // Vue 2 only. for Vue 3 use "from '@vue'"
+import { ref, unref, computed, watch, inject } from "@vue/composition-api" // Vue 2 only. for Vue 3 use "from '@vue'"
 import ItemEditor from '@/components/ItemEditor'
 import ValidationAsync from '@/components/ValidationAsync'
 import MetaEditor from '@/components/MetaEditor'
 import SearchControls from '@/components/SearchControls'
 import TemporalRelationships from '@/components/TemporalRelationships'
-import { NodeClass, capitalize } from '@/global/PhaserCommon'
+import GroupMatrixTable from '@/components/GroupMatrixTable'
+import NodeIcon from '@/components/NodeIcon'
+
+import { NodeClass, EdgeClass } from '@/global/PhaserCommon'
 
 export default {
 	components: {
@@ -50,31 +65,59 @@ export default {
 		MetaEditor,
 		SearchControls,
 		TemporalRelationships,
+		GroupMatrixTable,
+		NodeIcon
 	},
-	setup() {
+	props: {
+        // enables/disables the composite control
+        selectedID: {
+            type: String,
+            required: false,
+            default: ""
+        }
+	},  
+	setup(props) {
 		const store = inject('store')	
 		const tabIndex = ref(0)
-		const selectedID = computed(() => store.getters.selectedID)	
-		const nodeClasses = Object.values(NodeClass) 			
+		const nodeClasses = Object.values(NodeClass) 
+		
+		// tab might get manually selected - ensure we are displaying correct info 
+		// (e.g. selectedID might be context but selected tab might be groups..) 
+		const activated = (newIndex) => { 
+			let nc = store.getters.classByID(props.selectedID)
+			let match = false
+			switch(newIndex) {
+				case 0: match = (nc == NodeClass.PHASE);break;
+				case 1: match = (nc == NodeClass.GROUP);break;
+				case 2: match = (nc == NodeClass.SUBGROUP);break;
+				case 3: match = (nc == NodeClass.CONTEXT);break;
+				case 4: match = (nc == NodeClass.DATING);break;
+				case 5: match = (nc == NodeClass.PERIOD);break;
+			}
+			if(!match)
+				store.dispatch("setSelectedID", null)
+		}
 
-		const itemCount = nc => {
-			switch(nc) {
+		
+		const itemCount = itemClass => {
+			switch(itemClass) {
 				case NodeClass.PHASE: return store.getters.phases.length
 				case NodeClass.GROUP: return store.getters.groups.length
 				case NodeClass.SUBGROUP: return store.getters.subgroups.length
 				case NodeClass.CONTEXT: return store.getters.contexts.length
 				case NodeClass.DATING: return store.getters.datings.length
 				case NodeClass.PERIOD: return store.getters.periods.length
-				case "edge": return store.getters.edges.length
+				case EdgeClass.EDGE: return store.getters.edges.length
 				default: return 0
 			}
 		}
 
-		// display tab corresponding to the currently selected item (may be bode or edge)
-		watch(selectedID, (newID) => {			
+		// display tab corresponding to the currently selected item (may be node or edge)
+		const selectedID1 = computed(() => props.selectedID)
+		watch(selectedID1, (newID) => {			
 			if(store.getters.isNode(newID)) {
 				// if it's a node, display tab according to node.data.class
-				let nc = store.getters.nodeByID(newID).data?.class				
+				let nc = store.getters.classByID(newID)			
 				switch(nc) {
 					case NodeClass.PHASE: tabIndex.value = 0;break;
 					case NodeClass.GROUP: tabIndex.value = 1;break;
@@ -90,14 +133,15 @@ export default {
 			}
 			else return					
 		})
-
+	
 		return { 
 			//edgeCount, 
-			tabIndex, 
-			selectedID, 
-			nodeClasses, 
-			itemCount, 
-			capitalize 
+			tabIndex,
+			nodeClasses,
+			EdgeClass, 
+			itemCount,
+			activated, 
+			//capitalize 
 		}
 	}
 }

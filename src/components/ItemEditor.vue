@@ -1,17 +1,18 @@
 <template>
 	<b-container fluid class="p-2">
 		<ItemTable
+			:selectedID="selectedID"
 			:itemClass="itemClass" 
 			class="mb-2" 
 			@item-selected="itemSelected" 
 			@item-deleted="itemDeleted"/>
 					
-		<b-form-row v-if="fields.includes('redolayout')">		
+		<!--<b-form-row v-if="fields.includes('redolayout')">		
 			<b-col style="text-align: right">
 				<b-button pill
 					size="sm"
-					:disabled="disabled" 
-					variant="outline-primary"
+					:disabled="disabled || store.getters.diagramLock" 
+					variant="primary"
 					class="text-left shadow" 
 					title="redo layout" 
 					alt="redo layout"			
@@ -20,73 +21,84 @@
 					<span>{{`Redo layout for this ${itemClass}`}}</span>
 				</b-button>
 			</b-col>			
-		</b-form-row>
-		<b-form-row>
-			<!--<b-col>
-				<b-form-group label="Identifier" label-for="itemID">	
-					<b-form-input text 
-						:disabled="true"
-						class="shadow-sm" 
-						:placeholder="`${itemClass} identifier`" 
-						type="text"
-						name="itemID" 
-						:value="((selectedItem || {}).data || {}).id"/>						
-				</b-form-group>
-			</b-col>-->
-			<b-col>
-				<!--<b-form-group v-if="fields.includes('label')" 
-					label="Identifier" 
-					label-for="itemLabel">	
-					<b-form-input text 
-						:disabled="disabled"
-						class="shadow-sm" 
-						:placeholder="`${itemClass}`" 
-						type="text"
-						name="itemLabel"
-						autocomplete="off" 
-						v-model.trim="((selectedItem || {}).data || {}).label" 
-						@change="labelChanged"/>
-				</b-form-group>-->
+		</b-form-row>-->
 
-				<ItemLabel v-if="fields.includes('label')" 
+		<b-form-row v-if="fields.includes('connectedElements')">
+			<b-col>
+				<ConnectedElements :contextID="((selectedItem || {}).data || {}).id"/>
+			</b-col>
+		</b-form-row>
+			
+		<b-form-row>
+			<b-col>
+				<ItemLabel v-if="fields.includes('label')"
 					:disabled="disabled" 
 					label="Identifier"
 					:placeholder="`${itemClass}`" 
 					v-model.lazy="((selectedItem || {}).data || {}).label" 
 					@input="labelChanged"/>
-
+			</b-col>			
+			<b-col>
+				<div style="text-align: right" v-if="fields.includes('redolayout')">
+					<b-button pill
+						size="sm"
+						:disabled="disabled || store.getters.diagramLock" 
+						variant="primary"
+						class="text-left shadow" 
+						title="redo layout" 
+						alt="redo layout"			
+						@click.stop="redoCompoundNodeLayout">
+						<b-icon-diagram-3 class="mr-2" />
+						<span>{{`Redo layout for this ${itemClass}`}}</span>
+					</b-button>					
+				</div>
 				<ItemLabel v-if="fields.includes('uri')" 
 					:disabled="disabled" 
 					label="URI"
 					:placeholder="`${itemClass}`" 
 					v-model.lazy="((selectedItem || {}).data || {}).uri" 
-					@input="uriChanged"/>
-
-				<ItemLookup v-if="fields.includes('period')"
+					@input="uriChanged"/>	
+			</b-col>
+		</b-form-row>
+		<b-form-row>
+			<b-col>				
+				<ItemLookup2 v-if="fields.includes('period')"
 					label="Period" 
 					:disabled="disabled"
 					placeholder="period" 
 					v-model="((selectedItem || {}).data || {}).period"  
 					:options="periodLookupOptions" 
 					@change="periodChanged"/>
+			</b-col>
 
-				<ItemLookup v-if="fields.includes('meetsPhase')"
-					label="Meets" 
+			<b-col>
+				<ItemLookup2 v-if="fields.includes('parent')"
+					label="Within" 
 					:disabled="disabled"
-					placeholder="meets phase" 
-					v-model="((selectedItem || {}).data || {}).meets"  
-					:options="phaseLookupOptions" 
-					@change="phaseMeetsChanged"/>
-			
-				<ItemLookup v-if="fields.includes('type')"
-					label="Type" 
-					mode="input"
-					:disabled="disabled" 
-					:placeholder="`${itemClass} type`" 
-					v-model="((selectedItem || {}).data || {}).type" 
-					:options="typeLookupOptions"
-					@change="typeChanged"/> 
+					:placeholder="`${itemClass} parent`" 
+					v-model="((selectedItem || {}).data || {}).parent"  
+					:options="parentLookupOptions" 
+					@change="parentChanged"/>	
 
+				<!--<ItemList v-if="fields.includes('contains')"	 			
+					label="Contains" 
+					:disabled="true" 
+					:items="itemContains"/>-->
+				
+			</b-col>
+		</b-form-row>
+		<b-form-row>	
+			<b-col>
+				<ItemLookup v-if="fields.includes('type')"
+						label="Type" 
+						mode="input"
+						:disabled="disabled" 
+						:placeholder="`${itemClass} type`" 
+						v-model="((selectedItem || {}).data || {}).type" 
+						:options="typeLookupOptions"
+						@change="typeChanged"/> 
+			</b-col>
+			<b-col>
 				<ItemLookup v-if="fields.includes('cud')"
 					label="Construction/Use/Disuse" 
 					:disabled="disabled" 
@@ -101,61 +113,28 @@
 						{ value: 'CUD', text: 'construction &amp; use &amp; disuse' }
 					]" 
 					@change="cudChanged"/>				
-			</b-col>
-			<b-col>
-				<ItemLookup2 v-if="fields.includes('parent')"
-					label="Within" 
-					:disabled="disabled"
-					class="shadow-sm"
-					:placeholder="`${itemClass} parent`" 
-					v-model="((selectedItem || {}).data || {}).parent"  
-					:options="parentLookupOptions" 
-					@change="parentChanged"/>	
-
-				<!--<ItemList v-if="fields.includes('contains')"	 			
-					label="Contains" 
-					:disabled="true" 
-					:items="itemContains"/>-->
-
-				<b-form-group 
-					v-if="fields.includes('contains')"
-					label="Contains" 
-					label-for="itemContains">
-					<b-list-group 
-						name="itemContains"
-						class="shadow-sm overflow-auto" 
-						style="height: 200px;"   
-						:disabled="disabled">
-						<b-list-group-item 
-							class="px-2 py-1 m-0"
-							v-for="(item, index) in itemContains" 
-							:key="index">
-							<a href="#" @click="store.dispatch('setSelectedID', item.data.id)">{{ store.getters.labelByID(item.data.id, true) }}</a>
-						</b-list-group-item>
-					</b-list-group>
-				</b-form-group>
-
-
-
-				
-				<ItemList v-if="fields.includes('periodContains')"	 			
-					label="Contains" 
-					:disabled="true" 
-					:items="periodContains"/>
-			</b-col>
+			</b-col>				
 		</b-form-row> 
 
-		<b-form-row>	
-			<b-col>	
+		<b-form-row>
+			<b-col v-if="fields.includes('contains')">
+				<ItemContains 
+					v-if="fields.includes('contains')" 
+					:id="((selectedItem || {}).data || {}).id" 
+					:disabled="disabled"/>
+			</b-col>	
+			<b-col v-if="fields.includes('description')" >	
 				<b-form-group v-if="fields.includes('description')" 
 					label="Description"				
 					label-for="itemDescription">	
 					<b-form-textarea 
+						size="sm"
+						style="resize: vertical;" 
 						:disabled="disabled"
 						class="shadow-sm" 
 						:placeholder="`${itemClass} description`" 
-						rows="2"
-						max-rows="2"
+						rows="5"
+						max-rows="5"
 						name="itemDescription" 
 						v-model.trim="((selectedItem || {}).data || {}).description" 
 						@change="descriptionChanged"/>
@@ -205,16 +184,15 @@
 						@change="associationChanged"/>
 				</b-form-group>
 			</b-col>	
-		</b-form-row>
-			
+		</b-form-row>	
+
 		<b-form-row v-if="fields.includes('stratigraphy')">	
 			<b-col>
-				<Stratigraphy v-once  
-					:sourceID="((selectedItem || {}).data || {}).id"
-					:disabled="disabled"/>
+				<Stratigraphy/>
 			</b-col>
 		</b-form-row>
-
+	
+		
 		<!--<b-form-row v-if="fields.includes('temporal')">
 			<b-col>
 				<TemporalRelationshipsTable 
@@ -223,23 +201,26 @@
 			</b-col>
 		</b-form-row>-->
 		
-	</b-container>		
+	</b-container>
 </template>
 
 <script>
-import { ref, unref, computed, inject } from "@vue/composition-api" // Vue 2 only. for Vue 3 use "from '@vue'"
-import { NodeClass } from '@/global/PhaserCommon'
-//import ItemTable from '@/components/ItemTable'
+import { ref, unref, computed, inject, onMounted } from "@vue/composition-api" // Vue 2 only. for Vue 3 use "from '@vue'"
+import _cloneDeep from "lodash/cloneDeep"
+import _merge from "lodash/merge"
+import { NodeClass, EdgeClass } from '@/global/PhaserCommon'
+
 import ItemTable from '@/components/ItemTable'
 import ItemLookup from '@/components/ItemLookup'
 import ItemLookup2 from '@/components/ItemLookup2'
 import Stratigraphy from '@/components/Stratigraphy'
-//import DatingYearRange from '@/components/DatingYearRange'
 import DatingYearRangeCE from '@/components/DatingYearRangeCE'
 import SciDating from '@/components/SciDating'
 import ItemLabel from '@/components/ItemLabel'
-import ItemList from '@/components/ItemList'
+import ItemContains from '@/components/ItemContains'
+//import ItemList from '@/components/ItemList'
 //import TemporalRelationshipsTable from "@/components/TemporalRelationshipsTable"
+import ConnectedElements from '@/components/ConnectedElements'
 import EventBus from "@/global/EventBus"
 
 export default {
@@ -249,38 +230,45 @@ export default {
 		ItemTable,
 		ItemLookup,
 		ItemLookup2,
-		//DatingYearRange,
 		Stratigraphy,
+		ConnectedElements,
 		//DatingYearRange,
 		DatingYearRangeCE,
 		SciDating,
 		ItemLabel,
-		ItemList,
+		ItemContains,
+		//ItemList,
 		//TemporalRelationshipsTable
 		
 	},
 	props: {
+		selectedID: {
+			type: String,
+			required: false,
+			default: ""
+		},
 		itemClass: {
 			type: String,
 			required: false,
 			default: NodeClass.PHASE,
-			validator: value => [...Object.values(NodeClass), "edge"].includes(value) 
+			validator: value => [...Object.values(NodeClass), ...Object.values(EdgeClass)].includes(value) 
 		}
 	},
 	setup(props) {
 		const store = inject('store')
 		const selectedItem = ref(null)
-		const disabled = computed(() => selectedItem.value === null)
+		const disabled = computed(() => selectedItem.value === null || selectedItem.value === "")
 		
 		// This determines which editing controls are visible
 		const fields = computed(() => { 
 			switch(props.itemClass) {
-				case NodeClass.PHASE: return ["label", "description", "contains", "containsGroups", "containsSubGroups", "containsContexts", "yearrange", "redolayout", "period", "temporal"]
-				case NodeClass.GROUP: return ["label", "type", "parent", "contains", "containsSubGroups", "containsContexts", "description", "redolayout", "cud", "period", "temporal"]
-				case NodeClass.SUBGROUP: return ["label", "type", "parent", "contains", "containsContexts", "description", "redolayout", "cud", "period", "temporal"]
-				case NodeClass.CONTEXT: return ["label", "type", "parent", "contains", "containsDatings", "description", "stratigraphy", "cud", "period", "temporal"]	
+				case NodeClass.PHASE: return ["label", "description", "contains", "yearrange", "redolayout", "period", "temporal"]
+				case NodeClass.GROUP: return ["label", "type", "parent", "contains", "description", "redolayout", "cud", "period", "temporal"]
+				case NodeClass.SUBGROUP: return ["label", "type", "parent", "contains", "description", "redolayout", "cud", "period", "temporal"]
+				case NodeClass.CONTEXT: return ["label", "type", "parent", "contains", "description", "cud", "period", "temporal", "connectedElements"]	
 				case NodeClass.DATING: return ["label", "type", "parent", "description", "scidating", "included", "association", "period"]
-				case NodeClass.PERIOD: return ["label", "uri", "description", "periodContains", "yearrange"]
+				case NodeClass.PERIOD: return ["label", "uri", "description", "contains", "yearrange"]
+				case EdgeClass.EDGE: return ["stratigraphy"]
 				default: return []
 			}			
 		})
@@ -307,44 +295,18 @@ export default {
 				case NodeClass.DATING: return store.getters.datingTypeOptions
 				default: return []
 			}
-		})
-
-		// hierarchical containment relationships - list all descendants of selected item
-		const itemContains = computed(() => {
-			let id = ""			
-			if(selectedItem.value)
-				id = selectedItem.value.data?.id || ""
-			if(id !== "")
-				return store.getters.descendantsOfID(id) //.map(n => `(${n.data.class}) ${n.data.label}`)					
-			else
-				return [] 
-		})
-
-		// list all items that reference this period
-		const periodContains = computed(() => { 
-			let id = ""			
-			if(selectedItem.value && selectedItem.value.data?.class == NodeClass.PERIOD)
-				id = selectedItem.value.data?.id || ""
-			if(id !== "") {
-				return store.getters.nodes
-					.filter(n => n.data.period == id)
-					.map(n => `(${n.data.class}) ${n.data.label}`)
-					//.sort((a,b) => a - b) // ensures numeric values still sorted correctly
-					//.join(", ")
-			}
-			else
-				return []
-		})
-
+		})	
+		
 		const itemSelected = (item) => {
-            selectedItem.value = item
+            //selectedItem.value = item
+			selectedItem.value = _merge({}, item)
 			//console.log(selectedItem)
 			//this.$store.dispatch('setSelectedID', ((this.selectedItem || {}).data || {}).id)
 			store.dispatch('setSelectedID', unref(selectedItem).data?.id)
         }
 
 		const itemDeleted = (id) => {
-			//if(((this.selectedItem || {}).data || {}).id == id)
+			// if it was the selectedItem set that to null
 			if(selectedItem.value) {
 				if(selectedItem.value.data?.id == id)
 					selectedItem.value = null
@@ -412,19 +374,13 @@ export default {
 
 		const periodChanged = (value) => {	
 			if(selectedItem.value) {
-				selectedItem.value.data.period = value
-				itemChanged()
+				if(selectedItem.value.data.period) {
+					selectedItem.value.data.period = value
+					itemChanged()					
+				}
 			}
 		}
-
-		// TODO: should add/amend an edge here, not a property?
-		const phaseMeetsChanged = (value) => {	
-			if(selectedItem.value) {
-				selectedItem.value.data.meets = value
-				itemChanged()
-			}
-		}
-
+		
 		const itemChanged = () => {
             store.dispatch('updateNode', unref(selectedItem))
 		}	     
@@ -437,8 +393,6 @@ export default {
 			parentLookupOptions,
 			typeLookupOptions,
 			phaseLookupOptions,
-			itemContains,
-			periodContains,
 			periodLookupOptions,
 			itemSelected,
 			itemDeleted,
@@ -453,7 +407,6 @@ export default {
 			associationChanged,
 			cudChanged,
 			periodChanged,
-			phaseMeetsChanged,
 			itemChanged
 		}
 	}

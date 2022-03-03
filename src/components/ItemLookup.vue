@@ -4,6 +4,7 @@
             :label="this.label"
             label-for="itemSelector">
             <b-form-select 
+                size="sm"
                 variant="primary"					
                 :disabled="disabled"
                 name="itemSelector" 
@@ -36,7 +37,7 @@
 
 <script>
 import { computed } from "@vue/composition-api" // Vue 2 only. for Vue 3 use "from '@vue'"
-import { uniqueId } from '@/global/PhaserCommon'
+import _uniqueId from 'lodash/uniqueId'
 
 export default {	
 	props: {
@@ -83,7 +84,7 @@ export default {
 	},
     setup(props, context) {
         //const optionsId = computed(() => uniqueId("datalist-"))
-        const optionsId = uniqueId("datalist-")
+        const optionsId = _uniqueId("datalist-")
 
         const optionsForSelect = computed(() => {
             return props.options

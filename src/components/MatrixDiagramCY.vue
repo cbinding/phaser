@@ -4,7 +4,20 @@
     <div id="holder" class="overflow-auto position-relative"> 
         <!--<div class="position-relative">  -->           
         <Lock id="lock" class="position-absolute m-2" v-model="locked" @input="lockChanged"/>
-        <Legend id="legend" class="position-absolute m-2"></Legend>             
+        <Legend id="legend" class="position-absolute m-2"/>
+        
+        <b-button
+        size="sm" 
+            id="refresh"
+            class="position-absolute m-2 shadow"          
+			@click.stop="refreshDiagram()"
+            title="Refresh diagram"
+            alt="Refresh diagram"
+			:disabled="busy"
+            variant="primary">
+            <b-icon-arrow-clockwise />            
+        </b-button> 
+        
         <!--</div> -->
         <!--<div id="navigator"></div> -->
               
@@ -12,21 +25,21 @@
             ref="cy" 
             :config="config" 
             :preConfig="preConfig" 
-            :afterCreated="afterCreated">            
+            :afterCreated="afterCreated">                  
             
             <cy-element v-for="node in nodes" 
-                id="node.data.id"            
                 :key="node.data.id"
                 :class="node.data.class"
                 :definition="node"
                 @click="elementSelected($event, node)"
-                :sync="true"/>
+                :sync="false"/>
             
             <cy-element v-for="edge in edges"
                 :key="edge.data.id"
                 :class="edge.data.class"                
                 :definition="edge"
-                @click="elementSelected($event, edge)"/>            
+                @click="elementSelected($event, edge)"
+                :sync="false"/>            
         </cytoscape>
                   
     </div>   
@@ -44,7 +57,7 @@ import gridGuide from 'cytoscape-grid-guide'
 import cyCanvas from 'cytoscape-canvas'
 import panzoom from 'cytoscape-panzoom'
 //import domnode from 'cytoscape-dom-node'
-import nodehtmllabel from 'cytoscape-node-html-label'
+//import nodehtmllabel from 'cytoscape-node-html-label'
 import $ from 'jquery'
 //import _merge from "lodash/merge"
 
@@ -58,7 +71,7 @@ import $ from 'jquery'
 import Legend from '@/components/Legend'
 import Lock from '@/components/Lock'
 import EventBus from '@/global/EventBus'
-import { NodeClass, timestamp } from '@/global/PhaserCommon'
+import { NodeClass, EdgeType, ElementColour, timestamp } from '@/global/PhaserCommon'
 
         
 export default {
@@ -76,8 +89,25 @@ export default {
         const store = inject('store')      
 		const cy = shallowRef(null)
         const busy = ref(false)
-        const locked = ref(true)
-        //let popperInstance = null
+         //let popperInstance = null
+
+        const locked = computed({
+            get () { return store.getters.diagramLock },
+            set (newValue) {
+                const cyi = cy.value.instance
+                if(cyi) cyi.autolock(newValue)
+                store.dispatch('setDiagramLock', newValue) 
+            }            
+        })        
+
+        const lockChanged = (newValue) => {
+            locked.value = newValue
+            //const cyi = cy.value.instance
+            //if(!cyi) return
+            //store.dispatch('setDiagramLock', newValue)
+            //locked.value = newValue
+           // cyi.autolock(newValue)           
+        }
         
         const config = {
             pixelRation: 1,
@@ -85,8 +115,8 @@ export default {
             minZoom: 0.05,
             maxZoom: 2.0, 
             // the following 2 settings can improve performance on large graphs:  
-            hideEdgesOnViewport: true, // edges not drawn during pan and zoom
-            textureOnViewport: true,           
+            //hideEdgesOnViewport: true, // edges not drawn during pan and zoom
+            //textureOnViewport: true,           
             panzoom: {
                 zoomFactor: 0.05, // zoom factor per zoom tick
                 zoomDelay: 45, // how many ms between zoom ticks
@@ -104,7 +134,7 @@ export default {
                 //animateOnFit: function(){ return false; },// whether to animate on fit                   
                 //fitAnimationDuration: 1000, // duration of animation on fit
                 // icon class names
-                sliderHandleIcon: 'fa fa-minus',
+                sliderHandleIcon: 'fa fa-minus', //'"><b-icon-arrow-up/></span><span class="',
                 zoomInIcon: 'fa fa-plus',
                 zoomOutIcon: 'fa fa-minus',
                 resetIcon: 'fa fa-expand'
@@ -188,8 +218,8 @@ export default {
                 //transform: function( node, pos ){ return pos; }, // a function that applies a transform to the final node position
                 //zoom: function(e){ console.log("zoom"); console.log(e)},
                 //viewport: function(e){ console.log("viewport"); console.log(e)},
-                ready: function(){}, // on layoutready
-                stop: layoutStop // on layoutstop              
+                //ready: layoutDone, //function(){}, // on layoutready
+                //stop: layoutDone // on layoutstop              
             },
             layoutElk: {
                 name: "elk",
@@ -321,9 +351,9 @@ export default {
                         'text-valign': 'center',
                         'text-halign': 'center',
                         'color': 'black',
-                        'background-color': 'white',
+                        'background-color': ElementColour.CONTEXT_BG,
                         'background-opacity': 1.0,
-                        'border-color': 'black',
+                        'border-color': ElementColour.CONTEXT_FG,
                         'border-width': '4px',
                         'border-style': 'solid',
                         'border-opacity': 1.0, 
@@ -334,12 +364,13 @@ export default {
                 {                       
                     selector: `node[class="${NodeClass.CONTEXT}"]`,
                     style: {
-                        'width': props.gridSize * 3,
-                        'height': props.gridSize * 1,
+                        'shape': 'round-rectangle',
+                        //'width': props.gridSize * 3,
+                        //'height': props.gridSize * 1,
                         //'font-weight': 'bold',
                         'label':  el => `${el.data('label') ? el.data('label') : el.data('id')}`,
-                        'color': el => store.getters.hasDating(el.data('id')) ? "white" : "black",
-                        'background-color': el => store.getters.hasDating(el.data('id')) ? "black" : "white"
+                        'color': el => store.getters.contextHasDating(el.data('id')) ? ElementColour.CONTEXT_BG : ElementColour.CONTEXT_FG,
+                        'background-color': el => store.getters.contextHasDating(el.data('id')) ? ElementColour.CONTEXT_FG : ElementColour.CONTEXT_BG
                         //'background-fill': 'radial-gradient',
                         //'background-gradient-stop-colors': 'white gray'  
                     }
@@ -347,8 +378,8 @@ export default {
                 {                       
                     selector: `node[class="${NodeClass.CONTEXT}"]:selected`,
                     style: { 
-                        'background-color': 'gold', 
-                        'color': 'black'
+                        'background-color': ElementColour.SELECTED_BG, 
+                        'color': ElementColour.CONTEXT_FG // 'black'
                     }
                 },
                 /*{  
@@ -376,7 +407,10 @@ export default {
                 }, 
                 {                       
                     selector: `node[class="${NodeClass.PHASE}"]:selected`,
-                    style: { 'background-color': 'gold','background-opacity': 1  }
+                    style: { 
+                        'background-color': ElementColour.SELECTED_BG,
+                        'background-opacity': 1 
+                     }
                 },                                                   
                 {
                     selector: `node[class="${NodeClass.GROUP}"]`,
@@ -387,28 +421,29 @@ export default {
                         'text-halign': 'right',
                         'text-margin-x': 5,
                         'text-margin-y': 15,
-                        'color': 'green',                            
-                        'background-color': 'honeydew',
-                        'border-color': 'green'                            
+                        'color': ElementColour.GROUP_FG,                            
+                        'background-color': ElementColour.GROUP_BG,
+                        'border-color': ElementColour.GROUP_FG,    
+                        'compound-sizing-wrt-labels': 'include'                        
                     }
                 }, 
                 {                       
                     selector: `node[class="${NodeClass.GROUP}"]:selected`,
-                    style: { 'background-color': 'gold' }
+                    style: { 'background-color': ElementColour.SELECTED_BG }
                 },                  
                 {
                     selector: `node[class="${NodeClass.SUBGROUP}"]`,
                     style: {
-                        //'label':  el => `${el.data('label') ? el.data('label') : el.data('id')}`, 
+                        'label':  el => `${el.data('label') ? el.data('label') : el.data('id')}`, 
                         'text-opacity': 0.75,
                         'text-valign': 'center',
                         'text-halign': 'right',
                         'text-margin-x': 5,
                         //'text-margin-y': 0,
                         'text-justification': 'auto',
-                        'color': 'blue',                            
-                        'background-color': 'aliceblue',
-                        'border-color': 'blue',                           
+                        'color': ElementColour.SUBGROUP_FG,                            
+                        'background-color': ElementColour.SUBGROUP_BG,
+                        'border-color': ElementColour.SUBGROUP_FG,                           
                     }
                 },	 
                 {                       
@@ -428,22 +463,18 @@ export default {
                         'width': 3,
                         //'target-arrow-shape': 'none',
                         //'target-arrow-color': 'gray',
-                        'line-color': 'gray',
+                        'line-color': ElementColour.EDGE,
                         'line-style': 'solid',                        
                     }
                 },
                 {
                     selector: 'edge.connected', // syntax for css class
-                    style: { 'line-color': 'darkred', 'width': 8 }
-                },
-                {
-                    selector: 'edge[class="derived"]', // syntax for edge.data.class                   
-                    style: {'curve-style': 'haystack', 'line-color': 'blue', 'line-style': 'dashed', 'visibility': 'hidden'} // visibility: visible|hidden
+                    style: { 'line-color': ElementColour.EDGE_CONNECTED, 'width': 8 }
                 },
                 {                       
                     selector: 'edge:selected',
-                    style: { 'line-color': 'gold' }
-                },
+                    style: { 'line-color': ElementColour.EDGE_SELECTED, 'width': 8, }
+                }                
             ]                
         }
        
@@ -470,17 +501,23 @@ export default {
             const cyi = cy.value.instance 
             if(!cyi) return   
 
-            // unselect prev selected and remove highlighting of connected edges
+            // unselect prev selected and remove any highlighting of connected edges
             let cyNode = cyi.$id(oldValue)
             if(cyNode) {
                 cyNode.unselect()
                 cyNode.connectedEdges().removeClass("connected")                 
-            }
-            //let selected = cyi.$("node:selected")
-            //selected.unselect()
-            //cyi.$("edge.connected").removeClass("connected")
-            //selected.unselect()
+            }            
+                        
+            /*
+            // allow pass-through panning on phases. shouldn't be here, but not sure where it should go..    
+            // not working anyway... cannot pan regardless
+            cyi.nodes('[class="phase"]')
+                .unselectify()
+                .ungrabify()
+                .panify()
+            */
             
+            // show node as selected and highlight any connected edges 
             cyNode = cyi.$id(newValue)
             if(cyNode) {
                 cyNode.select() // show node as selected
@@ -498,12 +535,16 @@ export default {
                         placement: "right"
                     } // my popper options here
                 })*/ 
+
+                
+
+
             }
         })
     
         //const gridSpacing = computed(() => props.gridSize) 
 
-        const nodes = computed(() => {
+        /*const nodes = computed(() => {
             return []
                 .concat(store.getters.phases)
                 .concat(store.getters.groups)
@@ -511,33 +552,65 @@ export default {
                 .concat(store.getters.contexts)
                 //.concat(store.getters.datings)    // don't display on graph               
         })
-        //const nodes = computed(() => store.getters.nodes.filter(node => [NodeClass.PHASE, NodeClass.GROUP, NodeClass.SUBGROUP, NodeClass.CONTEXT].indexOf(node?.data?.class) !== -1))      
         const edges = computed(() => store.getters.edges.filter(edge => edge.data.type == "above"))
+        */
+        const nodes = ref([])
+        const edges = ref([])
+        
+        // refresh data from store
+        const refreshDiagram = async () => {
+            const cyi = cy.value.instance
+            if(!cyi) return
+
+            busy.value = true 
+            nodes.value = []
+            edges.value = []
+
+            nodes.value = []
+                .concat(store.getters.phases)
+                .concat(store.getters.groups)
+                .concat(store.getters.subgroups)
+                .concat(store.getters.contexts)
+                .slice()
+            
+            //nodes.value.forEach(node => console.log(`${node.data.id} ${node.data.parent}`))
+            
+            edges.value = store.getters.edges
+                .filter(edge => edge.data.type == EdgeType.ABOVE)
+                .slice()
+
+            //centre(cyi)
+            //zoomFit(cyi)
+
+            busy.value = false
+        }
 
         const preConfig = (cyi) => {
-            cyi.use(dagre) 
+            cyi.use(dagre)      // hierarchical layout algorithm 
             //cyi.use(elk)
             //cyi.use(klay)
-            cyi.use(gridGuide) 
-            cyi.use(cyCanvas) 
-            cyi.use(panzoom)
+            cyi.use(gridGuide)  // interactive guidelines for grid positioning
+            cyi.use(cyCanvas)   // overlay canvas used or drawing phase lines
+            cyi.use(panzoom)    // panzoom control on top left
             //cyi.use(navigator) 
             //cyi.use(domnode)
-            cyi.use(nodehtmllabel)
+            //cyi.use(nodehtmllabel)  // not used yet, to add labels to nodes
             //cyi.use(noOverlap)    // but not working...
             //cyi.use(popper)
             cyi.use($)
         }
 
         // notify store that a node or an edge has been selected in the diagram
-        const elementSelected = (event, element) => store.dispatch('setSelectedID', element.data?.id || "")
+        const elementSelected = async (event, element) => store.dispatch('setSelectedID', element.data?.id || "")
                
         // set up panzoom, grid, snap and guidelines
         const afterCreated = (cyi) => {            
             cyi.panzoom(config.panzoom)            
             cyi.gridGuide(config.gridguide)
 
-            cyi.nodeHtmlLabel([{
+            // this was only done to put the label on the outside of the node, 
+            // can be achieved using 'compound-sizing-wrt-labels': 'exclude'
+            /*cyi.nodeHtmlLabel([{
                 query: 'node[class="subgroup"]', // cytoscape query selector
                 halign: 'right', // title vertical position. Can be 'left',''center, 'right'
                 valign: 'center', // title vertical position. Can be 'top',''center, 'bottom'
@@ -547,7 +620,7 @@ export default {
                 tpl(data) {
                     return `<span class="subgrouplabel">${data.label || data.id}</span>`; // your html template here
                 }
-            }])
+            }])*/
             //cyi.navigator(config.navigator) 
             /*popperInstance.value = cyi.popper({
                 content: () => {
@@ -607,11 +680,13 @@ export default {
 
         // clear diagram
         const clear = (cyi) => {
-            // todo ensure all elements cleared from graph             
+            // clear local stored data
+            nodes.value = []
+            edges.value = []                      
             centre(cyi)
         }
 
-        const centre = (cyi) => {
+        const centre = (cyi) => {            
             cyi.zoom(1)
             cyi.pan({x: 0, y: 0})
         }
@@ -636,6 +711,9 @@ export default {
             if(!cyi || locked.value) return      
             busy.value = true     
             clear(cyi)
+            // get updated graph data from store before proceeding
+            refreshDiagram()
+
             //let options = config.layoutDagre //default
             //switch(name) {
                 //case "elk": options = config.layoutElk;break;
@@ -644,35 +722,26 @@ export default {
                // case "breadthfirst": options = config.layoutBreadthFirst;break;        
             //}
             //cyi.nodes().noOverlap({ padding: 5 }) // not working?
-            cyi.layout(config.layoutDagre).run() 
+
+            let layout = cyi.layout(config.layoutDagre)            
+            layout.on('layoutstop', updateNodePositionsInStore())
+            layout.run()
+            
             //cyi.layout(config.layoutBreadthFirst).run() 
             //cyi.layout(config.layoutKlay).run() 
-
+            //layoutDone()
             //cyi.nodes().noOverlap({ padding: 5 })
             //this.drawPhases(cyi)
             busy.value = false
         }  
 
-        const layoutStop = async () => {
-            // update node x,y positions within store following auto-layout
-            const cyi = cy.value.instance
+        const updateNodePositionsInStore = async () => {
+             const cyi = cy.value.instance
             if(!cyi) return
-            
+            //console.log("updating node positions")
             cyi.elements("node").forEach(node => { 
-                store.dispatch('updateNode', { 
-                    data: node.data(), 
-                    position: node.position() 
-                })
+                store.dispatch('updateNodePosition', { data: node.data(), position: node.position() })
             })
-            busy.value = false
-        }
-
-        const lockChanged = (newValue) => {
-            const cyi = cy.value.instance
-            if(!cyi) return
-
-            locked.value = newValue
-            cyi.autolock(newValue)           
         }
 
         /*const drawPhases = (cyi) => {
@@ -737,15 +806,15 @@ export default {
                     .sort((a,b) => a.data().dating?.maxYear - b.data().dating?.maxYear)
                     .forEach(n => {
                         //let dims = n.layoutDimensions()
-                        let w = extent.w * 2 
+                        let w = extent.w * 200 // ensure lines don't 'run out'
                         let h = n.layoutDimensions().h    
                         let x = extent.x1
                         let y = n.position().y - (h/2)                                          
 
                         // line style for drawing (dashed red)
-                        ctx.strokeStyle = "red"
-                        ctx.lineWidth = 2
-                        ctx.setLineDash([8,4])
+                        ctx.strokeStyle = `rgb(${ElementColour.PHASE_FG.join()}` // "red"
+                        ctx.lineWidth = 4
+                        ctx.setLineDash([12,4])
 
                         // draw phase line directly above this node                       
                         ctx.beginPath()
@@ -779,10 +848,10 @@ export default {
                         // drawing phase labels (left and right)
                         ctx.font = "2em Arial" // to match other elements; was "20px Arial"
                         ctx.textBaseline = "top"
-                        ctx.fillStyle = "red"
+                        ctx.fillStyle = `rgb(${ElementColour.PHASE_FG.join()}` //"red"
                         const lbl = n.data().label
                         // draw left phase label
-                        ctx.textAlign = "left"                                               
+                        ctx.textAlign = "left"
                         ctx.fillText(lbl, extent.x1 + 10, y + 10)
                          // draw right phase label
                         ctx.textAlign = "right"
@@ -792,19 +861,7 @@ export default {
                     })
             })
         } 
-        
-        // alternative = using cytoscape-dom-node to display phases as dom elements
-        /*const drawPhases3 = (cyi) => {
-            if(!cyi) return
-            store.getters.phases.forEach(phase => {
-                let div = document.createElement("div")
-                div.classList.add("myphase")
-                div.innerHTML = `myphase ${phase.data.id}`
-                //phase.data.dom = div
-
-                cyi.add({ data: _merge({}, phase.data, {id: `new-${phase.data.id}`, dom: div}), position: phase.position })
-            })
-        }  */      
+              
 	
         onMounted(() => {
             const cyi = cy.value.instance 
@@ -812,8 +869,6 @@ export default {
 
             // diagram locked by default
             cyi.autolock(locked.value)
-            //cyi.panzoom(config.panzoom) // this is also being done in 'afterCreated?
-
 
             /*delegate("#diagram", {
                 target: "CyElement", //cyi.elements("node"),
@@ -850,6 +905,17 @@ export default {
                 }
                 store.dispatch('updateNode', node)
             })*/
+
+            // 'position' and 'move' events don't return the node within the event
+            // also they fire multiple times as you drag across the grid, so used
+            // 'tapend' instead (alt 'vmouseup') and just assumed node has moved
+            cyi.on('tapend', 'node', function(evt) {
+                let data = evt.target.data()
+                let position = evt.target.position()
+                //console.log(position)
+                //store.dispatch('updateNodePosition', evt.target)
+                store.dispatch('updateNodePosition', { data: data, position: position })
+            })            
             
             // drawing phases on supplementary layer
             // self.drawPhases(cyi)
@@ -858,17 +924,18 @@ export default {
             // see https://github.com/rcarcasses/vue-cytoscape/issues/47
             document.getElementById("cytoscape-div").style.minHeight="900px" 
                     
-            // event bus message handlers (for events fired from menu bar)
+            // event bus message handlers (for received events fired from menu bar)
             EventBus.$on("diagram-clear", () => clear(cyi))
+            EventBus.$on("diagram-refresh", () => refreshDiagram(cyi))
             EventBus.$on("diagram-zoom-in", () => zoomIn(cyi)) 
             EventBus.$on("diagram-zoom-out", () => zoomOut(cyi))
             EventBus.$on("diagram-zoom-fit", () => zoomFit(cyi))
             EventBus.$on("diagram-export-part-png", () => exportPartPNG(cyi))
             EventBus.$on("diagram-export-full-png", () => exportFullPNG(cyi))
             EventBus.$on("diagram-redo-layout", name => redoLayout(cyi, name))      
-            // this one fired from ItemEditor - just re-layout contents of this node
-            EventBus.$on("diagram=-redo-compound-layout", node => {
-                let cyNode = cyi.$id(node.data.id)
+            // this one fired from ItemEditor - re-layout contents of this node
+            EventBus.$on("diagram-redo-compound-layout", node => {
+                let cyNode = cyi.$id(node?.data?.id)
                 if(!cyNode) return
                 // get TL position of compound node prior to redoing layout
                 let bbox1 = cyNode.boundingBox()
@@ -878,9 +945,11 @@ export default {
                 // nodes and their associated edges
                 let cyNodes = cyNode.descendants()
                 let cyEdges = cyNodes.edgesWith(cyNodes)
-                cyNodes.merge(cyEdges).layout(config.layoutDagre).run() 
-
-                // compound node may have moved - restore to previous position   
+                let layout =  cyNodes.merge(cyEdges).layout(config.layoutDagre)
+                layout.on('layoutstop', updateNodePositionsInStore())
+                layout.run() 
+                
+                // compound node itself may have moved - restore to previous position   
                 let bbox2 = cyNode.boundingBox() 
                 let newPos = {
                     x: (tlPos.x + (bbox2.w / 2)) - 5, // not sure why -5 but it works??
@@ -888,13 +957,14 @@ export default {
                 }        
                 cyNode.position(newPos)
                 // inform the store about the new position
-                store.dispatch('updateNode', { data: node.data, position: newPos })
+                //store.dispatch('updateNodePosition', cyNode)
+                store.dispatch('updateNodePosition', { data: cyNode.data(), position: cyNode.position() })
+                //store.dispatch('updateNode', { data: node.data, position: newPos })
             }) 
 
             // ensure parent change in data is reflected on diagram, 
             // cytoscape data.parent is immutable so must call 'move'
             EventBus.$on("node-parent-changed", (node) => {
-                //let cyNode = cyi.$(`#${node.data.id}`)
                 let cyNode = cyi.$id(node.data.id)
                 if(cyNode && node.data.parent !== "")
                     cyNode.move({ parent: node.data.parent }) 
@@ -906,24 +976,18 @@ export default {
         onBeforeUnmount(() => {
             // clear EventBus listeners to avoid memory leaks. See:
             // https://blog.usejournal.com/vue-js-best-practices-c5da8d7af48d
-            //EventBus.$off('node-parent-changed')
-            //EventBus.$off("diagram-clear")
-            //EventBus.$off("diagram-zoom-in") 
-            //EventBus.$off("diagram-zoom-out")
-            //EventBus.$off("diagram-zoom-fit")
-            //EventBus.$off("diagram-export-part-png")
-            //EventBus.$off("diagram-export-full-png")
-            //EventBus.$off("diagram-redo-layout")      
-            //EventBus.$off("redo-compound-node-layout")
+            // EventBus.$off('node-parent-changed')
+            // EventBus.$off("diagram-clear")
+            // EventBus.$off("diagram-zoom-in") 
+            // EventBus.$off("diagram-zoom-out")
+            // EventBus.$off("diagram-zoom-fit")
+            // EventBus.$off("diagram-export-part-png")
+            // EventBus.$off("diagram-export-full-png")
+            // EventBus.$off("diagram-redo-layout")      
+            // EventBus.$off("redo-compound-node-layout")
 
             // ensure current node positions are stored for next time
-            const cyi = cy.value.instance
-            cyi.elements("node").forEach(node => { 
-                store.dispatch('updateNode', { 
-                    data: node.data(), 
-                    position: node.position() 
-                })
-            })
+            // updateNodePositionsInStore()
         })
 
         return {
@@ -935,11 +999,11 @@ export default {
             edges,
             preConfig,
             afterCreated,
-            layoutStop,
             lockChanged,
             //drawPhases,
             //drawPhases2,
-            elementSelected            
+            elementSelected,
+            refreshDiagram,            
             //showTippy,
             //hideTippy
         }
@@ -948,8 +1012,10 @@ export default {
 </script>
 
 <style>
-    #lock { top: 0px; left: 0px; z-index: 100; }
+    #lock { top: 0px; left: 15px; z-index: 100; }
+    #refresh { top: 0px; left: 50px; z-index: 100; }
     #legend { top: 0px; right: 0px; z-index: 100; }
+    
 
     /* NodeHtmlLabel */
     .subgrouplabel {
@@ -1016,5 +1082,10 @@ export default {
     border-width: 5px;
     background-color: salmon;
 }*/
+
+/* make the 'no zoom' tick invisible */
+.cy-panzoom-no-zoom-tick {
+    display: none;
+}
 
 </style>

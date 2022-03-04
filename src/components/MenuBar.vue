@@ -232,8 +232,8 @@ import PeriodsImport from '@/components/PeriodsImport'
 import HelpAbout from '@/components/HelpAbout'
 import NodeIcon from '@/components/NodeIcon'
 //import moment from 'moment'
-import EventBus from '@/global/EventBus.js'
-import { NodeClass, EdgeClass, timestamp } from '@/global/PhaserCommon'
+import EventBus from '@/composables/EventBus.js'
+import { NodeClass, EdgeClass, timestamp } from '@/composables/PhaserCommon'
 import Papa from "papaparse"
 
 //npm run seeimport TemporalRelationships from '@/components/TemporalRelationships'

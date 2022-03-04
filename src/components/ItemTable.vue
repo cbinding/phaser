@@ -129,7 +129,7 @@
 import _merge from "lodash/merge"
 import Papa from "papaparse"
 import { ref, unref, computed, watch, inject, nextTick } from '@vue/composition-api' // Vue 2 only. for Vue 3 use "from '@vue'"
-import { NodeClass, EdgeClass } from '@/global/PhaserCommon'
+import { NodeClass, EdgeClass } from '@/composables/PhaserCommon'
 import NodeIconLink from '@/components/NodeIconLink'
 import TickOrCross from '@/components/TickOrCross'
 

@@ -21,7 +21,7 @@
 
 <script>
 //import { ref } from '@vue/composition-api' // Vue 2 only. for Vue 3 use "from '@vue'"
-import { tryParseInt } from '@/global/PhaserCommon'
+import { tryParseInt } from '@/composables/PhaserCommon'
 
 export default {		
 	props: {

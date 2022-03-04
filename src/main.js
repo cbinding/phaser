@@ -22,7 +22,7 @@ import 'bootstrap-vue/dist/bootstrap-vue.css'
 //import 'vue-popperjs/dist/vue-popper.css'
 //import router from '@/router' //import router.js into main.js
 //import store from '@/store/storeCY'   // for VUEX data
-import store from '@/store/storeUsingObjectNotArray'
+import store from '@/store/store'
 //import dagre from 'cytoscape-dagre'         // for auto-layout of matrix diagram
 // for jointjs (modified, from https://github.com/JoseGoncalves/vue-jointjs/blob/master/src/main.js)
 //import Joint from '@/plugins/joint'         // for matrix diagram (superseded)

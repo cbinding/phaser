@@ -56,7 +56,7 @@ import TemporalRelationships from '@/components/TemporalRelationships'
 import GroupMatrixTable from '@/components/GroupMatrixTable'
 import NodeIcon from '@/components/NodeIcon'
 
-import { NodeClass, EdgeClass } from '@/global/PhaserCommon'
+import { NodeClass, EdgeClass } from '@/composables/PhaserCommon'
 
 export default {
 	components: {

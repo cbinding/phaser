@@ -76,7 +76,7 @@
 import { ref, unref, computed, inject } from '@vue/composition-api' // Vue 2 only. for Vue 3 use "from '@vue'"
 import ItemLookup from '@/components/ItemLookup'
 import NodeIconLink from '@/components/NodeIconLink'
-import { EdgeType } from '@/global/PhaserCommon'
+import { EdgeType } from '@/composables/PhaserCommon'
 import VueBootstrapTypeahead from 'vue-bootstrap-typeahead'
 // Don't forget to include the Bootstrap CSS/SCSS files!
 //import 'bootstrap/scss/bootstrap.scss'

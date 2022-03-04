@@ -208,7 +208,7 @@
 import { ref, unref, computed, inject, onMounted } from "@vue/composition-api" // Vue 2 only. for Vue 3 use "from '@vue'"
 import _cloneDeep from "lodash/cloneDeep"
 import _merge from "lodash/merge"
-import { NodeClass, EdgeClass } from '@/global/PhaserCommon'
+import { NodeClass, EdgeClass } from '@/composables/PhaserCommon'
 
 import ItemTable from '@/components/ItemTable'
 import ItemLookup from '@/components/ItemLookup'
@@ -221,7 +221,7 @@ import ItemContains from '@/components/ItemContains'
 //import ItemList from '@/components/ItemList'
 //import TemporalRelationshipsTable from "@/components/TemporalRelationshipsTable"
 import ConnectedElements from '@/components/ConnectedElements'
-import EventBus from "@/global/EventBus"
+import EventBus from "@/composables/EventBus"
 
 export default {
 	name: 'ItemEditor',

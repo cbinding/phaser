@@ -70,8 +70,8 @@ import $ from 'jquery'
 //import { useTippy } from "vue-tippy/composition"
 import Legend from '@/components/Legend'
 import Lock from '@/components/Lock'
-import EventBus from '@/global/EventBus'
-import { NodeClass, EdgeType, ElementColour, timestamp } from '@/global/PhaserCommon'
+import EventBus from '@/composables/EventBus'
+import { NodeClass, EdgeType, ElementColour, timestamp } from '@/composables/PhaserCommon'
 
         
 export default {
@@ -350,10 +350,10 @@ export default {
                         'text-opacity': 1.0,
                         'text-valign': 'center',
                         'text-halign': 'center',
-                        'color': 'black',
-                        'background-color': ElementColour.CONTEXT_BG,
+                        'color': ElementColour.NODE_FG,
+                        'background-color': ElementColour.NODE_BG,
                         'background-opacity': 1.0,
-                        'border-color': ElementColour.CONTEXT_FG,
+                        'border-color': ElementColour.NODE_FG,
                         'border-width': '4px',
                         'border-style': 'solid',
                         'border-opacity': 1.0, 
@@ -390,7 +390,6 @@ export default {
                 {
                     selector: `node[class="${NodeClass.PHASE}"]`,
                     style: {
-                        //'label':  el => `${el.data('label') ? el.data('label') : el.data('id')}`,
                         'width': '600px',
                         'text-opacity': 0.75,
                         'text-valign': 'top',
@@ -558,7 +557,7 @@ export default {
         const edges = ref([])
         
         // refresh data from store
-        const refreshDiagram = async () => {
+        const refreshDiagram = () => {
             const cyi = cy.value.instance
             if(!cyi) return
 
@@ -712,7 +711,7 @@ export default {
             busy.value = true     
             clear(cyi)
             // get updated graph data from store before proceeding
-            refreshDiagram()
+            refreshDiagram() // note not async as need it to complete (or use await?)
 
             //let options = config.layoutDagre //default
             //switch(name) {
@@ -812,7 +811,7 @@ export default {
                         let y = n.position().y - (h/2)                                          
 
                         // line style for drawing (dashed red)
-                        ctx.strokeStyle = `rgb(${ElementColour.PHASE_FG.join()}` // "red"
+                        ctx.strokeStyle = ElementColour.PHASE_FG // "red"
                         ctx.lineWidth = 4
                         ctx.setLineDash([12,4])
 
@@ -848,7 +847,7 @@ export default {
                         // drawing phase labels (left and right)
                         ctx.font = "2em Arial" // to match other elements; was "20px Arial"
                         ctx.textBaseline = "top"
-                        ctx.fillStyle = `rgb(${ElementColour.PHASE_FG.join()}` //"red"
+                        ctx.fillStyle = ElementColour.PHASE_FG
                         const lbl = n.data().label
                         // draw left phase label
                         ctx.textAlign = "left"

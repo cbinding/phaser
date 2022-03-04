@@ -23,7 +23,7 @@
 </template>
 
 <script>
-import { NodeClass } from '@/global/PhaserCommon'
+import { NodeClass } from '@/composables/PhaserCommon'
 import NodeIcon from '@/components/NodeIcon'
 export default {
     components: { NodeIcon },

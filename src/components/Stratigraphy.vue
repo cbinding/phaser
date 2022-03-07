@@ -115,7 +115,8 @@ export default {
         	.map(n => { return { value: n.data.id, text: n.data.label }})
         	.sort((a, b) => a.text > b.text ? 1 : -1))
 
-		const edgeOptions = Object.values(EdgeType)
+		// don't allow creation of 'below' relationship, only 'ABOVE' or 'EQUAL'
+		const edgeOptions = [EdgeType.ABOVE, EdgeType.EQUAL] //Object.values(EdgeType)
 			.map(t => { return { value: t, text: t } })		
 		
 		const addItem = () => {

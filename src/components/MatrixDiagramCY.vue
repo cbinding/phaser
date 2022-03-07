@@ -47,7 +47,7 @@
 </template>
 
 <script>
-import { ref, shallowRef, computed, watch, onMounted, onBeforeUnmount, inject } from '@vue/composition-api' // Vue 2 only. for Vue 3 use "from '@vue'"
+import { ref, unref, shallowRef, computed, watch, onMounted, onBeforeUnmount, inject } from '@vue/composition-api' // Vue 2 only. for Vue 3 use "from '@vue'"
 import dagre from 'cytoscape-dagre'
 //import elk from 'cytoscape-elk'
 //import klay from 'cytoscape-klay'
@@ -593,7 +593,7 @@ export default {
             cyi.use(panzoom)    // panzoom control on top left
             //cyi.use(navigator) 
             //cyi.use(domnode)
-            //cyi.use(nodehtmllabel)  // not used yet, to add labels to nodes
+            //cyi.use(nodehtmllabel)  // not used, was to add labels to nodes
             //cyi.use(noOverlap)    // but not working...
             //cyi.use(popper)
             cyi.use($)
@@ -606,48 +606,7 @@ export default {
         const afterCreated = (cyi) => {            
             cyi.panzoom(config.panzoom)            
             cyi.gridGuide(config.gridguide)
-
-            // this was only done to put the label on the outside of the node, 
-            // can be achieved using 'compound-sizing-wrt-labels': 'exclude'
-            /*cyi.nodeHtmlLabel([{
-                query: 'node[class="subgroup"]', // cytoscape query selector
-                halign: 'right', // title vertical position. Can be 'left',''center, 'right'
-                valign: 'center', // title vertical position. Can be 'top',''center, 'bottom'
-                halignBox: 'right', // title vertical position. Can be 'left',''center, 'right'
-                valignBox: 'center', // title relative box vertical position. Can be 'top',''center, 'bottom'
-                //cssClass: 'subgrouplabel', // any classes will be as attribute of <div> container for every title
-                tpl(data) {
-                    return `<span class="subgrouplabel">${data.label || data.id}</span>`; // your html template here
-                }
-            }])*/
-            //cyi.navigator(config.navigator) 
-            /*popperInstance.value = cyi.popper({
-                content: () => {
-                    let div = document.createElement('div');
-                    div.innerHTML = 'Popper content';
-                    document.body.appendChild(div);
-                    return div;
-                },
-                renderedPosition: () => ({ x: 100, y: 200 }),
-                popper: {} // my popper options here
-            }) */           
-        }
-
-        // draw phases separately
-        // drawPhases(cyi) {
-            //const cyi = (this.$refs.cy || {}).instance || null      
-            //if(!cyi) return
-            /*const layers = cyi.layers()
-            layers.nodeLayer.insertAfter('html-static').node.innerHTML = 'Static Test Label'
-            layers.renderPerNode(layers.append('canvas'), (ctx, node, bb) => {
-                if(node._private.data.class == 'phase') {
-                    ctx.strokeStyle = 'red';
-                    ctx.lineWidth = 3;
-                    ctx.strokeRect(0, 0, 600, bb.h);
-                }
-            });  */
-
-        //},
+        }       
         
         // export visible part of diagram to PNG file
         const exportPartPNG = (cyi) => exportPNG(cyi, false)
@@ -656,8 +615,7 @@ export default {
         // export diagram to PNG file
         const exportPNG = (cyi, full=false) => {
             if(!cyi) return
-            const png64 = cyi.png({full: full, output: 'blob'});            
-            //const fileName = `phaser-${ moment().format("YYYYMMDDHHmmss") }.png`
+            const png64 = cyi.png({full: full, output: 'blob'})                 
             const fileName = `phaser-${ timestamp() }.png`
             let blob = new Blob([png64], { type: 'image/png' })
             if (navigator.msSaveBlob) { // IE 10+
@@ -742,183 +700,135 @@ export default {
                 store.dispatch('updateNodePosition', { data: node.data(), position: node.position() })
             })
         }
+       
+        // draw horizontal SVG phase lines on supplementary layer
+        // phase lines are drawn relative to TOP of phase nodes
+        const drawHorizontalPhaseLines = (ctx) => {
+            if(!ctx) return
 
-        /*const drawPhases = (cyi) => {
-            if(!cyi) return
-            // drawing phases on supplementary layer
-            var layer = cyi.cyCanvas()
-            var canvas = layer.getCanvas()
-            var ctx = canvas.getContext('2d')
+            const cyi = cy.value.instance 
+            if(!cyi) return            
+            
+            let extent = cyi.extent()  
 
-            cyi.on("render cyCanvas.resize pan", function() {
-                
-                layer.resetTransform(ctx)
-                layer.clear(ctx)
-                layer.setTransform(ctx)
+            cyi.elements('node[class = "phase"]').forEach(node => {
+                // establish drawing extents
+                let w = extent.w * 200 // ensure lines don't 'run out'
+                let h = node.layoutDimensions().h    
+                let x = extent.x1
+                let y = node.position().y - (h / 2)                                          
 
-                // Draw fixed elements
-                //ctx.fillRect(0, 0, 100, 100); // Top left corner
-                
-                // Draw phase elements relative to cy nodes
-                let extent = cyi.extent()            
-                cyi.nodes('[class = "phase"]')
-                    .forEach(function(n) {
-                        let dims = n.layoutDimensions()
-                        let x = extent.x1
-                        let y = n.position().y - (dims.h/2)
-                        let w = extent.w * 2
-                        let h = dims.h
-                    
-                        // draw phase outline (dashed red)
-                        ctx.strokeStyle = "red"
-                        ctx.setLineDash([5,5])
-                        ctx.strokeRect(x, y, w, h) 
+                // line style for drawing (dashed red)
+                ctx.strokeStyle = ElementColour.PHASE_FG // "red"
+                ctx.lineWidth = 4
+                ctx.setLineDash([12,4])
+
+                // draw phase line                    
+                ctx.beginPath()
+                ctx.moveTo(x, y)
+                ctx.lineTo(w, y)
+                ctx.stroke() 
                         
-                        // draw phase fill
-                        ctx.globalAlpha = 0.2
-                        ctx.fillStyle = "ivory"
-                        ctx.fillRect(x,y, w,h)
-                        ctx.globalAlpha = 1.0
-                })
-            })
-        }*/
-
-        // draw phase lines midway between separate elements instead??
-        const drawPhases2 = (cyi) => {
-            if(!cyi) return
-            // drawing phases on supplementary layer
-            var layer = cyi.cyCanvas()
-            var canvas = layer.getCanvas()
-            var ctx = canvas.getContext('2d')
-
-            cyi.on("render cyCanvas.resize pan", () => {
-                // prepare layer for drawing
-                layer.resetTransform(ctx)
-                layer.clear(ctx)
-                layer.setTransform(ctx)
-                
-                //let prevNode = null
-                let extent = cyi.extent()  
-
-                // Draw horizontal SVG phase lines relative to top of phase nodes                    
-                cyi.nodes('[class = "phase"]')
-                    .sort((a,b) => a.data().dating?.maxYear - b.data().dating?.maxYear)
-                    .forEach(n => {
-                        //let dims = n.layoutDimensions()
-                        let w = extent.w * 200 // ensure lines don't 'run out'
-                        let h = n.layoutDimensions().h    
-                        let x = extent.x1
-                        let y = n.position().y - (h/2)                                          
-
-                        // line style for drawing (dashed red)
-                        ctx.strokeStyle = ElementColour.PHASE_FG // "red"
-                        ctx.lineWidth = 4
-                        ctx.setLineDash([12,4])
-
-                        // draw phase line directly above this node                       
-                        ctx.beginPath()
-                        ctx.moveTo(x, y)
-                        ctx.lineTo(w, y)
-                        ctx.stroke()                           
-                       
-                        //if(!prevNode) {
-                            // first/lowest - draw extra phase line below this node
-                            //let y = thisNode.position().y + (dims.h/2)
-                            //ctx.beginPath()
-                            //ctx.moveTo(x, y)
-                            //ctx.lineTo(extent.w, y)
-                            //ctx.stroke()                            
-                        //}  
-
-                        // draw phase fill
-                        //ctx.globalAlpha = 0.1
-                        //ctx.fillStyle = "ivory"
-                        //ctx.fillRect(x,y, w,h)
-                        //ctx.globalAlpha = 1.0
+                // draw phase labels (left and right)
+                ctx.font = "2em Arial"
+                ctx.textBaseline = "top"
+                ctx.fillStyle = ElementColour.PHASE_FG
+                const txt = node.data().label
                     
-                        // draw phase line (dashed red)
-                        //ctx.strokeStyle = "red"
-                        //ctx.setLineDash([5,5])
-                        //ctx.beginPath()
-                        //ctx.moveTo(x1, y)
-                        //ctx.lineTo(x2, y)
-                        //ctx.stroke()   
-                        
-                        // drawing phase labels (left and right)
-                        ctx.font = "2em Arial" // to match other elements; was "20px Arial"
-                        ctx.textBaseline = "top"
-                        ctx.fillStyle = ElementColour.PHASE_FG
-                        const lbl = n.data().label
-                        // draw left phase label
-                        ctx.textAlign = "left"
-                        ctx.fillText(lbl, extent.x1 + 10, y + 10)
-                         // draw right phase label
-                        ctx.textAlign = "right"
-                        ctx.fillText(lbl, extent.x2 - 10, y + 10)
-                        // store prev for next iteration
-                        //prevNode = n
-                    })
-            })
+                // draw left phase label
+                ctx.textAlign = "left"
+                ctx.fillText(txt, extent.x1 + 10, y + 10)
+                    
+                // draw right phase label
+                ctx.textAlign = "right"
+                ctx.fillText(txt, extent.x2 - 10, y + 10)                    
+            })         
         } 
-              
-	
+
+        // draw double lines between contexts representing 'equal' stratigraphic relationships
+        const equalLinks = computed(() => store.getters.edges.filter(link => link.data.type === EdgeType.EQUAL))
+        const drawEqualRelationships = (ctx) => {
+            if(!ctx) return
+
+            const cyi = cy.value.instance 
+            if(!cyi) return  
+
+            // 'equal' relationships are not in the diagram as they would
+            // interfere with the dagre layout - so get from store instead
+            unref(equalLinks).forEach(link => {
+                let sourceNode = store.getters.nodeByID(link.data.source)
+                let targetNode = store.getters.nodeByID(link.data.target)
+
+                let x1 = sourceNode.position.x
+                let y1 = sourceNode.position.y
+                let x2 = targetNode.position.x
+                let y2 = targetNode.position.y  
+                
+                // we have central position of nodes, 
+                // but will draw from border to border 
+                let offset = (props.gridSize * 1.5) + 2
+                // direction from 1 -> 2 or 2 -> 1 ?                
+                if(x2 > x1) {
+                    x1 += offset
+                    x2 -= offset
+                }
+                else {
+                    x1 -= offset
+                    x2 += offset
+                }
+
+                // line style for drawing
+                ctx.setLineDash([])
+                ctx.strokeStyle = ElementColour.EDGE 
+                ctx.lineWidth = 3
+                
+                // draw (double) lines 
+                // between the contexts                      
+                ctx.beginPath()
+                ctx.moveTo(x1, y1 -3)
+                ctx.lineTo(x2, y2 -3)
+                ctx.stroke()
+                ctx.moveTo(x1, y1 +3)
+                ctx.lineTo(x2, y2 +3)
+                ctx.stroke()
+            })
+        }
+             
+             
         onMounted(() => {
             const cyi = cy.value.instance 
             if(!cyi) return             
 
             // diagram locked by default
             cyi.autolock(locked.value)
-
-            /*delegate("#diagram", {
-                target: "CyElement", //cyi.elements("node"),
-                content: "tippy",
-                onTrigger: (instance, event) => {
-                    if (event.target.textContent == 'hover') {
-                        instance.disable();
-                    }
-                },
-                onUntrigger: (instance) => {
-                    instance.enable();
-                },
-            });*/
-
-            //cyi.on('mouseEnter', 'node', function(evt) {
-
-
-           // })
-
             
-            // cytoscape diagram event handlers
-            //cyi.on('click tap', 'node', function(evt) {
-                //cyi.elements(":selected").unselect()           
-                //cyi.$id(element.data.id).select()     
-                //store.dispatch('setSelectedID', evt.target.id() )
-                //selectedID.value = evt.target.id() 
-           // })
-            // 'position' event causes endless loop here, so using vmouseup/tapend
-            // notify store of new node position after being dragged on screen
-            /*cyi.on('vmouseup tapend', 'node', function(evt) {
-                let node = {
-                    data: evt.target.data(),
-                    position: evt.target.position()
-                }
-                store.dispatch('updateNode', node)
-            })*/
-
             // 'position' and 'move' events don't return the node within the event
-            // also they fire multiple times as you drag across the grid, so used
-            // 'tapend' instead (alt 'vmouseup') and just assumed node has moved
+            // also they fire multiple times as you drag across the grid, so using
+            // 'tapend' instead (alt 'vmouseup') and just assume the node has moved
             cyi.on('tapend', 'node', function(evt) {
                 let data = evt.target.data()
                 let position = evt.target.position()
                 //console.log(position)
                 //store.dispatch('updateNodePosition', evt.target)
                 store.dispatch('updateNodePosition', { data: data, position: position })
+            })              
+
+            // drawing lines on supplementary layer 
+            // (phase lines and equals relationships)
+            let layer = cyi.cyCanvas()
+            let canvas = layer.getCanvas()
+            let ctx = canvas.getContext('2d')
+
+            cyi.on("render pan", () => {
+                // prepare layer for drawing
+                layer.resetTransform(ctx)
+                layer.clear(ctx)
+                layer.setTransform(ctx)
+
+                drawHorizontalPhaseLines(ctx)
+                drawEqualRelationships(ctx)
             })            
             
-            // drawing phases on supplementary layer
-            // self.drawPhases(cyi)
-            drawPhases2(cyi)
             // override height setting on cytoscape-vue div, else always 600px!
             // see https://github.com/rcarcasses/vue-cytoscape/issues/47
             document.getElementById("cytoscape-div").style.minHeight="900px" 
@@ -956,7 +866,6 @@ export default {
                 }        
                 cyNode.position(newPos)
                 // inform the store about the new position
-                //store.dispatch('updateNodePosition', cyNode)
                 store.dispatch('updateNodePosition', { data: cyNode.data(), position: cyNode.position() })
                 //store.dispatch('updateNode', { data: node.data, position: newPos })
             }) 

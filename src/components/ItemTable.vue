@@ -114,7 +114,7 @@
 			<b-col>
 				<b-pagination
 					v-model="currentPage"
-					:total-rows="rowCount"
+					:total-rows="filterCount"
 					:per-page="perPage"
 					aria-controls="my-table"
 					:first-number="true"

@@ -1,4 +1,5 @@
 module.exports = {
+  // changed 08/03/2021 @ 11:36...
   crossorigin: "anonymous",
   publicPath: process.env.NODE_ENV === 'production'
     ? '/tmp123/' // for github.io deployment

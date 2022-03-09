@@ -1,4 +1,7 @@
 module.exports = {
+  devServer: {
+    disableHostCheck: true
+  },
   crossorigin: "anonymous",
   publicPath: process.env.NODE_ENV === 'production'
     ? '/tmp123/' // for github.io deployment

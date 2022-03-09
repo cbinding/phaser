@@ -40,100 +40,115 @@
 
 					<b-dropdown-divider/>
 
-					<b-dropdown-group>
-
-						<b-dropdown-header>
-							<b-icon-box-arrow-in-left class="mr-2" />
-							<span>Import CSV</span>
-						</b-dropdown-header>
-
-						<b-dropdown-item-button v-b-modal.modalCsvImport @click="setupModal('phases')">
-						<NodeIcon :nodeClass="NodeClass.PHASE"/>
-						<span>Phase records...</span>										
-						</b-dropdown-item-button>
-
-						<b-dropdown-item-button v-b-modal.modalCsvImport @click="setupModal('groups')">
-							<NodeIcon :nodeClass="NodeClass.GROUP"/>
-							<span>Group records...</span>										
-						</b-dropdown-item-button>
-
-						<b-dropdown-item-button v-b-modal.modalCsvImport @click="setupModal('subgroups')">
-							<NodeIcon :nodeClass="NodeClass.SUBGROUP"/>
-							<span>Subgroup records...</span>										
-						</b-dropdown-item-button>
-
-						<b-dropdown-item-button v-b-modal.modalCsvImport @click="setupModal('contexts')">
-							<NodeIcon :nodeClass="NodeClass.CONTEXT"/>
-							<span>Context records...</span>										
-						</b-dropdown-item-button>
-
-						<b-dropdown-item-button v-b-modal.modalCsvImport @click="setupModal('stratigraphy')">
-							<NodeIcon :nodeClass="NodeClass.CONTEXT"/>
-							<span>Context stratigraphy...</span>											
-						</b-dropdown-item-button>
-
-						<b-dropdown-item-button v-b-modal.modalCsvImport @click="setupModal('stratigraphyold')">
-							<NodeIcon :nodeClass="NodeClass.CONTEXT"/>
-							<span>Context stratigraphy (old)...</span>											
-						</b-dropdown-item-button>
-
-						<b-dropdown-item-button v-b-modal.modalCsvImport @click="setupModal('datings')">
-							<NodeIcon :nodeClass="NodeClass.DATING"/>
-							<span>Dating records...</span>						
-						</b-dropdown-item-button>
-
-						<b-dropdown-item-button v-b-modal.modalCsvImport @click="setupModal('periods')">
-							<NodeIcon :nodeClass="NodeClass.PERIOD"/>
-							<span>Period records...</span>							
-						</b-dropdown-item-button>
+					<b-nav-item class="ml-3 menu">
+						<b-icon-box-arrow-in-left class="mr-2"/>
+						<span>Import CSV</span>	
+						<b-icon-caret-right-fill />
 						
-						<CsvImport :mode="csvImportMode" />
-					</b-dropdown-group>
+						<ul class="dropdown-menu dropdown-submenu">
+							<li>
+								<b-dropdown-item-button v-b-modal.modalCsvImport @click="setupModal('phases')">
+									<NodeIcon :nodeClass="NodeClass.PHASE"/>
+									<span>Import phase records...</span>										
+								</b-dropdown-item-button>
+							</li>
+							<li>
+								<b-dropdown-item-button v-b-modal.modalCsvImport @click="setupModal('groups')">
+									<NodeIcon :nodeClass="NodeClass.GROUP"/>
+									<span>Import group records...</span>										
+								</b-dropdown-item-button>
+							</li>
+							<li>
+								<b-dropdown-item-button v-b-modal.modalCsvImport @click="setupModal('subgroups')">
+									<NodeIcon :nodeClass="NodeClass.SUBGROUP"/>
+									<span>Import subgroup records...</span>										
+								</b-dropdown-item-button>
+							</li>
+							<li>
+								<b-dropdown-item-button v-b-modal.modalCsvImport @click="setupModal('contexts')">
+									<NodeIcon :nodeClass="NodeClass.CONTEXT"/>
+									<span>Import context records...</span>										
+								</b-dropdown-item-button>
+							</li>
+							<li>
+								<b-dropdown-item-button v-b-modal.modalCsvImport @click="setupModal('stratigraphy')">
+									<NodeIcon :nodeClass="NodeClass.CONTEXT"/>
+									<span>Import context stratigraphy...</span>											
+								</b-dropdown-item-button>							
+							</li>
+							<li>
+								<b-dropdown-item-button v-b-modal.modalCsvImport @click="setupModal('stratigraphyold')">
+									<NodeIcon :nodeClass="NodeClass.CONTEXT"/>
+									<span>Import context stratigraphy (old)...</span>											
+								</b-dropdown-item-button>
+							</li>
+							<li>
+								<b-dropdown-item-button v-b-modal.modalCsvImport @click="setupModal('datings')">
+									<NodeIcon :nodeClass="NodeClass.DATING"/>
+									<span>Import dating records...</span>						
+								</b-dropdown-item-button>
+							</li>
+							<li>
+								<b-dropdown-item-button v-b-modal.modalCsvImport @click="setupModal('periods')">
+									<NodeIcon :nodeClass="NodeClass.PERIOD"/>
+									<span>Import period records...</span>							
+								</b-dropdown-item-button>
+							</li>
+						</ul>
+						<CsvImport :mode="csvImportMode" />						
+					</b-nav-item>
 
-										
-					<b-dropdown-divider/>
-					<b-dropdown-group>
-						<b-dropdown-header>
-							<b-icon-box-arrow-right class="mr-2" />
-							<span>Export CSV</span>
-						</b-dropdown-header>
-
-						<b-dropdown-item-button @click="saveDelimited(NodeClass.PHASE)">
-							<NodeIcon :nodeClass="NodeClass.PHASE"/>
-							<span>Phase records...</span>										
-						</b-dropdown-item-button>
-
-						<b-dropdown-item-button @click="saveDelimited(NodeClass.GROUP)">
-							<NodeIcon :nodeClass="NodeClass.GROUP"/>
-							<span>Group records...</span>										
-						</b-dropdown-item-button>
-
-						<b-dropdown-item-button @click="saveDelimited(NodeClass.SUBGROUP)">
-							<NodeIcon :nodeClass="NodeClass.SUBGROUP"/>
-							<span>Subgroup records...</span>										
-						</b-dropdown-item-button>
-
-						<b-dropdown-item-button @click="saveDelimited(NodeClass.CONTEXT)">
-							<NodeIcon :nodeClass="NodeClass.CONTEXT"/>
-							<span>Context records...</span>											
-						</b-dropdown-item-button>
-
-						<b-dropdown-item-button @click="saveDelimited('edge')">
-							<NodeIcon :nodeClass="NodeClass.CONTEXT"/>
-							<span>Context stratigraphy...</span>											
-						</b-dropdown-item-button>
-
-						<b-dropdown-item-button @click="saveDelimited(NodeClass.DATING)">
-							<NodeIcon :nodeClass="NodeClass.DATING"/>
-							<span>Dating records...</span>						
-						</b-dropdown-item-button>
-
-						<b-dropdown-item-button @click="saveDelimited(NodeClass.PERIOD)">
-							<NodeIcon :nodeClass="NodeClass.PERIOD"/>
-							<span>Period records...</span>						
-						</b-dropdown-item-button>
-					</b-dropdown-group>					
-
+					<b-nav-item class="ml-3 menu">
+						<b-icon-box-arrow-right class="mr-2"/>
+						<span>Export CSV</span>	
+						<b-icon-caret-right-fill />
+						
+						<ul class="dropdown-menu dropdown-submenu">
+							<li>
+								<b-dropdown-item-button @click="saveDelimited(NodeClass.PHASE)">
+									<NodeIcon :nodeClass="NodeClass.PHASE"/>
+									<span>Export phase records...</span>										
+								</b-dropdown-item-button>
+							</li>
+							<li>
+								<b-dropdown-item-button @click="saveDelimited(NodeClass.GROUP)">
+									<NodeIcon :nodeClass="NodeClass.GROUP"/>
+									<span>Export group records...</span>										
+								</b-dropdown-item-button>
+							</li>
+							<li>
+								<b-dropdown-item-button @click="saveDelimited(NodeClass.SUBGROUP)">
+									<NodeIcon :nodeClass="NodeClass.SUBGROUP"/>
+									<span>Export subgroup records...</span>										
+								</b-dropdown-item-button>
+							</li>
+							<li>
+								<b-dropdown-item-button @click="saveDelimited(NodeClass.CONTEXT)">
+									<NodeIcon :nodeClass="NodeClass.CONTEXT"/>
+									<span>Export context records...</span>											
+								</b-dropdown-item-button>
+							</li>
+							<li>
+								<b-dropdown-item-button @click="saveDelimited('edge')">
+									<NodeIcon :nodeClass="NodeClass.CONTEXT"/>
+									<span>Export context stratigraphy...</span>											
+								</b-dropdown-item-button>
+							</li>
+							<li>
+								<b-dropdown-item-button @click="saveDelimited(NodeClass.DATING)">
+									<NodeIcon :nodeClass="NodeClass.DATING"/>
+									<span>Export dating records...</span>						
+								</b-dropdown-item-button>
+							</li>
+							<li>
+								<b-dropdown-item-button @click="saveDelimited(NodeClass.PERIOD)">
+									<NodeIcon :nodeClass="NodeClass.PERIOD"/>
+									<span>Export period records...</span>						
+								</b-dropdown-item-button>
+							</li>
+						</ul>
+					</b-nav-item>										
+					
 					<b-dropdown-divider/>
 
 					<b-dropdown-item-button @click="exportPartPNG">
@@ -252,7 +267,6 @@ export default {
 		const store = inject('store')  
 		// programmatically display the file dialog
 		const openFileDialog = () => document.getElementById("fileOpen").click()
-
 
 		const locked = computed({
             get () { return store.getters.diagramLock },
@@ -461,6 +475,7 @@ export default {
 		const diagramRedoLayout = (name="dagre") => EventBus.$emit('diagram-redo-layout', name)
 		
 		return {
+			console,
 			locked,
 			toggleLock,
 			NodeClass,
@@ -491,5 +506,18 @@ export default {
 }
 #brand {
 	color: darkgray;
+}
+
+.menu a {
+  position: relative;
+}
+.menu .dropdown-submenu {
+  display: none;
+  position: absolute;
+  left: 120px;
+  top: 0px;
+}
+.menu > a:hover > .dropdown-submenu {
+  display: block;
 }
 </style>

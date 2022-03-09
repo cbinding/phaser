@@ -180,6 +180,7 @@ export default {
             	return item.data.id == selectedID1.value ? "selected-row" : ""    
         }
  
+		// items to be displayed in table depend on specified item class
 		const items = computed(() => {			
 			switch(props.itemClass) {
 				case NodeClass.PHASE: return store.getters.phases
@@ -197,7 +198,7 @@ export default {
 		const filterCount = ref(items.value.length)         
 		watch(rowCount, (newValue) =>  filterCount.value = newValue)
 		
-
+		// columns to be displayed in table depend on specified item class
 		const columns = computed(() => { 
 			switch(props.itemClass) {
 				case NodeClass.PHASE: return ["label", "enteredMinYear", "enteredMaxYear", "enteredDiff", "derivedMinYear", "derivedMaxYear", "duration", "period"]
@@ -212,10 +213,11 @@ export default {
 		})
 
 		const copyToClipboard = () => {
+			// create array of POJO to be copied to clipboard
 			let data = unref(items).map(item => {                
 				let row = {}
 
-				unref(columns).forEach(col =>{
+				unref(columns).forEach(col => {
 					switch(col) {
 						case "label": row[col] = item.data.label; break;
 						case "period": row[col] = store.getters.labelByID(item.data.period); break;
@@ -236,7 +238,11 @@ export default {
 				})						
 				return row
 			})
-			let tsv = Papa.unparse(JSON.stringify(data), { delimiter: "\t" })            
+
+			// convert the POJO array to tab delimited (TSV) format
+			let tsv = Papa.unparse(JSON.stringify(data), { delimiter: "\t" })    
+			
+			// write TSV data to the clipboard
             navigator.clipboard.writeText(tsv)
 		}
 
@@ -251,21 +257,13 @@ export default {
 					formatter: (value, key, item) => `${item.data.class}${item.data.label}`,					
 				}] : [],
 				... (columns.value.includes('period')) ? [{
-					// virtual column with custom formatter
 					key: 'period',
 					label: 'period',
 					sortable: true,
 					sortByFormatted: true,
 					formatter: (value, key, item) => store.getters.labelByID(item.data.period),
 					sortable: true					
-				}] : [],
-				/*... (columns.value.includes('source')) ? [{
-					key: "data.source",
-					label: "source",
-					sortByFormatted: true,
-					formatter: tableSourceIdFormatter,
-					sortable: true					
-				}] : [], */
+				}] : [],				
 				... (columns.value.includes('source')) ? [{
 					key: "source",
 					label: "source",

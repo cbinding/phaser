@@ -1,6 +1,6 @@
 module.exports = {
   devServer: {
-    disableHostCheck: true
+    disableHostCheck: true  // for when testing in gitpod 
   },
   crossorigin: "anonymous",
   publicPath: process.env.NODE_ENV === 'production'

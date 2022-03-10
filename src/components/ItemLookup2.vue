@@ -1,11 +1,11 @@
 <template>
-    <b-form-group
-        :label="label"
-        :label-for="selectorID">
+    <div>    
+        <b-input-group-prepend>{{ label }}</b-input-group-prepend>
+    
         <b-dropdown block split
             size="sm"
             ref="dropdown"
-            class="shadow-sm m-0 p-0"
+            class="shadow-sm w-100"
             :disabled="disabled"
             menu-class="w-100"
             split-variant="link bg-white border-secondary"
@@ -32,8 +32,8 @@
                     </template>   
                 </b-form-select>
             </template>
-        </b-dropdown>
-    </b-form-group>    
+        </b-dropdown>    
+    </div>   
 </template>
 
 <script>

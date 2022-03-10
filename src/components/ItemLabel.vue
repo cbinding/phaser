@@ -1,21 +1,28 @@
 <template>
-	<b-form-group
-		:label="label" 
+	<div>
+	<!--<b-input-group
+		size="sm"
+		:prepend="label" 
 		label-for="itemLabel"
-		label-size="md">	
+		class="shadow-sm w-100"	
+		label-size="sm">-->
+
+		<b-input-group-prepend size="sm">{{ label }}</b-input-group-prepend>
+    
 		<b-form-input text 
 			size="sm"
-            :id="identifier"
+			:id="identifier"
 			:disabled="disabled"
             :placeholder="placeholder"
             :value="value"
-            class="shadow-sm"		
+            class="shadow-sm w-100"		
 			type="text"
 			name="itemLabel"            
 			autocomplete="off"
 			variant="primary"
             @input="changed"/>
-	</b-form-group>
+	<!--</b-input-group>-->
+	</div>	
 </template>
 
 <script>

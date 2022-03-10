@@ -6,6 +6,7 @@
 	],
 	"settings": {
 		"editor.bracketPairColorization.enabled": true,
-		"editor.guides.bracketPairs": false
+		"editor.guides.bracketPairs": false,
+		"terminal.integrated.gpuAcceleration": "canvas" // fixes squashed font in terminal window
 	}
 }

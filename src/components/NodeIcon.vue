@@ -3,7 +3,7 @@
         :title="nodeClass" 
         :alt="nodeClass" 
         class="mr-1 p-0">        
-        <svg :height="height" :width="width">
+        <svg :height="height" :width="width" role="img" alt="icon">
             <rect 
                 :x="strokeWidth / 2" 
                 :y="strokeWidth / 2" 

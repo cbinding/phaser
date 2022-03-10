@@ -1,22 +1,24 @@
 <template>
-	<b-input-group prepend="±" class="shadow-sm" size="sm">
-        <b-form-input number 
-			size="sm" 
-            min="0"                            
-            :disabled="disabled"
-            placeholder="tolerance"
-            type="number" 
-            :value="toleranceValue"
-            @change="valueChanged"/>
-        <b-input-group-append>
-            <b-form-select 
-				size="sm"
-                :value="toleranceUnit"
-                :options="tolUnits" 
-                :disabled="disabled" 
-                @change="unitChanged"/>
-        </b-input-group-append>
-    </b-input-group>   
+	<div class="m-0 p-0">
+		<!--<b-input-group-prepend>Tolerance</b-input-group-prepend>-->
+		<b-input-group prepend="±" class="shadow-sm" size="sm">
+			<b-form-input number 
+				min="0"                            
+				:disabled="disabled"
+				placeholder="tolerance"
+				type="number" 
+				:value="toleranceValue"
+				@change="valueChanged"/>
+			<b-input-group-append>
+				<b-form-select 
+					size="sm"
+					:value="toleranceUnit"
+					:options="tolUnits" 
+					:disabled="disabled" 
+					@change="unitChanged"/>
+			</b-input-group-append>
+		</b-input-group>
+	</div> 
 </template>
 
 <script>

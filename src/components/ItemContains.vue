@@ -1,8 +1,6 @@
 <template>
-	<b-form-group 
-		label="Contains" 
-		label-for="contains">
-
+	<div>
+		<b-input-group-prepend>Contains</b-input-group-prepend>
 		<b-list-group 				
 			name="contains"
 			class="shadow-sm border overflow-auto" 
@@ -14,7 +12,7 @@
 				<NodeIconLink :nodeID="item.data.id"/>                							
 			</b-list-group-item>
 		</b-list-group>		
-	</b-form-group>
+	</div>
 </template>
 <script>
 import { inject, computed } from "@vue/composition-api" // Vue 2 only. for Vue 3 use "from '@vue'"

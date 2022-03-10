@@ -1,27 +1,33 @@
 <template>
     <div>
-        <b-form-group v-if="mode == 'select'"
-            :label="this.label"
-            label-for="itemSelector">
-            <b-form-select 
+        <b-input-group-prepend>{{ label }}</b-input-group-prepend>
+
+        <b-input-group v-if="mode == 'select'" 
+            :label="label"
+            label-for="itemSelector"
+            :prepend1="label"
+            size="sm">
+            <b-form-select plain
                 size="sm"
                 variant="primary"					
                 :disabled="disabled"
                 name="itemSelector" 
-                class="shadow-sm"
+                class="shadow-sm w-100"
                 :placeholder="placeholder"
                 :value="value"
                 :options="optionsForSelect" 
                 @change="changed($event)"/>
-        </b-form-group>	
-        <b-form-group v-else  
-            :label="this.label"
-            label-for="itemInput">
+        </b-input-group>	
+        <b-input-group v-else  
+            :label="label"
+            label-for="itemInput"
+            size="sm"
+            :prepend1="label">
             <b-form-input text
                 size="sm"
                 :disabled="disabled"
 				name="itemInput" 
-                class="shadow-sm" 
+                class="shadow-sm w-100" 
                 :placeholder="placeholder"
                 :value="value"
 				type="text" 
@@ -31,7 +37,7 @@
 			<b-form-datalist :id="optionsId" :options="optionsForInput"/>
 			<!--	<option v-for="(value, index) in optionsForInput" :key="index">{{ value }}</option>
 			</b-form-datalist>-->
-		</b-form-group>       
+		</b-input-group>       
     </div>
 </template>
 

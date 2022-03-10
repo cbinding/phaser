@@ -18,7 +18,8 @@ const state = {
     appName: "Phaser",  // application name
     appVersion: "1.15", // application version    
     selectedID: "",     // ID of currently selected node  
-    diagramLock: true,  // nodes cannot be moved on diagram when locked 
+    diagramLock: true,  // nodes cannot be moved on diagram when locked
+    paginated: false, // whether to show pagination controls for editor tables 
     about: {            // dataset metadata (see MetaEditor.vue)
         title: "",      // e.g. "My example project"
         description: "",    // description of the dataset
@@ -189,7 +190,8 @@ const getters = {
     appName: state => state.appName,                // application name - for UI display
     appVersion: state => state.appVersion,          // application version - for UI display
     selectedID: state => state.selectedID,          // currently selected node identifier
-    diagramLock: state => state.diagramLock,        // lock prevents inadvertently moving nodes
+    diagramLock: state => state.diagramLock,        // bool - lock prevents inadvertently moving nodes
+    paginated: state => state.paginated,            // bool - display editor tables paginated or not
 
     // metadata for current graph
     about: state => state.about,
@@ -517,7 +519,7 @@ const getters = {
         
         // structure of a new phase
         return { 
-            data: {
+            data: {               
                 siteCode: "", 
                 id: `${nc}-${id}`, 
                 class: nc, 
@@ -587,6 +589,8 @@ const getters = {
         // structure of a new context
         return { 
             data: { 
+                order: 1,   // dagre needs this to minimise crossings?
+                rank: 1,    // dagre needs this to minimise crossings?
                 siteCode: "", 
                 id: `${nc}-${id}`, 
                 class: nc, 
@@ -661,7 +665,8 @@ const getters = {
         
         // structure of a new edge
         return { 
-            data: { 
+            data: {
+                weight: 1,  // dagre needs this to minimise crossings?
                 siteCode: "", 
                 id: `${EdgeClass.EDGE}-${id}`,  // "edge-123"
                 class: EdgeClass.EDGE,          // "edge" 
@@ -752,6 +757,10 @@ const actions = {
     setDiagramLock({commit}, value){
         commit('SET_DIAGRAM_LOCK', value)
     },
+    setPaginated({commit}, value){
+        commit('SET_PAGINATED', value)
+    },
+
 	deleteNode({commit, getters}, node) {
         // set 'parent' of any children to null 
         // so we no longer reference this node
@@ -803,6 +812,9 @@ const mutations = {
     },
     SET_DIAGRAM_LOCK(state, value) {
         state.diagramLock = value
+    },
+    SET_PAGINATED(state, value) {
+        state.paginated = value
     },
     // for bulk data imports - faster
     BULK_LOAD_ELEMENTS: (state, elements) => {

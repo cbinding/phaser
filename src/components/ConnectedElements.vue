@@ -92,17 +92,19 @@ export default {
             })
             
             // get all elements in the identified subset of IDs
-            let connectedNodes = [...connectedNodeIDs].map(id => store.getters.nodeByID(id))                
+            let connectedNodes = [...connectedNodeIDs]
+                .map(id => store.getters.nodeByID(id))                
             
-            // need to be ordered, for diagram nesting to work
-            // (we may want to display this data in Cytoscape)
-            let phases = connectedNodes.filter(isPhase)
-            let groups = connectedNodes.filter(isGroup)
-            let subgroups = connectedNodes.filter(isSubGroup)
-            let contexts = connectedNodes.filter(isContext)
+            // needed to be ordered for diagram nesting to work in cytoscape
+            // but we're not using that now so don't bother with this stage
+            // let phases = connectedNodes.filter(isPhase)
+            // let groups = connectedNodes.filter(isGroup)
+            // let subgroups = connectedNodes.filter(isSubGroup)
+            // let contexts = connectedNodes.filter(isContext)
+            // let nodes = [].concat(phases).concat(groups).concat(subgroups).concat(contexts)
             
             return {
-                nodes: [].concat(phases).concat(groups).concat(subgroups).concat(contexts),
+                nodes: connectedNodes, //nodes
                 edges: connectedEdges
             }
         }

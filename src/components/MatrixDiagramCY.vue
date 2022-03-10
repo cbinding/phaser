@@ -793,6 +793,19 @@ export default {
                 ctx.stroke()
             })
         }
+
+        // cytoscape panzoom control uses fontawesome icons, which we do not have loaded
+        // append text nodes so we at least have something displayed in their place..
+        const replacePanZoomIcons = () => {
+            // Add "+" for the zoom in button
+            const plusTextNode = document.createTextNode("+")
+            Array.from(document.getElementsByClassName("cy-panzoom-zoom-in"))
+                .forEach(element => element.appendChild(plusTextNode))
+            // Add "-" for the zoom out button
+            const minusTextNode = document.createTextNode("-")            
+            Array.from(document.getElementsByClassName("cy-panzoom-zoom-out"))
+                .forEach(element => element.appendChild(minusTextNode))            
+        }
              
              
         onMounted(() => {
@@ -801,6 +814,10 @@ export default {
 
             // diagram locked by default
             cyi.autolock(locked.value)
+
+            // icons on panzoom control use fontawesome, but we dont have
+            // that loaded so need to insert some suitable icons instead
+            replacePanZoomIcons()
             
             // 'position' and 'move' events don't return the node within the event
             // also they fire multiple times as you drag across the grid, so using
@@ -993,6 +1010,10 @@ export default {
 
 /* make the 'no zoom' tick invisible */
 .cy-panzoom-no-zoom-tick {
+    display: none;
+}
+/* make the 'reset' button invisible */
+.cy-panzoom-reset {
     display: none;
 }
 

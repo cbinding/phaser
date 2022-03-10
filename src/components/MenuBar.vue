@@ -48,49 +48,49 @@
 						<ul class="dropdown-menu dropdown-submenu">
 							<li>
 								<b-dropdown-item-button v-b-modal.modalCsvImport @click="setupModal('phases')">
-									<NodeIcon :nodeClass="NodeClass.PHASE"/>
+									<NodeIcon :nodeClass="NodeClass.PHASE" class="mr-2"/>
 									<span>Import phase records...</span>										
 								</b-dropdown-item-button>
 							</li>
 							<li>
 								<b-dropdown-item-button v-b-modal.modalCsvImport @click="setupModal('groups')">
-									<NodeIcon :nodeClass="NodeClass.GROUP"/>
+									<NodeIcon :nodeClass="NodeClass.GROUP" class="mr-2"/>
 									<span>Import group records...</span>										
 								</b-dropdown-item-button>
 							</li>
 							<li>
 								<b-dropdown-item-button v-b-modal.modalCsvImport @click="setupModal('subgroups')">
-									<NodeIcon :nodeClass="NodeClass.SUBGROUP"/>
+									<NodeIcon :nodeClass="NodeClass.SUBGROUP" class="mr-2"/>
 									<span>Import subgroup records...</span>										
 								</b-dropdown-item-button>
 							</li>
 							<li>
 								<b-dropdown-item-button v-b-modal.modalCsvImport @click="setupModal('contexts')">
-									<NodeIcon :nodeClass="NodeClass.CONTEXT"/>
+									<NodeIcon :nodeClass="NodeClass.CONTEXT" class="mr-2"/>
 									<span>Import context records...</span>										
 								</b-dropdown-item-button>
 							</li>
 							<li>
 								<b-dropdown-item-button v-b-modal.modalCsvImport @click="setupModal('stratigraphy')">
-									<NodeIcon :nodeClass="NodeClass.CONTEXT"/>
+									<NodeIcon :nodeClass="NodeClass.CONTEXT" class="mr-2"/>
 									<span>Import context stratigraphy...</span>											
 								</b-dropdown-item-button>							
 							</li>
 							<li>
 								<b-dropdown-item-button v-b-modal.modalCsvImport @click="setupModal('stratigraphyold')">
-									<NodeIcon :nodeClass="NodeClass.CONTEXT"/>
+									<NodeIcon :nodeClass="NodeClass.CONTEXT" class="mr-2"/>
 									<span>Import context stratigraphy (old)...</span>											
 								</b-dropdown-item-button>
 							</li>
 							<li>
 								<b-dropdown-item-button v-b-modal.modalCsvImport @click="setupModal('datings')">
-									<NodeIcon :nodeClass="NodeClass.DATING"/>
+									<NodeIcon :nodeClass="NodeClass.DATING" class="mr-2"/>
 									<span>Import dating records...</span>						
 								</b-dropdown-item-button>
 							</li>
 							<li>
 								<b-dropdown-item-button v-b-modal.modalCsvImport @click="setupModal('periods')">
-									<NodeIcon :nodeClass="NodeClass.PERIOD"/>
+									<NodeIcon :nodeClass="NodeClass.PERIOD" class="mr-2"/>
 									<span>Import period records...</span>							
 								</b-dropdown-item-button>
 							</li>
@@ -106,43 +106,43 @@
 						<ul class="dropdown-menu dropdown-submenu">
 							<li>
 								<b-dropdown-item-button @click="saveDelimited(NodeClass.PHASE)">
-									<NodeIcon :nodeClass="NodeClass.PHASE"/>
+									<NodeIcon :nodeClass="NodeClass.PHASE" class="mr-2"/>
 									<span>Export phase records...</span>										
 								</b-dropdown-item-button>
 							</li>
 							<li>
 								<b-dropdown-item-button @click="saveDelimited(NodeClass.GROUP)">
-									<NodeIcon :nodeClass="NodeClass.GROUP"/>
+									<NodeIcon :nodeClass="NodeClass.GROUP" class="mr-2"/>
 									<span>Export group records...</span>										
 								</b-dropdown-item-button>
 							</li>
 							<li>
 								<b-dropdown-item-button @click="saveDelimited(NodeClass.SUBGROUP)">
-									<NodeIcon :nodeClass="NodeClass.SUBGROUP"/>
+									<NodeIcon :nodeClass="NodeClass.SUBGROUP" class="mr-2"/>
 									<span>Export subgroup records...</span>										
 								</b-dropdown-item-button>
 							</li>
 							<li>
 								<b-dropdown-item-button @click="saveDelimited(NodeClass.CONTEXT)">
-									<NodeIcon :nodeClass="NodeClass.CONTEXT"/>
+									<NodeIcon :nodeClass="NodeClass.CONTEXT" class="mr-2"/>
 									<span>Export context records...</span>											
 								</b-dropdown-item-button>
 							</li>
 							<li>
 								<b-dropdown-item-button @click="saveDelimited('edge')">
-									<NodeIcon :nodeClass="NodeClass.CONTEXT"/>
+									<NodeIcon :nodeClass="NodeClass.CONTEXT" class="mr-2"/>
 									<span>Export context stratigraphy...</span>											
 								</b-dropdown-item-button>
 							</li>
 							<li>
 								<b-dropdown-item-button @click="saveDelimited(NodeClass.DATING)">
-									<NodeIcon :nodeClass="NodeClass.DATING"/>
+									<NodeIcon :nodeClass="NodeClass.DATING" class="mr-2"/>
 									<span>Export dating records...</span>						
 								</b-dropdown-item-button>
 							</li>
 							<li>
 								<b-dropdown-item-button @click="saveDelimited(NodeClass.PERIOD)">
-									<NodeIcon :nodeClass="NodeClass.PERIOD"/>
+									<NodeIcon :nodeClass="NodeClass.PERIOD" class="mr-2"/>
 									<span>Export period records...</span>						
 								</b-dropdown-item-button>
 							</li>
@@ -182,17 +182,17 @@
 					<b-dropdown-divider/>
 
 					<b-dropdown-item-button @click="diagramRefresh">
-						<b-icon-arrow-clockwise class="mr-2" />
+						<b-icon-arrow-clockwise variant="primary" class="mr-2" />
 						<span>Refresh diagram</span>
 					</b-dropdown-item-button>
 
 					<b-dropdown-item-button @click="toggleLock">						
             			<span v-if="locked">
-							<b-icon-lock-fill class="mr-2"/>						
+							<b-icon-lock-fill variant="success" class="mr-2"/>						
 							<span>Unlock diagram</span>
 						</span>
 						<span v-else>
-							<b-icon-unlock-fill class="mr-2"/> 			
+							<b-icon-unlock-fill variant="danger" class="mr-2"/> 			
 							<span>Lock diagram</span>
 						</span>
 					</b-dropdown-item-button>
@@ -200,6 +200,13 @@
 					<b-dropdown-item-button @click="diagramRedoLayout('dagre')" :disabled="locked">
 						<b-icon-diagram-3 class="mr-2" />
 						<span>Redo Layout</span>
+					</b-dropdown-item-button>
+
+					<b-dropdown-divider/>
+					<b-dropdown-item-button @click="togglePagination">
+						<b-icon-check class="mr-2" variant="success" v-if="paginated"/>						
+						<b-icon-x class="mr-2" variant="danger" v-else />														
+						<span>Paginated tables?</span>						
 					</b-dropdown-item-button>
 
 					<!--<b-dropdown-divider/>	
@@ -223,9 +230,21 @@
 					</b-dropdown-item-button>
 					-->
 				</b-nav-item-dropdown>
+
 				<b-nav-item-dropdown text="Help">
+					
+					<!--<b-nav-item 
+						class="ml-2" 
+						:active="true"
+						target="_blank" 
+						rel="noopener noreferrer"  
+						href="help.html">
+						<b-icon-question-circle class="mr-2" />					
+						<span>Help...</span>
+					</b-nav-item>-->
 					<b-dropdown-item-button v-b-modal.modalAbout>
-						<b-icon-question-circle class="mr-2" />
+						<!--<img src="phaser-spacedout-p.png" height="15" class="mr-2"/>-->
+						<b-icon-question-circle class="mr-2" />		
 						<span>{{ `About ${ store.getters.appName }...` }}</span>
 						<HelpAbout />					
 					</b-dropdown-item-button>
@@ -275,6 +294,14 @@ export default {
             }            
         })
 		const toggleLock = () =>  locked.value = !locked.value
+
+		const paginated = computed({
+            get () { return store.getters.paginated },
+            set (newValue) {
+                store.dispatch('setPaginated', newValue) 
+            }            
+        })
+		const togglePagination = () =>  paginated.value = !paginated.value
 
 		const clearAll = () => {
 			// todo - this works but is deprecated, needs correct syntax
@@ -465,7 +492,7 @@ export default {
             }
         }
 
-		// event bus calls - phaser diagram component has handlers for these			
+		// event bus calls - MatrixDiagramCY.vue component has handlers for these			
 		const exportPartPNG = () => EventBus.$emit('diagram-export-part-png')			
 		const exportFullPNG = () => EventBus.$emit('diagram-export-full-png')
 		const diagramRefresh = () => EventBus.$emit("diagram-refresh")			
@@ -477,7 +504,9 @@ export default {
 		return {
 			console,
 			locked,
+			paginated,
 			toggleLock,
+			togglePagination,
 			NodeClass,
 			setupModal,
 			csvImportMode,

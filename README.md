@@ -1,4 +1,4 @@
-# matrix-app
+# phaser
 
 ## Project setup
 ```

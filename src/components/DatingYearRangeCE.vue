@@ -1,19 +1,23 @@
 <template>
-    <b-form-group class="px-2 shadow-sm"  label="">
+    <b-form-group class="px-0 shadow-sm"  label="">
         <b-form-row>             
             <b-col> 
-                <b-form-group 
+                <b-form-group
+                    class="p-1" 
                     valid-feedback=""
                     :invalid-feedback="validationMessage"
-                    :state="validateMinYear">
+                    :state="validateMinYear">                
                     <DatingYearCE 
+                        class="w-100 m-1"
                         label="Minimum (earliest) Year" 
                         :disabled="disabled" 
                         placeholder="Minimum year"
                         name="minYearInput" 
                         :year="local.minYear"
                         @change="changed('minYear', $event)"/>
+                
                     <DatingYearTolerance v-if="showTolerances"
+                        class="w-100 m-1"
                         :disabled="disabled"
                         :tolerance-value="local.minYearTolValue" 
                         :tolerance-unit="local.minYearTolUnit"             
@@ -22,18 +26,22 @@
                 </b-form-group>
             </b-col> 
             <b-col>
-                <b-form-group  
+                <b-form-group
+                    class="p-1"   
                     valid-feedback=""
                     :invalid-feedback="validationMessage"
                     :state="validateMaxYear">
                     <DatingYearCE 
+                        class="w-100 m-1"
                         label="Maximum (latest) year" 
                         :disabled="disabled" 
                         :year="local.maxYear"                        
                         placeholder="Maximum year"
                         name="maxYearInput" 
                         @change="changed('maxYear', $event)"/>
+
                     <DatingYearTolerance v-if="showTolerances"
+                        class="w-100 m-1"
                         :disabled="disabled"
                         :tolerance-value="local.maxYearTolValue" 
                         :tolerance-unit="local.maxYearTolUnit"             

@@ -56,7 +56,7 @@
 					sticky-header="200px" 
 					select-mode="single"
 					primary-key="data.id"
-					:per-page="perPage"
+					:per-page="(paginated ? perPage : 0)"
 					:current-page="currentPage"
 					:items="items" 
 					:fields="fields"
@@ -112,7 +112,7 @@
 		</b-overlay>
 		<b-row>
 			<b-col>
-				<b-pagination
+				<b-pagination v-if="paginated"
 					v-model="currentPage"
 					:total-rows="filterCount"
 					:per-page="perPage"
@@ -157,6 +157,10 @@ export default {
 		const perPage = 25
 		const currentPage = ref(1)
 		const isBusy = ref(false) // not used yet
+
+		// whether to display pagination controls for table
+		const paginated = computed(() => store.getters.paginated)
+
 
 		// select row if node is selected somewhere else in the app (e.g. on the diagram)
 		//const selectedID = computed(() => store.getters.selectedID)
@@ -484,6 +488,7 @@ export default {
 			//selectedID,
 			sortBy,
 			sortDesc,
+			paginated,
 			items,
 			columns,
 			fields,

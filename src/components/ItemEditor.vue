@@ -28,17 +28,9 @@
 				<ConnectedElements :contextID="((selectedItem || {}).data || {}).id"/>
 			</b-col>
 		</b-form-row>
-			
+
 		<b-form-row>
-			<b-col>
-				<ItemLabel v-if="fields.includes('label')"
-					:disabled="disabled" 
-					label="Identifier"
-					:placeholder="`${itemClass}`" 
-					v-model.lazy="((selectedItem || {}).data || {}).label" 
-					@input="labelChanged"/>
-			</b-col>			
-			<b-col>
+			<b-col>				
 				<div style="text-align: right" v-if="fields.includes('redolayout')">
 					<b-button pill
 						size="sm"
@@ -52,55 +44,69 @@
 						<span>{{`Redo layout for this ${itemClass}`}}</span>
 					</b-button>					
 				</div>
-				<ItemLabel v-if="fields.includes('uri')" 
+			</b-col>
+		</b-form-row>
+			
+		<b-form-row>
+			<b-col>				
+				<ItemLabel v-if="fields.includes('sitecode')"
+					class="m-2"
+					:disabled="disabled"
+					label="Site code"
+					placeholder="site code" 
+					v-model.lazy="((selectedItem || {}).data || {}).siteCode" 
+					@input="siteCodeChanged"/>
+
+				<ItemLabel v-if="fields.includes('uri')"
+					class="m-2" 
 					:disabled="disabled" 
 					label="URI"
 					:placeholder="`${itemClass}`" 
 					v-model.lazy="((selectedItem || {}).data || {}).uri" 
 					@input="uriChanged"/>	
-			</b-col>
-		</b-form-row>
-		<b-form-row>
-			<b-col>				
+
 				<ItemLookup2 v-if="fields.includes('period')"
 					label="Period" 
+					class="m-2"
 					:disabled="disabled"
 					placeholder="period" 
 					v-model="((selectedItem || {}).data || {}).period"  
 					:options="periodLookupOptions" 
 					@change="periodChanged"/>
-			</b-col>
 
-			<b-col>
-				<ItemLookup2 v-if="fields.includes('parent')"
-					label="Within" 
-					:disabled="disabled"
-					:placeholder="`${itemClass} parent`" 
-					v-model="((selectedItem || {}).data || {}).parent"  
-					:options="parentLookupOptions" 
-					@change="parentChanged"/>	
-
-				<!--<ItemList v-if="fields.includes('contains')"	 			
-					label="Contains" 
-					:disabled="true" 
-					:items="itemContains"/>-->
-				
-			</b-col>
-		</b-form-row>
-		<b-form-row>	
-			<b-col>
 				<ItemLookup v-if="fields.includes('type')"
 						label="Type" 
+						class="m-2"
 						mode="input"
 						:disabled="disabled" 
 						:placeholder="`${itemClass} type`" 
 						v-model="((selectedItem || {}).data || {}).type" 
 						:options="typeLookupOptions"
-						@change="typeChanged"/> 
+						@change="typeChanged"/>
 			</b-col>
 			<b-col>
+				<ItemLabel v-if="fields.includes('label')"
+					class="m-2"
+					:disabled="disabled" 
+					label="Identifier"
+					:placeholder="`${itemClass} identifier`" 
+					v-model.lazy="((selectedItem || {}).data || {}).label" 
+					@input="labelChanged"/>
+
+				<ItemLookup2 v-if="fields.includes('parent')"
+					label="Within" 
+					class="m-2"
+					:disabled="disabled"
+					:placeholder="`${itemClass} parent`" 
+					v-model="((selectedItem || {}).data || {}).parent"  
+					:options="parentLookupOptions" 
+					@change="parentChanged"/>
+
 				<ItemLookup v-if="fields.includes('cud')"
-					label="Construction/Use/Disuse" 
+					label="CUD" 
+					class="m-2"
+					alt="Construction/Use/Disuse"
+					title="Construction/Use/Disuse"
 					:disabled="disabled" 
 					v-model="((selectedItem || {}).data || {}).cud"
 					:options="[
@@ -112,33 +118,32 @@
 						{ value: 'UD', text: 'use &amp; disuse' },
 						{ value: 'CUD', text: 'construction &amp; use &amp; disuse' }
 					]" 
-					@change="cudChanged"/>				
+					@change="cudChanged"/>	
 			</b-col>				
-		</b-form-row> 
+		</b-form-row>
 
 		<b-form-row>
 			<b-col v-if="fields.includes('contains')">
 				<ItemContains 
-					v-if="fields.includes('contains')" 
+					class="m-2"
 					:id="((selectedItem || {}).data || {}).id" 
 					:disabled="disabled"/>
 			</b-col>	
-			<b-col v-if="fields.includes('description')" >	
-				<b-form-group v-if="fields.includes('description')" 
-					label="Description"				
-					label-for="itemDescription">	
-					<b-form-textarea 
-						size="sm"
-						style="resize: vertical;" 
-						:disabled="disabled"
-						class="shadow-sm" 
-						:placeholder="`${itemClass} description`" 
-						rows="5"
-						max-rows="5"
-						name="itemDescription" 
-						v-model.trim="((selectedItem || {}).data || {}).description" 
-						@change="descriptionChanged"/>
-				</b-form-group>
+			<b-col v-if="fields.includes('description')">
+				<div class="m-2">
+				<b-input-group-prepend>Description</b-input-group-prepend>					
+				<b-form-textarea 
+					size="sm"
+					style="resize: vertical;" 
+					:disabled="disabled"
+					class="shadow-sm w-100" 
+					:placeholder="`${itemClass} description`" 
+					rows="5"
+					max-rows="5"
+					name="itemDescription" 
+					v-model.trim="((selectedItem || {}).data || {}).description" 
+					@change="descriptionChanged"/>
+				</div>
 			</b-col>
 		</b-form-row>
 
@@ -262,17 +267,17 @@ export default {
 		// This determines which editing controls are visible
 		const fields = computed(() => { 
 			switch(props.itemClass) {
-				case NodeClass.PHASE: return ["label", "description", "contains", "yearrange", "redolayout", "period", "temporal"]
-				case NodeClass.GROUP: return ["label", "type", "parent", "contains", "description", "redolayout", "cud", "period", "temporal"]
-				case NodeClass.SUBGROUP: return ["label", "type", "parent", "contains", "description", "redolayout", "cud", "period", "temporal"]
-				case NodeClass.CONTEXT: return ["label", "type", "parent", "contains", "description", "cud", "period", "temporal", "connectedElements"]	
-				case NodeClass.DATING: return ["label", "type", "parent", "description", "scidating", "included", "association", "period"]
-				case NodeClass.PERIOD: return ["label", "uri", "description", "contains", "yearrange"]
+				case NodeClass.PHASE: return ["sitecode", "label", "description", "contains", "yearrange", "redolayout", "period", "temporal"]
+				case NodeClass.GROUP: return ["sitecode", "label", "type", "parent", "contains", "description", "redolayout", "cud", "period", "temporal"]
+				case NodeClass.SUBGROUP: return ["sitecode", "label", "type", "parent", "contains", "description", "redolayout", "cud", "period", "temporal"]
+				case NodeClass.CONTEXT: return ["sitecode", "label", "type", "parent", "contains", "description", "cud", "period", "temporal", "connectedElements"]	
+				case NodeClass.DATING: return ["sitecode", "label", "type", "parent", "description", "scidating", "included", "association", "period"]
+				case NodeClass.PERIOD: return ["sitecode", "label", "uri", "description", "contains", "yearrange"]
 				case EdgeClass.EDGE: return ["stratigraphy"]
 				default: return []
 			}			
 		})
-
+		
 		// options for use in lookups
 		const periodLookupOptions = computed(() => store.getters.periodOptions)
 		const phaseLookupOptions = computed(() => store.getters.phaseOptions)
@@ -337,6 +342,13 @@ export default {
 			}
 		}
 
+		const siteCodeChanged = (value) => {
+			if(selectedItem.value) {
+				selectedItem.value.data.siteCode = value
+				itemChanged()
+			}
+		}
+
 		const typeChanged = (value) => {
 			if(selectedItem.value) {
 				selectedItem.value.data.type = value
@@ -396,6 +408,7 @@ export default {
 			periodLookupOptions,
 			itemSelected,
 			itemDeleted,
+			siteCodeChanged,
 			labelChanged,
 			uriChanged,
 			descriptionChanged,

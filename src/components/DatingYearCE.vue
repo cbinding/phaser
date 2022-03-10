@@ -1,9 +1,7 @@
 <template>
-    <b-form-group 
-        :label="label"
-        label-for="yearInput"
-        label-size="md">
-        <b-input-group class="shadow-sm" size="sm">       
+    <div class="m-0 p-0">
+        <b-input-group-prepend>{{ label }}</b-input-group-prepend>
+        <b-input-group size="sm">
             <b-form-input number 
                 min=0
                 :disabled="disabled" 
@@ -22,7 +20,7 @@
                     @change="suffixChanged($event)">{{ isYearBCE ? "BCE" : "CE" }}</b-form-checkbox>
             </b-input-group-append>            
         </b-input-group>
-    </b-form-group>   
+    </div>   
 </template>
 
 <script>

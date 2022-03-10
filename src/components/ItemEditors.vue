@@ -1,5 +1,5 @@
 <template>
-	<b-tabs 
+	<b-tabs
 		v-model="tabIndex"
 		class="my-1" 
 		align="left" 

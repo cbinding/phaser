@@ -272,7 +272,7 @@ export default {
 				case NodeClass.SUBGROUP: return ["sitecode", "label", "type", "parent", "contains", "description", "redolayout", "cud", "period", "temporal"]
 				case NodeClass.CONTEXT: return ["sitecode", "label", "type", "parent", "contains", "description", "cud", "period", "temporal", "connectedElements"]	
 				case NodeClass.DATING: return ["sitecode", "label", "type", "parent", "description", "scidating", "included", "association", "period"]
-				case NodeClass.PERIOD: return ["sitecode", "label", "uri", "description", "contains", "yearrange"]
+				case NodeClass.PERIOD: return ["label", "uri", "description", "contains", "yearrange"]
 				case EdgeClass.EDGE: return ["stratigraphy"]
 				default: return []
 			}			

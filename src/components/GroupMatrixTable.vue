@@ -134,14 +134,14 @@ export default {
         const fields = [                    
             {
 				key: "sourceLabel",
-				label: "id",
+				label: "identifier",
                 sortable: true,
 				sortByFormatted: true,
 				formatter: (value, key, item) => item.sourceLabel,			
 			}, 
             {		
 				key: 'sourceDates',
-				label: 'years',                
+				label: 'years (duration)',                
 				sortable: false					
 			},           
             {		
@@ -156,14 +156,14 @@ export default {
 			},             
             {
 				key: "targetLabel",
-				label: "id",
+				label: "identifier",
                 sortable: true,
 				sortByFormatted: true,
 				formatter: (value, key, item) => item.targetLabel,			
 			},
             {		
 				key: 'targetDates',
-				label: 'years',                
+				label: 'years (duration)',                
 				sortable: false					
 			},              
         ] 

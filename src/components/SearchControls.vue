@@ -387,7 +387,7 @@ export default {
 			return [           
                 {
                     key: "nodeLabel",
-                    label: "id",
+                    label: "identifier",
                     sortable: true					
                 }, 
                 {
@@ -402,7 +402,7 @@ export default {
 				}, 
                 {
 					key: 'derivedDates',
-					label: 'years',
+					label: 'years (duration)',
 					sortable: false					
 				},
                 /*{

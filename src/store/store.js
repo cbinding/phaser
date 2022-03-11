@@ -16,7 +16,7 @@ Vue.use(Vuex)
 
 const state = {        
     appName: "Phaser",  // application name
-    appVersion: "1.15", // application version    
+    appVersion: "1.16", // application version    
     selectedID: "",     // ID of currently selected node  
     diagramLock: true,  // nodes cannot be moved on diagram when locked
     paginated: false, // whether to show pagination controls for editor tables 

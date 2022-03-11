@@ -307,7 +307,9 @@ export const relationshipStatus = (sourceClass, targetClass, stratRelationship, 
 				break;
 			}
 			case EdgeType.EQUAL: {
-				switch(tempRelationship) {                        
+				switch(tempRelationship) {  
+					case AllenType.BEFORE: result = Status.INVALID; break;
+					case AllenType.AFTER: result = Status.INVALID; break;                      
 					case AllenType.EQUALS: result =Status.VALID; break;
 					default: result = defaultStatus(); break;                      
 				}

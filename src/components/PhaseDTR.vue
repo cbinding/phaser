@@ -18,6 +18,8 @@
                     :filter-included-fields="['sourceLabel', 'relationship', 'targetLabel']"
                     :filter="filter"
                     @filtered="onFiltered"
+                    :per-page="perPage"
+					:current-page="currentPage"                    
                     :items="items" 
                     :fields="fields"
                     class="shadow-sm">
@@ -50,9 +52,18 @@
                 </b-table>               
             </b-col>
         </b-row>
-        <b-row>
-            <b-col>Showing {{ filterCount }} of {{ items.length }} records</b-col>
-        </b-row>
+       <b-row>
+			<b-col>
+				<b-pagination
+					v-model="currentPage"
+					:total-rows="filterCount"
+					:per-page="perPage"
+					aria-controls="my-table"
+					:first-number="true"
+					:last-number="true"/>					
+			</b-col>
+            <b-col class="text-right">Showing {{ filterCount }} of {{ items.length }} records</b-col>
+		</b-row>   
         
     </b-container>
 </template>
@@ -85,7 +96,8 @@ export default {
         const store = inject('store')
 		const items = ref([])	
         const isBusy = ref(false)
-
+        const perPage = 25
+		const currentPage = ref(1)
         const filterCount = ref(0)	       
         const onFiltered = (items, count) => {
             filterCount.value = count
@@ -94,14 +106,14 @@ export default {
         const fields = [                       
             {
 				key: "sourceLabel",
-				label: "id",
+				label: "identifier",
                 sortable: true,
 				sortByFormatted: true,
 				formatter: (value, key, item) => `${item.sourceClass}${item.sourceLabel}`,				
 			},
             {		
 				key: 'sourceDates',
-				label: 'years',                
+				label: 'years (duration)',                
 				sortable: false					
 			},  
             {		
@@ -111,14 +123,14 @@ export default {
 			},            
             {
 				key: "targetLabel",
-				label: "id",
+				label: "identifier",
                 sortable: true,
 				sortByFormatted: true,
 				formatter: (value, key, item) => `${item.targetClass}${item.targetLabel}`,				
 			},   
             {		
 				key: 'targetDates',
-				label: 'years',                
+				label: 'years (duration)',                
 				sortable: false					
 			},  
         ] 
@@ -215,6 +227,8 @@ export default {
 		return { 
             store, 
             fields,
+            perPage,
+            currentPage,
             filterCount, 
             onFiltered,            
             selectedPhaseLabel, 

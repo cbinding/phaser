@@ -7,7 +7,7 @@
 		class="shadow-sm w-100"	
 		label-size="sm">-->
 
-		<b-input-group-prepend size="sm">{{ label }}</b-input-group-prepend>
+		<b-input-group-prepend>{{ label }}</b-input-group-prepend>
     
 		<b-form-input text 
 			size="sm"

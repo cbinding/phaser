@@ -13,7 +13,7 @@
 				<span>{{ `${nc}s [${itemCount(nc)}]` }}</span>				
 			</template>
 			<!--<keep-alive>-->
-				<ItemEditor :selectedID="selectedID" :itemClass="nc"/>
+			<ItemEditor :selectedID="selectedID" :itemClass="nc"/>
 			<!--</keep-alive>-->
 		</b-tab>
 		<b-tab

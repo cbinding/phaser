@@ -10,7 +10,9 @@
                         v-model="selectedPhaseID"
                         :options1="phaseLookupOptions"
                         placeholder="select phase"> 
-                        <b-form-select-option v-for="option in phaseLookupOptions" :key="option.value" :value="option.value">
+                        <b-form-select-option v-for="option in phaseLookupOptions" 
+                            :key="option.value" 
+                            :value="option.value">
                             <!--<NodeIcon :width="16" :height="16" nodeClass="phase" text="P"/>-->
                             <span>{{ option.text }}</span>
                         </b-form-select-option>

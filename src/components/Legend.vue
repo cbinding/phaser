@@ -7,7 +7,7 @@
             <b-collapse id="legendItems" class="card-body m-0 px-3 py-1">               
             <b-list-group flush class="bg-light">
                 <b-list-group-item v-for="(item, index) in items" :key="index" class="m-0 p-0 border-0">
-                    <NodeIcon 
+                    <NodeIcon
                         :width="30" 
                         :height="16" 
                         :dashed="item.dashed" 

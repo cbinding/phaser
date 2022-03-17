@@ -241,7 +241,7 @@ export default {
 		DatingYearRangeCE,
 		SciDating,
 		ItemLabel,
-		ItemContains,
+		ItemContains,		
 		//ItemList,
 		//TemporalRelationshipsTable
 		
@@ -386,10 +386,8 @@ export default {
 
 		const periodChanged = (value) => {	
 			if(selectedItem.value) {
-				if(selectedItem.value.data.period) {
-					selectedItem.value.data.period = value
-					itemChanged()					
-				}
+				selectedItem.value.data.period = value
+				itemChanged()
 			}
 		}
 		

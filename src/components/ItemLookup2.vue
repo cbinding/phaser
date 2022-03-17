@@ -12,9 +12,7 @@
             split-href="#"
             variant="primary border-secondary">
             <template #button-content>
-                <a href="#" @click.stop="store.dispatch('setSelectedID', value)">
-                    <NodeIconLink :nodeID="value"/>
-                </a>
+                <NodeIconLink :nodeID="value"/>                
             </template>
 
             <template #default>
@@ -95,7 +93,6 @@ export default {
         })
         
         const onChange = (value) => {
-            //console.log(value)
             dropdown.value.hide() 
             context.emit('change', value)            
         }

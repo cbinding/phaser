@@ -1,7 +1,7 @@
 <template>
     <b-card no-body 
         v-b-toggle.legendItems             
-        class="legend card  shadow text-secondary">
+        class="legend card shadow text-secondary">
         <div class="card-header px-3 py-1">
             <b-icon-key class="mr-2"/>Key</div>
             <b-collapse id="legendItems" class="card-body m-0 px-3 py-1">               

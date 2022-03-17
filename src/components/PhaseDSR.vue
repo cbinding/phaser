@@ -2,7 +2,10 @@
     <b-container fluid class="p-0 m-0">            
         <b-row>
             <b-col>
-                <div class="p-2 text-center">Derived stratigraphic relationships between elements within phase {{ selectedPhaseLabel }}</div>
+                <div class="p-2 text-center">
+                    <span>Derived stratigraphic relationships between elements within phase {{ selectedPhaseLabel }}</span>
+                    <StatusKey/>
+                </div>
             </b-col>
         </b-row>
         <b-row>
@@ -73,11 +76,13 @@ import { ref, inject, computed, watch } from '@vue/composition-api' // Vue 2 onl
 import { EdgeType, rangeRelationship, isContext, relationshipStatus } from '@/composables/PhaserCommon'
 import NodeIconLink from '@/components/NodeIconLink'
 import YearRangeDisplay from '@/components/YearRangeDisplay'
+import StatusKey from '@/components/StatusKey'
 
 export default {
     components: { 
         NodeIconLink, 
-        YearRangeDisplay 
+        YearRangeDisplay,
+        StatusKey
     },
     props: {
         phaseID: {
@@ -165,16 +170,16 @@ export default {
         
         const phaseID = computed(() => props.phaseID)
         watch(phaseID, async (newValue) =>  { 
+            items.value = []  
             isBusy.value = true
-            filterCount.value = 0
-            items.value = []            
-            items.value = await getDSRforPhase(newValue) 
+            filterCount.value = 0                      
+            await getDSRforPhase(newValue) 
             filterCount.value = items.value.length
             isBusy.value = false
-        })   
+        }) 
         
         const getDSRforPhase = async phaseID => {
-            const dsr = []
+            let dsr = []
 
             // ensure its a valid phase ID before proceeding
             let phase = store.getters.nodeByID(phaseID)
@@ -251,17 +256,8 @@ export default {
                 })
             })
             
-            return dsr
-        }
-            
-
-
-
-
-
-
-
-
+            items.value = dsr
+        } 
 
         /*
             // ensure its a valid phase ID before proceeding

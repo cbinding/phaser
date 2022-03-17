@@ -35,7 +35,7 @@
 			<template v-slot:title>Metadata</template>
 			<MetaEditor/>
 		</b-tab>	
-		<b-tab>
+		<b-tab lazy>
 			<template v-slot:title>Search<br>(experimental)</template>
 			<SearchControls/>			
 		</b-tab>
@@ -140,7 +140,7 @@ export default {
 			nodeClasses,
 			EdgeClass, 
 			itemCount,
-			activated, 
+			activated
 			//capitalize 
 		}
 	}

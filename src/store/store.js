@@ -19,7 +19,7 @@ const state = {
     appVersion: "1.16", // application version    
     selectedID: "",     // ID of currently selected node  
     diagramLock: true,  // nodes cannot be moved on diagram when locked
-    paginated: false, // whether to show pagination controls for editor tables 
+    paginated: true,    // whether to show pagination controls for editor tables 
     about: {            // dataset metadata (see MetaEditor.vue)
         title: "",      // e.g. "My example project"
         description: "",    // description of the dataset
@@ -30,7 +30,7 @@ const state = {
     },
 
     // Array slow for retrieving object by ID, vuex doesn't (currently) support Map() 
-    // so using nodes & edges objects with IDs as properties 
+    // so using objects to store nodes & edges with IDs as properties 
     nodes: {},          // phases, groups, subgroups, contexts, datings, periods
     edges: {},          // represents context stratigraphy (context ABOVE context)
 

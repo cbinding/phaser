@@ -1,5 +1,5 @@
 <template>
-	<div>
+	<b-overlay :show="busy">
 		<b-input-group-prepend>Contains</b-input-group-prepend>
 		<b-list-group 				
 			name="contains"
@@ -11,11 +11,11 @@
 				:key="index">
 				<NodeIconLink :nodeID="item.data.id"/>                							
 			</b-list-group-item>
-		</b-list-group>		
-	</div>
+		</b-list-group>	
+	</b-overlay>		
 </template>
 <script>
-import { inject, computed } from "@vue/composition-api" // Vue 2 only. for Vue 3 use "from '@vue'"
+import { inject, ref, watch, computed } from "@vue/composition-api" // Vue 2 only. for Vue 3 use "from '@vue'"
 import { isPeriod } from '@/composables/PhaserCommon.js'
 import NodeIconLink from '@/components/NodeIconLink'
 export default {
@@ -36,14 +36,40 @@ export default {
 		}
     },
 	setup(props) {
-		const store = inject('store')		
+		const store = inject('store')					
+		const items = ref([])
+		const busy = ref(false) //for async population??
 		
-        const items = computed(() => {
+		const getContainedItems = async (id) => {			
+			let node = store.getters.nodeByID(id)
+			if(node) {
+				if(isPeriod(node)) {
+					// list all nodes that reference this period
+					items.value = store.getters.nodes.filter(n => n.data.period === id)
+				}
+				else {
+					// hierarchical containment relationships 
+					// list all descendants of selected node
+					items.value = store.getters.descendantsOfID(id) 
+				}
+			}		
+		}
+		// computed properties are synchronous 
+		// so using watcher and async function instead
+		const nodeID = computed(() => props.id)
+		watch(nodeID, async (newID) => {
+			busy.value = true
+			items.value = []
+			await getContainedItems(newID)
+			busy.value = false
+		}, { immediate:true })	
+		
+        /*const items = computed(() => {
 			let node = store.getters.nodeByID(props.id)
 			if(node) {
 				if(isPeriod(node)) {
 					// list all nodes that reference this period
-					return store.getters.nodes.filter(n => n.data.period == props.id)
+					return store.getters.nodes.filter(n => n.data.period === props.id)
 				}
 				else {
 					// hierarchical containment relationships 
@@ -53,9 +79,9 @@ export default {
 			}
 			else
 				return []
-		})
+		})*/
 
-        return { store, items }
+        return { store, items, busy }
 
 	}
 }

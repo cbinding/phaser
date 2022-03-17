@@ -36,7 +36,7 @@
 						:serializer="item => item.text"
 						:minMatchingChars="1"
 						:maxMatches="5"
-						v-model="targetID"							
+						v-model="targetID"
 						@hit="targetSelected"/>
 				</b-form-group>									
 			</b-col>

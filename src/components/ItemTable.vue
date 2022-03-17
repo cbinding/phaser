@@ -51,6 +51,7 @@
 			<b-col>
 				<b-table show-empty sort-icon-left hover outlined selectable small
 					style="height: 200px;"
+					ref="datatable"
 					:id="`datatable-${itemClass}`"										
 					:no-border-collapse="true"
 					sticky-header="200px" 
@@ -62,6 +63,7 @@
 					:fields="fields"
 					:filter="filter"
 					@filtered="onFiltered"
+					:filter-ignored-fields="[ 'data', 'position' ]"
 					class="overflow-auto shadow-sm"
 					@row-selected="rowSelected"
 					:tbody-tr-class1="rowClass">
@@ -76,23 +78,23 @@
 						</div>				
 					</template>					
 										
-					<template #cell(label)="row">
+					<template #cell(nodeLabel)="row">
 						<NodeIconLink :nodeID="row.item.data.id"/>
 					</template>	
 
-					<template #cell(period)="row">
+					<template #cell(periodLabel)="row">
 						<NodeIconLink :nodeID="row.item.data.period"/>
 					</template>	
 
-					<template #cell(source)="row">
+					<template #cell(sourceLabel)="row">
 						<NodeIconLink :nodeID="row.item.data.source"/>
 					</template>
 
-					<template #cell(target)="row">
+					<template #cell(targetLabel)="row">
 						<NodeIconLink :nodeID="row.item.data.target"/>
 					</template>	
 
-					<template #cell(parent)="row">
+					<template #cell(parentLabel)="row">
 						<NodeIconLink :nodeID="row.item.data.parent"/>						
 					</template>	
 
@@ -128,8 +130,8 @@
 <script>
 import _merge from "lodash/merge"
 import Papa from "papaparse"
-import { ref, unref, computed, watch, inject, nextTick } from '@vue/composition-api' // Vue 2 only. for Vue 3 use "from '@vue'"
-import { NodeClass, EdgeClass } from '@/composables/PhaserCommon'
+import { ref, shallowRef, unref, computed, watch, inject, nextTick } from '@vue/composition-api' // Vue 2 only. for Vue 3 use "from '@vue'"
+import { NodeClass, EdgeClass, classIs } from '@/composables/PhaserCommon'
 import NodeIconLink from '@/components/NodeIconLink'
 import TickOrCross from '@/components/TickOrCross'
 
@@ -150,6 +152,7 @@ export default {
 	},
 	setup(props, context) {
 		const store = inject('store')
+		const datatable = shallowRef(null)
 		const filter = ref("")
 		const onFiltered = (items, count) => filterCount.value = count
 		const sortBy = ref("data.label")
@@ -161,19 +164,37 @@ export default {
 		// whether to display pagination controls for table
 		const paginated = computed(() => store.getters.paginated)
 
-
-		// select row if node is selected somewhere else in the app (e.g. on the diagram)
-		//const selectedID = computed(() => store.getters.selectedID)
+		// programmatically selecting row when node is selected 
+		// somewhere else in the app (e.g. on the diagram)
 		const selectedID1 = computed(() => props.selectedID)
         watch(selectedID1, async (newValue) => {	
-			await nextTick() // helps to ensure subsequent scrolling works
+			await nextTick() // helps to ensure subsequent scrolling works..
+
+			// do nothing if selected item is not in this table
+			let node = store.getters.nodeByID(newValue)
+			if(!classIs(node, props.itemClass))
+				return
+
+			// if there is more than one page, calculate which 
+			// page the item with the selected ID is on 
+			let page = 1
+			if(items.value.length > perPage) {
+				let index = (datatable.value?.sortedItems || [])
+					.findIndex(item => item.data.id === newValue)	
+				page = Math.trunc(index / perPage) + 1	
+			}
+			// select that page (if not already selected)
+			if(currentPage.value !== page)
+				currentPage.value = page	
+
 			// scroll to ensure selected row is visible in the table
+			await nextTick() // helps to ensure subsequent scrolling works correctly..			
 			let el = document.getElementById(`datatable-${props.itemClass}__row_${newValue}`)			
 			if(el) { 
 				el.click() // simulates a click on the row to highlight
 				el.scrollIntoView({behavior: "smooth", block: "center", inline: "nearest"}) // scroll the selected row 
-				el.scrollIntoViewIfNeeded(true)	// (TODO: should only do this if manually clicked?)
-			}
+				el.scrollIntoViewIfNeeded(true)	
+			}			
         })
 		
 		// colour coding selected row
@@ -217,7 +238,7 @@ export default {
 		})
 
 		const copyToClipboard = () => {
-			// create array of POJO to be copied to clipboard
+			// create POJO array to be copied to clipboard
 			let data = unref(items).map(item => {                
 				let row = {}
 
@@ -254,51 +275,60 @@ export default {
 			return [					
 				// displaying label as if identifier
 				... (columns.value.includes('label')) ? [{
-					key: "label",
+					key: "nodeLabel",
 					label: "identifier",
 					sortable: true,
 					sortByFormatted: true,
-					formatter: (value, key, item) => `${item.data.class}${item.data.label}`,					
+					filterByFormatted: true,
+					formatter: (value, key, item) => item.data.label,					
 				}] : [],
 				... (columns.value.includes('period')) ? [{
-					key: 'period',
+					key: 'periodLabel',
 					label: 'period',
 					sortable: true,
 					sortByFormatted: true,
+					filterByFormatted: true,
 					formatter: (value, key, item) => store.getters.labelByID(item.data.period),
 					sortable: true					
 				}] : [],				
 				... (columns.value.includes('source')) ? [{
-					key: "source",
+					key: "sourceLabel",
 					label: "source",
 					sortable: true,
 					sortByFormatted: true,
-					formatter: (value, key, item) =>  store.getters.labelByID(item.data.source),						
+					filterByFormatted: true,
+					formatter: (value, key, item) => store.getters.labelByID(item.data.source),						
 				}] : [],  
 				... (columns.value.includes('type')) ? [{
-					key: "data.type",
+					key: "type",
 					label: "type",
-					sortable: true					
+					sortable: true,
+					sortByFormatted: true,
+					filterByFormatted: true,
+					formatter: (value, key, item) => item.data.type,						
 				}] : [],  
 				... (columns.value.includes('target')) ? [{
-					key: "target",
+					key: "targetLabel",
 					label: "target",
 					sortable: true,
 					sortByFormatted: true,
+					filterByFormatted: true,
 					formatter: (value, key, item) => store.getters.labelByID(item.data.target),					
 				}] : [], 				
 				... (columns.value.includes('parent')) ? [{
-					key: "parent",
+					key: "parentLabel",
 					label: "within",
 					sortable: true,
 					sortByFormatted: true,
-					formatter: (value, key, item) => `${store.getters.classByID(item.data.parent)}${store.getters.labelByID(item.data.parent)}`,					
+					filterByFormatted: true,
+					formatter: (value, key, item) => store.getters.labelByID(item.data.parent),					
                 }] : [],                
 				... (columns.value.includes('enteredMinYear')) ? [{
 					// virtual column with custom formatter
 					key: 'minyear',
 					label: 'entered min year',
 					sortByFormatted: true,
+					filterByFormatted: true,
 					formatter: tableMinYearFormat,
 					sortable: true,
 					class: "text-right"
@@ -308,6 +338,7 @@ export default {
 					key: 'maxyear',
 					label: 'entered max year',
 					sortByFormatted: true,
+					filterByFormatted: true,
 					formatter: tableMaxYearFormat,
 					sortable: true,
 					class: "text-right"
@@ -317,6 +348,7 @@ export default {
 					key: 'entereddiff',
 					label: 'duration',
 					sortByFormatted: true,
+					filterByFormatted: true,
 					formatter: enteredDiffFormat,
 					sortable: true,
 					class: "text-right"
@@ -326,6 +358,7 @@ export default {
 					key: 'derivedminyear',
 					label: 'derived min year',
 					sortByFormatted: true,
+					filterByFormatted: true,
 					formatter: derivedMinYearFormat,
 					sortable: true,
 					class: "text-right"
@@ -335,6 +368,7 @@ export default {
 					key: 'derivedmaxyear',
 					label: 'derived max year',
 					sortByFormatted: true,
+					filterByFormatted: true,
 					formatter: derivedMaxYearFormat,
 					sortable: true,
 					class: "text-right"
@@ -344,6 +378,7 @@ export default {
 					key: 'duration',
 					label: 'duration',
 					sortByFormatted: true,
+					filterByFormatted: true,
 					formatter: durationFormat,
 					sortable: true,
 					class: "text-right"
@@ -353,6 +388,7 @@ export default {
 					key: 'derivedminduration',
 					label: 'min duration',
 					sortByFormatted: true,
+					filterByFormatted: true,
 					formatter: derivedMinDurationFormat,
 					sortable: true,
 					class: "text-right"
@@ -362,6 +398,7 @@ export default {
 					key: 'derivedmaxduration',
 					label: 'max duration',
 					sortByFormatted: true,
+					filterByFormatted: true,
 					formatter: derivedMaxDurationFormat,
 					sortable: true,
 					class: "text-right"
@@ -372,6 +409,7 @@ export default {
 					sortable: true,
 					class: "text-center",
 					sortByFormatted: true,
+					filterByFormatted: true,
 					formatter: (value, key, item) => item.data.included				
 				}] : [],     
 				/*{
@@ -482,10 +520,10 @@ export default {
 		const derivedMaxDurationFormat = (value, key, item) => store.getters.derivedMaxDuration(item.data.id) 	
 			
 		return {
-			store,			
+			store,
+			datatable,			
 			filter,
 			isBusy,
-			//selectedID,
 			sortBy,
 			sortDesc,
 			paginated,

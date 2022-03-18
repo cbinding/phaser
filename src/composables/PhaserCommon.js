@@ -67,7 +67,7 @@ export const EdgeClass = Object.freeze({
 // string date/timestamps 
 export const timestampISO = () => new Date().toISOString() // e.g. "2022-03-04T08:13:47.578Z"
 export const timestamp = () => timestampISO().replaceAll(/[:.\-Z]/g,"") // used for file naming e.g. "20211225T120523"
-export const datestamp = () => timestamp().slice(0,8) // "YYYYMMDD"
+export const datestamp = () => timestamp().slice(0,8) // "YYYYMMDD" eg 20220318
 
 // get JSON data from a URI (asynchronous call)
 export const getJSON = async (uri, success=()=>{}, error=()=>{}) => {

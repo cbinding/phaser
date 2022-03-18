@@ -182,17 +182,17 @@
 					<b-dropdown-divider/>
 
 					<b-dropdown-item-button @click="diagramRefresh">
-						<b-icon-arrow-clockwise variant="primary" class="mr-2" />
+						<b-icon-arrow-clockwise class="mr-2 p-1 rounded bg-primary" variant="light"/>
 						<span>Refresh diagram</span>
 					</b-dropdown-item-button>
 
 					<b-dropdown-item-button @click="toggleLock">						
             			<span v-if="locked">
-							<b-icon-lock-fill variant="success" class="mr-2"/>						
+							<b-icon-lock-fill class="mr-2 p-1 rounded bg-success" variant="light"/>						
 							<span>Unlock diagram</span>
 						</span>
 						<span v-else>
-							<b-icon-unlock-fill variant="danger" class="mr-2"/> 			
+							<b-icon-unlock-fill class="mr-2 p-1 rounded bg-danger" variant="light"/> 			
 							<span>Lock diagram</span>
 						</span>
 					</b-dropdown-item-button>
@@ -202,12 +202,14 @@
 						<span>Redo Layout</span>
 					</b-dropdown-item-button>
 
+					<!--
 					<b-dropdown-divider/>
 					<b-dropdown-item-button @click="togglePagination">
 						<b-icon-check class="mr-2" variant="success" v-if="paginated"/>						
 						<b-icon-x class="mr-2" variant="danger" v-else />														
 						<span>Paginated tables?</span>						
 					</b-dropdown-item-button>
+					-->
 
 					<!--<b-dropdown-divider/>	
 					<b-dropdown-item-button v-b-modal.modalTemporalRelationships>

@@ -134,7 +134,7 @@ export default {
                 //animateOnFit: function(){ return false; },// whether to animate on fit                   
                 //fitAnimationDuration: 1000, // duration of animation on fit
                 // icon class names
-                sliderHandleIcon: 'fa fa-minus', //'"><b-icon-arrow-up/></span><span class="',
+                sliderHandleIcon: 'fa fa-minus', // these won't display; we don't use FontAwesome in Phaser
                 zoomInIcon: 'fa fa-plus',
                 zoomOutIcon: 'fa fa-minus',
                 resetIcon: 'fa fa-expand'
@@ -360,7 +360,7 @@ export default {
                          //'background-fill': 'radial-gradient',
                         //'background-gradient-stop-colors': 'aliceblue blue'
                     }
-                },                    
+                },                                   
                 {                       
                     selector: `node[class="${NodeClass.CONTEXT}"]`,
                     style: {
@@ -374,43 +374,29 @@ export default {
                         //'background-fill': 'radial-gradient',
                         //'background-gradient-stop-colors': 'white gray'  
                     }
-                },
+                }, 
                 {                       
                     selector: `node[class="${NodeClass.CONTEXT}"]:selected`,
-                    style: { 
-                        'background-color': ElementColour.SELECTED_BG, 
-                        'color': ElementColour.CONTEXT_FG // 'black'
-                    }
-                },
-                /*{  
-                     // different shape based on type?                     
-                    selector: 'node[type="Layer"]',
-                    style: { 'shape': 'rhomboid' }
-                },*/
+                    style: { 'color': ElementColour.CONTEXT_FG }
+                },               
                 {
                     selector: `node[class="${NodeClass.PHASE}"]`,
                     style: {
-                        'width': '600px',
+                        //'width': 600,
                         'text-opacity': 0.75,
                         'text-valign': 'top',
                         'text-halign': 'right',
                         'text-margin-x': 5,
                         'text-margin-y': 15,
+                        'min-width': 800,                        
                         'padding': props.gridSize,
                         'color': 'gray',  
                         'background-opacity': 0,                          
                         'background-color': 'transparent',
                         'border-color': 'lightgray',
-                        'border-width': '0px'                                                     
+                        'border-width': 1                                                     
                      }
-                }, 
-                {                       
-                    selector: `node[class="${NodeClass.PHASE}"]:selected`,
-                    style: { 
-                        'background-color': ElementColour.SELECTED_BG,
-                        'background-opacity': 1 
-                     }
-                },                                                   
+                },                                                               
                 {
                     selector: `node[class="${NodeClass.GROUP}"]`,
                     style: {
@@ -425,11 +411,7 @@ export default {
                         'border-color': ElementColour.GROUP_FG,    
                         'compound-sizing-wrt-labels': 'include'                        
                     }
-                }, 
-                {                       
-                    selector: `node[class="${NodeClass.GROUP}"]:selected`,
-                    style: { 'background-color': ElementColour.SELECTED_BG }
-                },                  
+                },               
                 {
                     selector: `node[class="${NodeClass.SUBGROUP}"]`,
                     style: {
@@ -444,11 +426,16 @@ export default {
                         'background-color': ElementColour.SUBGROUP_BG,
                         'border-color': ElementColour.SUBGROUP_FG,                           
                     }
-                },	 
+                },  
                 {                       
-                    selector: `node[class="${NodeClass.SUBGROUP}"]:selected`,
-                    style: { 'background-color': 'gold' }
-                },                    	
+                    selector: `node:selected`,
+                    style: { 
+                        'background-color': ElementColour.SELECTED_BG,
+                        'background-opacity': 1,
+                        //'border-style': 'double',
+                        'border-width': 6
+                     }
+                },                                	
                 {
                     selector: 'edge',
                     style: {
@@ -504,6 +491,7 @@ export default {
             let cyNode = cyi.$id(oldValue)
             if(cyNode) {
                 cyNode.unselect()
+                cyNode.removeClass("selected")                
                 cyNode.connectedEdges().removeClass("connected")                 
             }            
                         
@@ -520,6 +508,7 @@ export default {
             cyNode = cyi.$id(newValue)
             if(cyNode) {
                 cyNode.select() // show node as selected
+                cyNode.addClass("selected")                
                 cyNode.connectedEdges().addClass("connected") // highlight any connected edges     
 
                 /*popperInstance?.destroy()
@@ -779,8 +768,15 @@ export default {
 
                 // line style for drawing
                 ctx.setLineDash([])
-                ctx.strokeStyle = ElementColour.EDGE 
-                ctx.lineWidth = 3
+                if(link.data.source == store.getters.selectedID || link.data.target == store.getters.selectedID) {
+                    ctx.strokeStyle = ElementColour.EDGE_CONNECTED
+                    ctx.lineWidth = 4
+                }
+                else {
+                    ctx.strokeStyle = ElementColour.EDGE 
+                    ctx.lineWidth = 3
+                }
+                
                 
                 // draw (double) lines 
                 // between the contexts                      
@@ -1008,13 +1004,9 @@ export default {
     background-color: salmon;
 }*/
 
-/* make the 'no zoom' tick invisible */
-.cy-panzoom-no-zoom-tick {
-    display: none;
-}
-/* make the 'reset' button invisible */
-.cy-panzoom-reset {
-    display: none;
-}
+/* make the panzoom control 'no zoom' tick invisible */
+.cy-panzoom-no-zoom-tick { display: none; }
+/* make the panzoom control 'reset' button invisible */
+.cy-panzoom-reset { display: none; }
 
 </style>

@@ -31,7 +31,7 @@
 						type="search"
 						autocomplete="off"
 						placeholder="filter validation records"/>	
-						<div class="text-secondary">Showing {{ filterCount }} of {{ tests.length }} records</div>				
+						<div class="text-secondary text-right">Showing {{ filterCount }} of {{ tests.length }}</div>				
 				</b-form-group>
 			</b-col>
 		</b-row>

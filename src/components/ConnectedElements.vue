@@ -6,7 +6,7 @@
         <b-table sort-icon-left outlined small show-empty
             ref="relationships"
             id="relationships"  
-            style="height: 150px;"                  
+            style="height: 150px; resize: vertical;"                  
             :no-border-collapse="true"
             :sticky-header="true" 
             :items="tableData" 
@@ -267,7 +267,7 @@ a:hover {
     background-color: #c3e6cb;    
 }
 /deep/ .status-uncertain {
-    background-color: gold; /* was #ffeeba; */
+    background-color: orange; /* was #ffeeba; */
 }
 /deep/ .status-needsmore {
     background-color: moccasin; /* was lightyellow; */

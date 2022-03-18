@@ -58,6 +58,7 @@
         <b-row>
 			<b-col>
 				<b-pagination
+                    size="sm"
 					v-model="currentPage"
 					:total-rows="filterCount"
 					:per-page="perPage"
@@ -65,7 +66,7 @@
 					:first-number="true"
 					:last-number="true"/>					
 			</b-col>
-            <b-col class="text-right">Showing {{ filterCount }} of {{ items.length }} records</b-col>
+            <b-col class="text-right">Showing {{ filterCount }} of {{ items.length }}</b-col>
 		</b-row>       
     </b-container>
 </template>
@@ -350,10 +351,10 @@ export default {
     background-color: #c3e6cb;    
 }
 /deep/ .status-uncertain {
-    background-color: gold; /* was #ffeeba; */
+    background-color: orange; 
 }
 /deep/ .status-needsmore {
-    background-color: moccasin; /* was lightyellow; */
+    background-color: moccasin; 
 }
 /deep/ .status-invalid {
     background-color: #f5c6cb;

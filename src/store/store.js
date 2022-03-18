@@ -16,7 +16,7 @@ Vue.use(Vuex)
 
 const state = {        
     appName: "Phaser",  // application name
-    appVersion: "1.16", // application version    
+    appVersion: "1.17", // application version    
     selectedID: "",     // ID of currently selected node  
     diagramLock: true,  // nodes cannot be moved on diagram when locked
     paginated: true,    // whether to show pagination controls for editor tables 
@@ -32,7 +32,7 @@ const state = {
     // Array slow for retrieving object by ID, vuex doesn't (currently) support Map() 
     // so using objects to store nodes & edges with IDs as properties 
     nodes: {},          // phases, groups, subgroups, contexts, datings, periods
-    edges: {},          // represents context stratigraphy (context ABOVE context)
+    edges: {},          // represents context stratigraphy (context ABOVE/EQUAL context)
 
     types: Object.freeze({            
         groupTypes: [ // TODO: load from external JSON or CSV. Part of config?
@@ -589,8 +589,9 @@ const getters = {
         // structure of a new context
         return { 
             data: { 
-                order: 1,   // dagre needs this to minimise crossings?
-                rank: 1,    // dagre needs this to minimise crossings?
+                //rank: 1,    // dagre needs this to minimise crossings?
+                //weight: 1,  // dagre needs this to minimise crossings?
+                //order: 1,   // dagre GENERATES this to minimise crossings?                
                 siteCode: "", 
                 id: `${nc}-${id}`, 
                 class: nc, 

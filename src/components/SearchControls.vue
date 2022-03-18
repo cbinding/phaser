@@ -132,7 +132,7 @@
 						type="search"
 						autocomplete="off"
 						placeholder="filter results"/>	
-                    <div class="text-secondary">Showing {{ filterCount }} of {{ searchResults.length }} results</div>				
+                    <div class="text-secondary text-right">Showing {{ filterCount }} of {{ searchResults.length }}</div>				
 				</b-form-group> 
 			</b-col>
 		</b-row>
@@ -187,6 +187,7 @@
         <b-row>
 			<b-col>
 				<b-pagination
+                    size="sm"
 					v-model="currentPage"
 					:total-rows="filterCount"
 					:per-page="perPage"

@@ -55,6 +55,7 @@
        <b-row>
 			<b-col>
 				<b-pagination
+                    size="sm"
 					v-model="currentPage"
 					:total-rows="filterCount"
 					:per-page="perPage"
@@ -62,7 +63,7 @@
 					:first-number="true"
 					:last-number="true"/>					
 			</b-col>
-            <b-col class="text-right">Showing {{ filterCount }} of {{ items.length }} records</b-col>
+            <b-col class="text-right">Showing {{ filterCount }} of {{ items.length }}</b-col>
 		</b-row>   
         
     </b-container>

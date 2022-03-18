@@ -20,9 +20,10 @@
 					@click.stop="itemsToClipboard()">
                     <b-icon-clipboard-plus class="mr-2" />
                     <span>Copy to clipboard</span>
-                    </b-button>            
+                </b-button>   
+                <StatusKey/>         
 			</b-col>
-			<b-col>
+			<b-col cols="4">
 				<b-form-group
 					label="Filter"
 					label-for="filter-input"
@@ -39,7 +40,7 @@
 						type="search"
 						autocomplete="off"
 						placeholder="filter records"/>		
-                    <div class="text-secondary">Showing {{ filterCount }} of {{ items.length }} records</div>				
+                    <div class="text-secondary text-right">Showing {{ filterCount }} of {{ items.length }}</div>				
 				</b-form-group>
 			</b-col>
 		</b-row>
@@ -109,6 +110,7 @@ import { NodeClass, EdgeType, isGroup, rangeRelationship, relationshipStatus } f
 import GroupMatrixDiagram from '@/components/GroupMatrixDiagram'
 import NodeIconLink from '@/components/NodeIconLink'
 import YearRangeDisplay from '@/components/YearRangeDisplay'
+import StatusKey from '@/components/StatusKey'
 //import NodeTypeAhead from "@/components/NodeTypeAhead"
 import Papa from "papaparse"
 
@@ -116,7 +118,8 @@ export default {
     components: { 
         GroupMatrixDiagram, 
         NodeIconLink,
-        YearRangeDisplay
+        YearRangeDisplay,
+        StatusKey
     },
     props: {
         disabled: {

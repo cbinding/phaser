@@ -43,18 +43,18 @@
 						type="search"
 						autocomplete="off"
 						:placeholder="`filter ${itemClass} records`"/>	
-					<div class="text-secondary">Showing {{ filterCount }} of {{ items.length }} records</div>				
+					<div class="text-secondary text-right">Showing {{ filterCount }} of {{ items.length }}</div>				
 				</b-form-group>
 			</b-col>
 		</b-row>
 		<b-row>
 			<b-col>
 				<b-table show-empty sort-icon-left hover outlined selectable small
-					style="height: 200px;"
+					style="height: 200px; resize: vertical;"
 					ref="datatable"
 					:id="`datatable-${itemClass}`"										
 					:no-border-collapse="true"
-					sticky-header="200px" 
+					:sticky-header="true" 
 					select-mode="single"
 					primary-key="data.id"
 					:per-page="(paginated ? perPage : 0)"
@@ -115,6 +115,7 @@
 		<b-row>
 			<b-col>
 				<b-pagination v-if="paginated"
+					size="sm"
 					v-model="currentPage"
 					:total-rows="filterCount"
 					:per-page="perPage"

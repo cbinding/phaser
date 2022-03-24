@@ -370,7 +370,7 @@ export default {
     background-color: #c3e6cb;    
 }
 /deep/ .status-uncertain {
-    background-color: gold; 
+    background-color: orange; 
 }
 /deep/ .status-needsmore {
     background-color: moccasin; 

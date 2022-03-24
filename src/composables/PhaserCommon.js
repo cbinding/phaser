@@ -64,9 +64,9 @@ export const EdgeClass = Object.freeze({
     EDGE: "edge"
 })
 
-// string date/timestamps 
+// string date/timestamps used for file naming etc.
 export const timestampISO = () => new Date().toISOString() // e.g. "2022-03-04T08:13:47.578Z"
-export const timestamp = () => timestampISO().replaceAll(/[:.\-Z]/g,"") // used for file naming e.g. "20211225T120523"
+export const timestamp = () => timestampISO().replaceAll(/[:.\-Z]/g,"") // e.g. "20211225T120523"
 export const datestamp = () => timestamp().slice(0,8) // "YYYYMMDD" eg 20220318
 
 // get JSON data from a URI (asynchronous call)
@@ -124,7 +124,7 @@ export const tryParseInt = (value, defaultValue) => {
     return outputValue
 } 
 
-// functions mainly used for validating PHASER node date ranges
+// general data cleansing and type checking for graph nodes
 export const clean = s => (s || "").toString().trim()
 export const lower = s => clean(s).toLowerCase()
 export const upper = s => clean(s).toUpperCase()
@@ -136,6 +136,7 @@ export const isContext = node => classIs(node, NodeClass.CONTEXT)
 export const isDating = node => classIs(node, NodeClass.DATING)
 export const isPeriod = node => classIs(node, NodeClass.PERIOD)
 
+// functions used for validating PHASER node date ranges
 // check for a valid year range: {minYear: <integer>, maxYear: <integer>}
 export const isValidRange = range => {
 	if(!range) return false
@@ -145,7 +146,7 @@ export const isValidRange = range => {
 }
 
 // check if an integer is within bounds of a given year range
-export const inRange = (num, range) => {
+export const isWithinRange = (num, range) => {
 	if(!Number.isInteger(num) || !isValidRange(range)) return false	
 	return (num >= range.minYear && num <= range.maxYear)
 } 
@@ -283,7 +284,7 @@ export const relationshipStatus = (sourceClass, targetClass, stratRelationship, 
 		INVALID: "status-invalid",
 		UNKNOWN: "status-unknown"
 	}
-	const defaultStatus = () => sourceClass === targetClass ? Status.UNCERTAIN : Status.NEEDSMORE
+	const defaultStatus = (sourceClass === targetClass ? Status.UNCERTAIN : Status.NEEDSMORE)
 
 	let result = Status.UNKNOWN
 
@@ -294,7 +295,7 @@ export const relationshipStatus = (sourceClass, targetClass, stratRelationship, 
 				switch(tempRelationship) {
 					case AllenType.BEFORE: result = Status.INVALID; break;
 					case AllenType.AFTER: result = Status.VALID; break;
-					default: result = defaultStatus(); break;                        
+					default: result = defaultStatus; break;                        
 				}
 				break;
 			}                
@@ -302,7 +303,7 @@ export const relationshipStatus = (sourceClass, targetClass, stratRelationship, 
 				switch(tempRelationship) {
 					case AllenType.BEFORE: result = Status.VALID; break;
 					case AllenType.AFTER: result = Status.INVALID; break;
-					default: result = defaultStatus(); break;                        
+					default: result = defaultStatus; break;                        
 				}
 				break;
 			}
@@ -311,7 +312,7 @@ export const relationshipStatus = (sourceClass, targetClass, stratRelationship, 
 					case AllenType.BEFORE: result = Status.INVALID; break;
 					case AllenType.AFTER: result = Status.INVALID; break;                      
 					case AllenType.EQUALS: result =Status.VALID; break;
-					default: result = defaultStatus(); break;                      
+					default: result = defaultStatus; break;                      
 				}
 				break;
 			}               

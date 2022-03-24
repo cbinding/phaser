@@ -1,6 +1,5 @@
 <template>
-    <b-card no-body 
-        v-b-toggle.legendItems             
+    <b-card v-once no-body v-b-toggle.legendItems             
         class="legend card shadow text-secondary">
         <div class="card-header px-3 py-1">
             <b-icon-key class="mr-2"/>Key</div>

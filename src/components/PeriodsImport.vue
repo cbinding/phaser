@@ -8,98 +8,99 @@
 
         <b-container class="p-0">
             <b-row align-h="between">
-            <b-col>
-                <b-button pill
-                    size="sm"
-                    variant="primary"
-                    class="text-left shadow" 
-                    title="refresh" 
-                    alt="refresh"			
-                    @click.stop="refresh">
-                    <b-icon-arrow-clockwise class="mr-2" />
-                    <span>Refresh</span>
-                </b-button>
-            </b-col>	
-            <b-col>
-                <b-form-group
-					label="Filter"
-					label-for="periods-filter-input"
-					label-cols-sm="3"
-					label-align-sm="right"
-					label-size="sm"
-					class="mb-2">
-					<template v-slot:label>
-						<b-icon-search />
-					</template>
-					<b-form-input 
-						size="sm"
-						id="periods-filter-input"
-						class="shadow-sm"
-						v-model="filter"
-						type="search"
-						autocomplete="off"
-						placeholder="filter"/>					
-				</b-form-group>
-            </b-col>
-            </b-row>
-            <b-row><b-col>
-        <b-overlay :show="busy" rounded="sm">
-            <b-form-group 
-                label="Collections"
-                label-for="collectionList" 
-                label-size="sm">
-                <template v-slot:label>
-                    <span>Collections</span>
-                    <b-badge 
-                        variant="outline" 
-                        class="border secondary pb-1 m-0 ml-2">
-                        <span>{{ collections.length }}</span>
-                    </b-badge>
-                </template>
-
-                <b-table show-empty hover outlined selectable small 
-                    style="height: 300px;"
-					id="periods-table"					
-					:no-border-collapse="false"
-					sticky-header="300px" 
-					select-mode="single"
-					primary-key="id" 
-					:items="collections" 
-					:fields="fields"
-					:filter="filter"
-                    :sort-by.sync="sortBy"
-                    :sort-desc.sync="sortDesc"						
-					class="overflow-auto shadow-sm"
-					@row-selected="rowSelected">									
-				</b-table>
-            </b-form-group>
-            <b-form-group 
-                label="Periods"
-                label-for="periodsList"
-                label-size="sm">
-                <template v-slot:label>
-                    <span>Periods</span>
-                    <b-badge 
-                        variant="outline" 
-                        class="border secondary pb-1 m-0 ml-2">
-                        <span>{{ periods.length }}</span>					
-                    </b-badge>
-                </template>
-                <b-list-group 
-                    class="shadow-sm overflow-auto m-1" 
-                    style="height: 175px;" 
-                    size="sm">
-                    <b-list-group-item
+                <b-col>
+                    <b-button pill
                         size="sm"
-                        v-for="(period, index) in periods" 
-                        :key="index">
-                        <a target="_blank" :href="`${baseURI}${period.id}`">{{ period.label }}</a>
-                        &nbsp;<span>[{{ periodCoverage(period) }}]</span>
-                    </b-list-group-item>
-                </b-list-group>
-            </b-form-group>
-        </b-overlay> 
-        </b-col>
+                        variant="primary"
+                        class="text-left shadow" 
+                        title="refresh" 
+                        alt="refresh"			
+                        @click.stop="refresh">
+                        <b-icon-arrow-clockwise class="mr-2" />
+                        <span>Refresh</span>
+                    </b-button>
+                </b-col>	
+                <b-col>
+                    <b-form-group
+                        label="Filter"
+                        label-for="periods-filter-input"
+                        label-cols-sm="3"
+                        label-align-sm="right"
+                        label-size="sm"
+                        class="mb-2">
+                        <template v-slot:label>
+                            <b-icon-search />
+                        </template>
+                        <b-form-input 
+                            size="sm"
+                            id="periods-filter-input"
+                            class="shadow-sm"
+                            v-model="filter"
+                            type="search"
+                            autocomplete="off"
+                            placeholder="filter"/>					
+                    </b-form-group>
+                </b-col>
+            </b-row>
+            <b-row>
+                <b-col>
+                <b-overlay :show="busy" rounded="sm">
+                    <b-form-group 
+                        label="Collections"
+                        label-for="collectionList" 
+                        label-size="sm">
+                        <template v-slot:label>
+                            <span>Collections</span>
+                            <b-badge 
+                                variant="outline" 
+                                class="border secondary pb-1 m-0 ml-2">
+                                <span>{{ collections.length }}</span>
+                            </b-badge>
+                        </template>
+
+                        <b-table show-empty hover outlined selectable small 
+                            style="height: 300px;"
+                            id="periods-table"					
+                            :no-border-collapse="false"
+                            sticky-header="300px" 
+                            select-mode="single"
+                            primary-key="id" 
+                            :items="collections" 
+                            :fields="fields"
+                            :filter="filter"
+                            :sort-by.sync="sortBy"
+                            :sort-desc.sync="sortDesc"						
+                            class="overflow-auto shadow-sm"
+                            @row-selected="rowSelected">									
+                        </b-table>
+                    </b-form-group>
+                    <b-form-group 
+                        label="Periods"
+                        label-for="periodsList"
+                        label-size="sm">
+                        <template v-slot:label>
+                            <span>Periods</span>
+                            <b-badge 
+                                variant="outline" 
+                                class="border secondary pb-1 m-0 ml-2">
+                                <span>{{ periods.length }}</span>					
+                            </b-badge>
+                        </template>
+                        <b-list-group 
+                            class="shadow-sm overflow-auto m-1" 
+                            style="height: 175px;" 
+                            size="sm">
+                            <b-list-group-item
+                                size="sm"
+                                v-for="(period, index) in periods" 
+                                :key="index">
+                                <a target="_blank" :href="`${baseURI}${period.id}`">{{ period.label }}</a>
+                                &nbsp;<span>[{{ periodCoverage(period) }}]</span>
+                            </b-list-group-item>
+                        </b-list-group>
+                    </b-form-group>
+                </b-overlay> 
+            </b-col>
         </b-row> 
         </b-container>
         <template #modal-footer="{ ok, cancel }">

@@ -80,8 +80,7 @@
             <b-col>
                 <b-button-group class="my-1">
                 <!--TODO: date range criteria?-->
-                    <b-button
-                        pill 
+                    <b-button pill 
                         size="sm"
                         class="m-1"
                         variant="primary"                         
@@ -91,8 +90,7 @@
                         :disabled="isSearchDisabled" 
                         @click="onSubmit">
                         <b-icon-search class="mr-2"/>Search</b-button>
-                    <b-button 
-                        pill
+                    <b-button pill
                         size="sm"
                         class="m-1"
                         variant="primary" 
@@ -102,8 +100,7 @@
                         :disabled="isCopyDisabled" 
                         @click="copyToClipboard"> 
                         <b-icon-clipboard-plus class="mr-2" />Copy</b-button>
-                    <b-button 
-                        pill
+                    <b-button pill
                         size="sm"
                         class="m-1"
                         variant="primary" 
@@ -136,19 +133,7 @@
 				</b-form-group> 
 			</b-col>
 		</b-row>
-        <!--<b-row align-h="between">			
-			<b-col>
-				<b-pagination
-                    v-model="currentPage"
-                    :total-rows="rowCount"
-                    :per-page="perPage"
-                    aria-controls="my-table"
-                    :first-number="true"
-                    :last-number="true"/>
-			</b-col>
-			
-		</b-row>-->
-        
+                
 
         <b-table show-empty small striped hover outlined sort-icon-left
             style="height: 600px;" 
@@ -182,8 +167,7 @@
                 <YearRangeDisplay :minYear="row.item.minYear" :maxYear="row.item.maxYear" :showDuration="true"/>                          
             </template>          
         </b-table>
-        <!--<ColourPicker colour="yellow" :disabled="false"	/>-->	  
-
+        
         <b-row>
 			<b-col>
 				<b-pagination
@@ -194,7 +178,6 @@
 					aria-controls="my-table"
 					:first-number="true"
 					:last-number="true"/>
-					<!--<p class="mt-3">Current Page: {{ currentPage }}</p>-->
 			</b-col>
 		</b-row>	      
 	</b-container>
@@ -207,9 +190,6 @@ import Papa from "papaparse"
 import { isDating } from '@/composables/PhaserCommon'
 import NodeIconLink from '@/components/NodeIconLink'
 import YearRangeDisplay from '@/components/YearRangeDisplay'
-
-
-//import ColourPicker from '@/components/ColourPicker'
 
 export default {
     components: { 

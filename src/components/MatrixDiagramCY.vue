@@ -394,7 +394,7 @@ export default {
                         'background-opacity': 0,                          
                         'background-color': 'transparent',
                         'border-color': 'lightgray',
-                        'border-width': 1                                                     
+                        'border-width': 0                                                     
                      }
                 },                                                               
                 {

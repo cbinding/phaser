@@ -1,5 +1,8 @@
 <template>
-	<span v-b-toggle="'statuskey'" class="px-1 mx-2 ext-secondary position-absolute">
+	<span 
+        :v-once="true" 
+        v-b-toggle="'statuskey'" 
+        class="px-1 mx-2 ext-secondary position-absolute">
         <div><b-icon-key class="mr-1"/>Key</div>
         <b-collapse id="statuskey">               
             <b-list-group>
@@ -20,19 +23,19 @@
     margin: 0px;
     border: 1px solid lightgray;
 }
-/deep/ .status-valid {
+.status-valid {
     background-color: #c3e6cb;    
 }
-/deep/ .status-uncertain {
+.status-uncertain {
     background-color: orange;
 }
-/deep/ .status-needsmore {
+.status-needsmore {
     background-color: moccasin; 
 }
-/deep/ .status-invalid {
+.status-invalid {
     background-color: #f5c6cb;
 }
-/deep/ .status-unknown {
+.status-unknown {
     background-color: white;
 }
 </style>

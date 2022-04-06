@@ -696,7 +696,7 @@ export default {
         }  
 
         const updateNodePositionsInStore = async () => {
-             const cyi = cy.value.instance
+            const cyi = cy.value.instance
             if(!cyi) return
             //console.log("updating node positions")
             cyi.elements("node").forEach(node => { 
@@ -705,7 +705,7 @@ export default {
         }
        
         // draw horizontal SVG phase lines on supplementary layer
-        // phase lines are drawn relative to TOP of phase nodes
+        // phase lines are drawn relative to TOP edge of phase elements
         const drawHorizontalPhaseLines = (ctx) => {
             if(!ctx) return
 
@@ -749,7 +749,7 @@ export default {
         } 
 
         // draw double lines between contexts representing 'equal' stratigraphic relationships
-        const equalLinks = computed(() => store.getters.edges.filter(link => link.data.type === EdgeType.EQUAL))
+        const equalRelationships = computed(() => store.getters.edges.filter(link => link.data.type === EdgeType.EQUAL))
         const drawEqualRelationships = (ctx) => {
             if(!ctx) return
 
@@ -758,9 +758,10 @@ export default {
 
             // 'equal' relationships are not in the diagram as they would
             // interfere with the dagre layout - so get from store instead
-            unref(equalLinks).forEach(link => {
+            unref(equalRelationships).forEach(link => {
                 let sourceNode = store.getters.nodeByID(link.data.source)
                 let targetNode = store.getters.nodeByID(link.data.target)
+                if(!sourceNode || !targetNode) return
 
                 let x1 = sourceNode.position.x
                 let y1 = sourceNode.position.y
@@ -768,7 +769,7 @@ export default {
                 let y2 = targetNode.position.y  
                 
                 // we have central position of nodes, 
-                // but will draw from border to border 
+                // but will draw horizontal line from border to border 
                 let offset = (props.gridSize * 1.5) + 2
                 // direction from 1 -> 2 or 2 -> 1 ?                
                 if(x2 > x1) {

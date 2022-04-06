@@ -450,44 +450,50 @@ export default {
         }
 
         const contextsCsvToStore = async (data) => {
-            // local lookups, usage: dating = datingFromLabel.get(label)
+            // local lookup of existing contexts by label,
+            // usage: dating = datingFromLabel.get(label)            
             const contextFromLabel = new Map()
             store.getters.contexts.forEach(node => {
                 contextFromLabel.set(node.data.label || "label", node)
             })
-
+            // local lookup of existing groups by label,
+            // usage: group = groupFromLabel.get(label)
             const groupFromLabel = new Map()
             store.getters.groups.forEach(node => {
                 groupFromLabel.set(node.data.label || "label", node)
             })
-
+            // local lookup of existing subgroups by label,
+            // usage: subgroup = subgroupFromLabel.get(label)
             const subgroupFromLabel = new Map()
             store.getters.subgroups.forEach(node => {
                 subgroupFromLabel.set(node.data.label || "label", node)
             })
-
+            // local lookup of existing phases by label,
+            // usage: phase = phaseFromLabel.get(label)
             const phaseFromLabel = new Map()
             store.getters.phases.forEach(node => {
                 phaseFromLabel.set(node.data.label || "label", node)
             })
-
+            // local lookup of existing periods by label,
+            // usage: period = periodFromLabel.get(label)
             const periodFromLabel = new Map()
             store.getters.periods.forEach(node => {
                 periodFromLabel.set(node.data.label || "label", node)
             })
 
+            // processing each data record
             for (const item of data) {               
 
                 // get cleaned data field values
-                let siteCode = clean(item.siteCode || "")
-                let contextID = clean(item.contextID || "")
-                let contextType = clean(item.contextType || "")
-                let cud = clean(item.cud || "").toUpperCase()                
-                let description = clean(item.description || "")
-                let withinPeriod = clean(item.withinPeriod || "")               
-                let withinPhase = clean(item.withinPhase || "")
-                let withinGroup = clean(item.withinGroup || "")
-                let withinSubGroup = clean(item.withinSubGroup || "")                
+                let siteCode = clean(item.siteCode)
+                let contextID = clean(item.contextID)
+                let contextType = clean(item.contextType)
+                let cud = clean(item.cud).toUpperCase()                
+                let description = clean(item.description)
+                let withinPeriod = clean(item.withinPeriod)               
+                let withinPhase = clean(item.withinPhase)
+                let withinGroup = clean(item.withinGroup)
+                let withinSubGroup = clean(item.withinSubGroup)                
 
                 // if context doesn't exist create new
                 if(!contextFromLabel.has(contextID)) {
@@ -496,7 +502,7 @@ export default {
 
                 // get a copy to update
                 let context = _merge({}, contextFromLabel.get(contextID)) 
-                // merge properties
+                // merge properties from new data
                 context.data.siteCode = siteCode
                 context.data.label = contextID
                 context.data.type = contextType
@@ -509,9 +515,10 @@ export default {
                         period.data.label = withinPeriod
                         periodFromLabel.set(withinPeriod, period)
                         // create or update in store
-                        await store.dispatch('updateNode', period)
+                        store.dispatch('updateNode', period)
                     } 
                     // attach the context to the period
+                    // attach the (real) period id to the context
                     context.data.period = periodFromLabel.get(withinPeriod).data.id
                 }
 
@@ -523,9 +530,10 @@ export default {
                         subgroup.data.label = withinSubGroup
                         subgroupFromLabel.set(withinSubGroup, subgroup)
                         // create or update in store
-                        await store.dispatch('updateNode', subgroup)
+                        store.dispatch('updateNode', subgroup)
                     } 
                     // attach the context to the subgroup
+                    // attach the context to the subgroup parent
                     context.data.parent = subgroupFromLabel.get(withinSubGroup).data.id
                 }
                 else if(withinGroup) {
@@ -535,9 +543,10 @@ export default {
                         group.data.label = withinGroup
                         groupFromLabel.set(withinGroup, group)
                         // create or update in store
-                        await store.dispatch('updateNode', group)
+                        store.dispatch('updateNode', group)
                     } 
                     // attach the context to the group
+                    // attach the context to the group parent
                     context.data.parent = groupFromLabel.get(withinGroup).data.id
                 }
                 else if(withinPhase) {
@@ -547,9 +556,10 @@ export default {
                         phase.data.label = withinPhase
                         phaseFromLabel.set(withinPhase, phase)
                         // create or update in store
-                        await store.dispatch('updateNode', phase)
+                        store.dispatch('updateNode', phase)
                     } 
                     // attach the context to the phase
+                    // attach the context to the phase parent
                     context.data.parent = phaseFromLabel.get(withinPhase).data.id
                 }
 

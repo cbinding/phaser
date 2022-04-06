@@ -35,6 +35,14 @@ export const NodeClass = Object.freeze({
     PERIOD: "period"
 })
 
+// Yes we only have one at the moment(!)
+// but allows for future expansion with
+// more fine-grained edge class values
+// Usage: EdgeClass.EDGE
+export const EdgeClass = Object.freeze({
+    EDGE: "edge"
+})
+
 // Colour constants for diagrams and icons 
 export const ElementColour = Object.freeze({
 	NODE_BG: "white",
@@ -52,16 +60,10 @@ export const ElementColour = Object.freeze({
 	PERIOD_BG: "orchid",
 	PERIOD_FG: "rebeccapurple",
 	SELECTED_BG: "gold",
+	SELECTED_FG: "black",
 	EDGE: "gray",
 	EDGE_CONNECTED: "darkred",
 	EDGE_SELECTED: "darkred",
-})
-
-// Yes we only have one at the moment(!)
-// but allows for future expansion with
-// more fine-grained edge class values
-export const EdgeClass = Object.freeze({
-    EDGE: "edge"
 })
 
 // string date/timestamps used for file naming etc.

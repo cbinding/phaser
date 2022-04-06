@@ -84,15 +84,16 @@ export default {
 		// tab might get manually selected - ensure we are displaying correct info 
 		// (e.g. selectedID might be context but selected tab might be groups..) 
 		const activated = (newIndex) => { 
-			let nc = store.getters.classByID(props.selectedID)
+			let itemClass = store.getters.classByID(props.selectedID)
 			let match = false
 			switch(newIndex) {
-				case 0: match = (nc == NodeClass.PHASE);break;
-				case 1: match = (nc == NodeClass.GROUP);break;
-				case 2: match = (nc == NodeClass.SUBGROUP);break;
-				case 3: match = (nc == NodeClass.CONTEXT);break;
-				case 4: match = (nc == NodeClass.DATING);break;
-				case 5: match = (nc == NodeClass.PERIOD);break;
+				case 0: match = (itemClass == NodeClass.PHASE);break;
+				case 1: match = (itemClass == NodeClass.GROUP);break;
+				case 2: match = (itemClass == NodeClass.SUBGROUP);break;
+				case 3: match = (itemClass == NodeClass.CONTEXT);break;
+				case 4: match = (itemClass == NodeClass.DATING);break;
+				case 5: match = (itemClass == NodeClass.PERIOD);break;
+				case 6: match = (itemClass == EdgeClass.EDGE);break;
 			}
 			if(!match)
 				store.dispatch("setSelectedID", null)
@@ -115,23 +116,17 @@ export default {
 		// display tab corresponding to the currently selected item (may be node or edge)
 		const selectedID1 = computed(() => props.selectedID)
 		watch(selectedID1, (newID) => {			
-			if(store.getters.isNode(newID)) {
-				// if it's a node, display tab according to node.data.class
-				let nc = store.getters.classByID(newID)			
-				switch(nc) {
-					case NodeClass.PHASE: tabIndex.value = 0;break;
-					case NodeClass.GROUP: tabIndex.value = 1;break;
-					case NodeClass.SUBGROUP: tabIndex.value = 2;break;
-					case NodeClass.CONTEXT: tabIndex.value = 3;break;
-					case NodeClass.DATING: tabIndex.value = 4;break;
-					case NodeClass.PERIOD: tabIndex.value = 5;break;
-				}
-			}
-			else if(store.getters.isEdge(newID)) {
-				// if it's an edge, display edges tab	
-				tabIndex.value = 6
-			}
-			else return					
+			// if it's a node, display tab according to node.data.class
+			let itemClass = store.getters.classByID(newID)			
+			switch(itemClass) {
+				case NodeClass.PHASE: tabIndex.value = 0;break;
+				case NodeClass.GROUP: tabIndex.value = 1;break;
+				case NodeClass.SUBGROUP: tabIndex.value = 2;break;
+				case NodeClass.CONTEXT: tabIndex.value = 3;break;
+				case NodeClass.DATING: tabIndex.value = 4;break;
+				case NodeClass.PERIOD: tabIndex.value = 5;break;
+				case EdgeClass.EDGE: tabIndex.value = 6;break;
+			}							
 		})
 	
 		return { 

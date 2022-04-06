@@ -81,7 +81,7 @@
 import { ref, shallowRef, computed, inject, onDeactivated } from "@vue/composition-api" // Vue 2 only. for Vue 3 use "from '@vue'"
 //import VuePapaParse from 'vue-papa-parse'   // for CSV I/O
 import Papa from "papaparse"
-import { clean, tryParseInt, EdgeType } from "@/composables/PhaserCommon"
+import { clean, lower, tryParseInt, EdgeType } from "@/composables/PhaserCommon"
 //import MyMixin from '@/composables/MyMixin.js'
 import _merge from "lodash/merge"
 import TickOrCross from '@/components/TickOrCross'
@@ -511,7 +511,7 @@ export default {
                         // create or update in store
                         await store.dispatch('updateNode', period)
                     } 
-                    // attach the dating to the parent id
+                    // attach the context to the period
                     context.data.period = periodFromLabel.get(withinPeriod).data.id
                 }
 
@@ -525,7 +525,7 @@ export default {
                         // create or update in store
                         await store.dispatch('updateNode', subgroup)
                     } 
-                    // attach the dating to the parent id
+                    // attach the context to the subgroup
                     context.data.parent = subgroupFromLabel.get(withinSubGroup).data.id
                 }
                 else if(withinGroup) {
@@ -537,7 +537,7 @@ export default {
                         // create or update in store
                         await store.dispatch('updateNode', group)
                     } 
-                    // attach the dating to the parent id
+                    // attach the context to the group
                     context.data.parent = groupFromLabel.get(withinGroup).data.id
                 }
                 else if(withinPhase) {
@@ -549,7 +549,7 @@ export default {
                         // create or update in store
                         await store.dispatch('updateNode', phase)
                     } 
-                    // attach the dating to the parent id
+                    // attach the context to the phase
                     context.data.parent = phaseFromLabel.get(withinPhase).data.id
                 }
 
@@ -591,14 +591,14 @@ export default {
             for (const item of data) {               
 
                 // get cleaned data field values
-                let siteCode = clean(item.siteCode || "")
-                let datingID = clean(item.datingID || "")
-                let datingType = clean(item.datingType || "")
+                let siteCode = clean(item.siteCode)
+                let datingID = clean(item.datingID)
+                let datingType = clean(item.datingType)
                 let minYear = tryParseInt(item.minYear || null)
                 let maxYear = tryParseInt(item.maxYear || null)
-                let description = clean(item.description || "")
-                let withinPeriod = clean(item.withinPeriod || "")
-                let withinContext = clean(item.withinContext || "")                
+                let description = clean(item.description)
+                let withinPeriod = clean(item.withinPeriod)
+                let withinContext = clean(item.withinContext)                
 
                 // if datingID doesn't exist create new structure
                 if(!datingFromLabel.has(datingID)) {
@@ -607,7 +607,7 @@ export default {
 
                 // get a copy of the subgroup to update
                 let dating = _merge({}, datingFromLabel.get(datingID)) 
-                // merge properties
+                // merge any new properties
                 dating.data.siteCode = siteCode
                 dating.data.label = datingID
                 dating.data.type = datingType
@@ -658,11 +658,11 @@ export default {
             for (const item of data) {               
 
                 // get cleaned data field values
-                let periodID = clean(item.periodID || "")
+                let periodID = clean(item.periodID)
                 let minYear = tryParseInt(item.minYear || null)
                 let maxYear = tryParseInt(item.maxYear || null)
-                let description = clean(item.description || "")
-                let uri = clean(item.uri || "")
+                let description = clean(item.description)
+                let uri = clean(item.uri)
 
                 // if periodID doesn't exist create new structure
                 if(!periodFromLabel.has(periodID)) {
@@ -708,7 +708,7 @@ export default {
                 contextFromLabel.set(node.data.label || "label", node)
             })
 
-            const createEdgeID = (sourceID, targetID) => `${sourceID}|${targetID}`             
+            const createEdgeID = (sourceID, targetID) => `${ lower(sourceID) }|${ lower(targetID) }`             
             const existingEdges = new Map()
             store.getters.edges.forEach(edge => {
                 let edgeID = createEdgeID(edge.data.source, edge.data.target)
@@ -722,7 +722,7 @@ export default {
                 let siteCode = clean(item.siteCode)
                 let sourceID = clean(item.sourceID)
                 let targetID = clean(item.targetID)
-                let relationship = clean(item.stratRelationship)                
+                let relationship = lower(item.stratRelationship)                
                 
                 if(sourceID !== "" && targetID !== "") {                    
 
@@ -802,7 +802,7 @@ export default {
                 let siteCode = clean(item.siteCode)
                 let contextNo = clean(item.contextNo)
                 let contextType = clean(item.contextType)
-                let stratRelationship = clean(item.stratRelationship)
+                let stratRelationship = lower(item.stratRelationship)
                 let relatedContextNo = clean(item.relatedContextNo)
                 
                 if(contextNo !== "" && relatedContextNo !== "") {

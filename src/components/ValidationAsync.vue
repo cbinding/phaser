@@ -129,7 +129,7 @@ export default {
 			},
 			{
 				key: "passed",
-				label: "✓ passed",
+				label: "passed",
 				sortByFormatted: true,
 				formatter: (value, key, item) => unref(item.passed),
                 sortable: true,
@@ -137,7 +137,7 @@ export default {
 			},
 			{
 				key: "failed",
-				label: "✗ failed",
+				label: "failed",
 				sortByFormatted: true,
 				formatter: (value, key, item) => unref(item.failed),
                 sortable: true,

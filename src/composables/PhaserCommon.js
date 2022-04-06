@@ -128,13 +128,13 @@ export const tryParseInt = (value, defaultValue) => {
 export const clean = s => (s || "").toString().trim()
 export const lower = s => clean(s).toLowerCase()
 export const upper = s => clean(s).toUpperCase()
-export const classIs = (node, nc) => lower(node?.data?.class) == lower(nc)
-export const isPhase = node => classIs(node, NodeClass.PHASE)
-export const isGroup = node => classIs(node, NodeClass.GROUP) 
-export const isSubGroup = node => classIs(node, NodeClass.SUBGROUP) 
-export const isContext = node => classIs(node, NodeClass.CONTEXT)
-export const isDating = node => classIs(node, NodeClass.DATING)
-export const isPeriod = node => classIs(node, NodeClass.PERIOD)
+export const isClass = (node, nc) => lower(node?.data?.class) == lower(nc)
+export const isPhase = node => isClass(node, NodeClass.PHASE)
+export const isGroup = node => isClass(node, NodeClass.GROUP) 
+export const isSubGroup = node => isClass(node, NodeClass.SUBGROUP) 
+export const isContext = node => isClass(node, NodeClass.CONTEXT)
+export const isDating = node => isClass(node, NodeClass.DATING)
+export const isPeriod = node => isClass(node, NodeClass.PERIOD)
 
 // functions used for validating PHASER node date ranges
 // check for a valid year range: {minYear: <integer>, maxYear: <integer>}
@@ -311,7 +311,7 @@ export const relationshipStatus = (sourceClass, targetClass, stratRelationship, 
 				switch(tempRelationship) {  
 					case AllenType.BEFORE: result = Status.INVALID; break;
 					case AllenType.AFTER: result = Status.INVALID; break;                      
-					case AllenType.EQUALS: result =Status.VALID; break;
+					case AllenType.EQUALS: result = Status.VALID; break;
 					default: result = defaultStatus; break;                      
 				}
 				break;

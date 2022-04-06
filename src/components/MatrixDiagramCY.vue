@@ -47,6 +47,7 @@
 </template>
 
 <script>
+import Vue from "vue"
 import { ref, unref, shallowRef, computed, watch, onMounted, onBeforeUnmount, inject } from '@vue/composition-api' // Vue 2 only. for Vue 3 use "from '@vue'"
 import dagre from 'cytoscape-dagre'
 //import elk from 'cytoscape-elk'
@@ -551,21 +552,34 @@ export default {
             if(!cyi) return
 
             busy.value = true 
-            nodes.value = []
-            edges.value = []
+            //nodes.value = []
+            //edges.value = []
+            //Vue.set(nodes, "value", [])
+            //Vue.set(edges, "value", [])
+            
 
-            nodes.value = []
+            Vue.set(nodes, "value", []
                 .concat(store.getters.phases)
                 .concat(store.getters.groups)
                 .concat(store.getters.subgroups)
                 .concat(store.getters.contexts)
                 .slice()
+            )
+            /*nodes.value = []
+                .concat(store.getters.phases)
+                .concat(store.getters.groups)
+                .concat(store.getters.subgroups)
+                .concat(store.getters.contexts)
+                .slice()*/
             
             //nodes.value.forEach(node => console.log(`${node.data.id} ${node.data.parent}`))
-            
-            edges.value = store.getters.edges
+            Vue.set(edges, "value",  store.getters.edges
                 .filter(edge => edge.data.type == EdgeType.ABOVE)
-                .slice()
+                .slice())
+
+            /*edges.value = store.getters.edges
+                .filter(edge => edge.data.type == EdgeType.ABOVE)
+                .slice()*/
 
             //centre(cyi)
             //zoomFit(cyi)
@@ -767,7 +781,7 @@ export default {
                 }
 
                 // line style for drawing
-                ctx.setLineDash([])
+                ctx.setLineDash([]) // ensure dashes are reset
                 if(link.data.source == store.getters.selectedID || link.data.target == store.getters.selectedID) {
                     ctx.strokeStyle = ElementColour.EDGE_CONNECTED
                     ctx.lineWidth = 4

@@ -14,9 +14,7 @@
         <!--<b-row><testMiniStore/></b-row>-->
         <vue-splitter :margin="10" :defaultPercent="50">
             <div slot="left-pane">
-                <b-col>
-                   <MatrixDiagramCY/>
-                </b-col>
+                <MatrixDiagramCY/>               
             </div>
             <div slot="right-pane">
                 <ItemEditors :selectedID="store.getters.selectedID"/>

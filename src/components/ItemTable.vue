@@ -132,7 +132,7 @@
 import _merge from "lodash/merge"
 import Papa from "papaparse"
 import { ref, shallowRef, unref, computed, watch, inject, nextTick } from '@vue/composition-api' // Vue 2 only. for Vue 3 use "from '@vue'"
-import { NodeClass, EdgeClass, classIs } from '@/composables/PhaserCommon'
+import { NodeClass, EdgeClass, isClass } from '@/composables/PhaserCommon'
 import NodeIconLink from '@/components/NodeIconLink'
 import TickOrCross from '@/components/TickOrCross'
 
@@ -170,20 +170,18 @@ export default {
 		const selectedID1 = computed(() => props.selectedID)
         watch(selectedID1, async (newValue) => {	
 			await nextTick() // helps to ensure subsequent scrolling works..
-
-			// do nothing if selected item is not in this table
-			let node = store.getters.nodeByID(newValue)
-			if(!classIs(node, props.itemClass))
+			// do nothing if selected item is not in this current table
+			let item = store.getters.isNode(newValue) ? store.getters.nodeByID(newValue) : store.getters.edgeByID(newValue)	
+			if(!isClass(item, props.itemClass))
 				return
-
 			// if there is more than one page, calculate which 
 			// page the item with the selected ID is on 
 			let page = 1
 			if(items.value.length > perPage) {
-				let index = (datatable.value?.sortedItems || [])
-					.findIndex(item => item.data.id === newValue)	
+				let index = (datatable.value?.sortedItems || []).findIndex(item => item.data.id === newValue)	
 				page = Math.trunc(index / perPage) + 1	
 			}
+			
 			// select that page (if not already selected)
 			if(currentPage.value !== page)
 				currentPage.value = page	
@@ -566,7 +564,7 @@ a:hover {
 .action:hover {
 	color:red;
 }
-/deep/ .selected-row {
+::v-deep .selected-row {
 	background-color: lightgray;
 }
 </style>

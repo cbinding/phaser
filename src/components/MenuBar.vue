@@ -256,7 +256,8 @@
 		<!--<b-navbar-brand href="#" id="brand" tag="h1" class="mb-0 primary">The Matrix</b-navbar-brand>-->
 		<b-navbar-brand href="#" v-b-modal.modalAbout>
 			<img src="phaser-spacedout-logo.png" width="94" height="25" alt="PHASER"/>
-		</b-navbar-brand>
+			<span class="ml-2 small">v{{ store.getters.appVersion }}</span>			
+		</b-navbar-brand>		
 	</b-navbar>	
 </template>
 
@@ -504,6 +505,7 @@ export default {
 		const diagramRedoLayout = (name="dagre") => EventBus.$emit('diagram-redo-layout', name)
 		
 		return {
+			store,
 			console,
 			locked,
 			paginated,

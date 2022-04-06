@@ -36,7 +36,7 @@
 </template>
 <script>
 import { inject, computed } from "@vue/composition-api" // Vue 2 only. for Vue 3 use "from '@vue'"
-import { rangeRelationship, isPhase, isGroup, isSubGroup, isContext, relationshipStatus } from '@/composables/PhaserCommon'
+import { rangeRelationship, relationshipStatus } from '@/composables/PhaserCommon'
 import NodeIconLink from '@/components/NodeIconLink'
 import YearRangeDisplay from '@/components/YearRangeDisplay'
 import StatusKey from '@/components/StatusKey'
@@ -263,19 +263,24 @@ a:hover {
     margin: 0px;
     border: 1px solid lightgray;
 }
-/deep/ .status-valid {
+
+/* 
+NOTE: syntax used previously /deep/ changed to ::deep
+the former worked but lint flagged it as an error 
+*/
+::v-deep .status-valid {
     background-color: #c3e6cb;    
 }
-/deep/ .status-uncertain {
+::v-deep .status-uncertain {
     background-color: orange; /* was #ffeeba; */
 }
-/deep/ .status-needsmore {
+::v-deep .status-needsmore {
     background-color: moccasin; /* was lightyellow; */
 }
-/deep/ .status-invalid {
+::v-deep .status-invalid {
     background-color: #f5c6cb;
 }
-/deep/ .status-unknown {
+::v-deep .status-unknown {
     background-color: white;
 }
 </style>

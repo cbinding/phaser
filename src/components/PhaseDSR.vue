@@ -347,19 +347,19 @@ export default {
 }
 </script>
 <style lang="css" scoped>
-/deep/ .status-valid {
+::v-deep .status-valid {
     background-color: #c3e6cb;    
 }
-/deep/ .status-uncertain {
+::v-deep .status-uncertain {
     background-color: orange; 
 }
-/deep/ .status-needsmore {
+::v-deep .status-needsmore {
     background-color: moccasin; 
 }
-/deep/ .status-invalid {
+::v-deep .status-invalid {
     background-color: #f5c6cb;
 }
-/deep/ .status-unknown {
+::v-deep .status-unknown {
     background-color: white;
 }
 </style>

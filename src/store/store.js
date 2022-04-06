@@ -1,28 +1,27 @@
 import Vue from "vue"
 import Vuex from "vuex"
-//import { createStore } from 'vuex'
-//import createPersistedState from "vuex-persistedstate"
-//import createPersistedState from "vuex-persist-indexeddb"
+// import { createStore } from 'vuex'
+// import createPersistedState from "vuex-persistedstate"
+// import createPersistedState from "vuex-persist-indexeddb"
 import { NodeClass, EdgeClass, EdgeType, utf8_to_hex, clean } from "@/composables/PhaserCommon"
 import _merge from "lodash/merge"
 import _uniqueId from "lodash/uniqueId"
 
 Vue.use(Vuex)
 
-//const plugins = [ createPersistedState({ storage: window.localStorage, paths: ["nodes", "edges"] }) ]
-
+// const plugins = [ createPersistedState({ storage: window.localStorage, paths: ["nodes", "edges"] }) ]
 // temporarily disable the persistence..
-//const plugins = [ createPersistedState({ paths: ["about", "nodes", "edges"] }) ]
+// const plugins = [ createPersistedState({ paths: ["about", "nodes", "edges"] }) ]
 
 const state = {        
     appName: "Phaser",  // application name
-    appVersion: "1.17", // application version    
+    appVersion: "1.18", // application version    
     selectedID: "",     // ID of currently selected node  
     diagramLock: true,  // nodes cannot be moved on diagram when locked
     paginated: true,    // whether to show pagination controls for editor tables 
     about: {            // dataset metadata (see MetaEditor.vue)
-        title: "",      // e.g. "My example project"
-        description: "",    // description of the dataset
+        title: "",      // short descriptive title for the dataset
+        description: "",    // fuller description of the dataset
         creator: "",    // e.g. "Ceri Binding, University of South Wales"
         contact: "",    // email e.g. "ceri.binding@southwales.ac.uk"
         license: "",    // URL e.g. "https://creativecommons.org/licenses/by/4.0/"
@@ -288,7 +287,7 @@ const getters = {
         .map(n => { return { value: n.data.id, text: n.data.label }})
         .sort(nodeOptionSort), //nodeOptions(getters.periods),
     
-        // grouped option lists for element selectors
+    // grouped option lists for element selectors
     phaseOptionsGrouped: (state, getters) => (getters.phaseOptions.length == 0) ? 
         [] : [{ label: "Phases", options: getters.phaseOptions }],           
     groupOptionsGrouped: (state, getters) => (getters.groupOptions.length == 0) ? 
@@ -313,8 +312,8 @@ const getters = {
     childrenOfID: (state, getters) => id => getters.nodes.filter(n => n.data.parent == id),
     
     // not sure if required yet..
-    //childrenOfNode: (state, getters) => node => getters.nodes.filter(n => n.data.parent == node.data.id),
-    //descendantsOfNode
+    // childrenOfNode: (state, getters) => node => getters.nodes.filter(n => n.data.parent == node.data.id),
+    // descendantsOfNode
 
     descendantsOfIDs: (state, getters) => ids => {
         let descendants = []
@@ -348,7 +347,6 @@ const getters = {
         return ancestors
     },
     
-
     // hierarchically derived stratigraphic links between elements
     derivedEdges: (state, getters) => {
         
@@ -390,8 +388,8 @@ const getters = {
         return [...newEdges.values()]
     },
 
-    //datingsForID: (state, getters) => id => getters.descendantsOfID(id)
-        //.filter(n => n.data.class == NodeClass.DATING && n.data.included), 
+    // datingsForID: (state, getters) => id => getters.descendantsOfID(id)
+    // .filter(n => n.data.class == NodeClass.DATING && n.data.included), 
         
     // get actual min/max years accounting for any tolerance set
     enteredDatesForID: (state, getters) => id => {
@@ -477,7 +475,7 @@ const getters = {
             minYear: minYear < Number.POSITIVE_INFINITY ? Math.round(minYear) : null, 
             maxYear: maxYear > Number.NEGATIVE_INFINITY ? Math.round(maxYear) : null
         }
-    },            
+    },
 
     // duration for derived dates (accounting for any tolerance set)
     derivedDuration: (state, getters) => id => { 
@@ -667,7 +665,7 @@ const getters = {
         // structure of a new edge
         return { 
             data: {
-                weight: 1,  // dagre needs this to minimise crossings?
+                //weight: 1,  // dagre needs this to minimise crossings?
                 siteCode: "", 
                 id: `${EdgeClass.EDGE}-${id}`,  // "edge-123"
                 class: EdgeClass.EDGE,          // "edge" 
@@ -713,7 +711,11 @@ const actions = {
             return(newItem ? _merge(newItem, node) : null)
         }).map(node => node)
         
-        const newEdges = edges.map(edge => _merge(getters.newEdge(), edge))
+        const newEdges = edges.map(edge => {
+            let newItem = getters.newEdge() 
+            edge.data.class = EdgeClass.EDGE // ensure populated; was missing from some external data                        
+            return(_merge(newItem, edge))
+        })
         
         commit('BULK_LOAD_ELEMENTS', { nodes: newNodes, edges: newEdges })         
     },
@@ -727,7 +729,7 @@ const actions = {
         Promise.resolve() // See https://blog.usejournal.com/vue-js-best-practices-c5da8d7af48d
     },
     // update mutation will insert if node doesn't exist        
-    insertNode({commit, dispatch}, node) { 
+    insertNode({commit}, node) { 
         commit('UPDATE_NODE', node)
         //dispatch('setSelectedID', node.data.id, commit)  // not working?    
         Promise.resolve()       
@@ -755,13 +757,12 @@ const actions = {
     setSelectedID({commit}, id) {
         commit('SET_SELECTED_ID', id)
     },
-    setDiagramLock({commit}, value){
+    setDiagramLock({commit}, value) {
         commit('SET_DIAGRAM_LOCK', value)
     },
-    setPaginated({commit}, value){
+    setPaginated({commit}, value) {
         commit('SET_PAGINATED', value)
     },
-
 	deleteNode({commit, getters}, node) {
         // set 'parent' of any children to null 
         // so we no longer reference this node
@@ -783,7 +784,7 @@ const actions = {
         let edge = getters.newEdge()
         dispatch('insertEdge', edge, commit)  
     },
-    insertEdge({commit, getters}, edge) {
+    insertEdge({commit}, edge) {
         // ensure item to add has all required properties  
         //let newEdge = _merge(getters.newEdge(), edge)
         commit('UPDATE_EDGE', edge)            
@@ -818,7 +819,7 @@ const mutations = {
         state.paginated = value
     },
     // for bulk data imports - faster
-    BULK_LOAD_ELEMENTS: (state, elements) => {
+    BULK_LOAD_ELEMENTS(state, elements) {
         let newNodes = {}; // Object.assign({}, state.nodes);
         let newEdges = {}; // Object.assign({}, state.edges);
 
@@ -844,8 +845,7 @@ const mutations = {
         Vue.set(state, "edges", newEdges)
         //console.log(`BULK_LOAD_ELEMENTS: edges set`)
     },
-
-    UPDATE_NODE: (state, node) => {
+    UPDATE_NODE(state, node) {
         const id = node?.data?.id || null        
         if(id !== null) {
             // https://medium.com/@jiihu/how-to-improve-performance-of-vuex-store-c9e3cfb01f72
@@ -855,7 +855,7 @@ const mutations = {
             Vue.set(state.nodes, id, newNode)
         }
     },
-    DELETE_NODE: (state, node) => {
+    DELETE_NODE(state, node) {
         const id = node?.data?.id || null
         if(id !== null) {
         //if(Object.hasOwn(state.nodes, id)) { // maybe don't need to check this?

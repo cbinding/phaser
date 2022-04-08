@@ -3,17 +3,282 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="description" content="PHASER - stratigraphic matrix editing and analysis tool">
+    <meta name="author" content="Ceri Binding, University of South Wales, ceri.binding@southwales.ac.uk">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="icon" href="phaser-spacedout-p.ico">   
-    <title>Phaser - help</title>   
+    <link rel="icon" href="phaser-spacedout-p.ico" type="image/x-icon">    
+
+     <!-- Bootstrap CSS -->
+     <link rel="stylesheet" 
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" 
+      integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" 
+      crossorigin="anonymous">
+
+    <title>PHASER - Help</title>   
+
+    <style>
+      .container { 
+        display: grid; 
+        width: 80%;
+        margin-left: 10%;
+        margin-right: 10%;
+      }
+      .header, .footer { text-align: center; }
+      a:hover { color: red; } 
+      ul, li , a { margin: 0; padding: 0 }         
+    </style>
+
   </head>
   <body>
-    <div id="container">
-      <h1>Phaser - stratigraphic matrix editing tool</h1>
-      <h3>Introduction</h3>
+    <div id="main" class="container">
+      <section class="header">
+        <img src="phaser-spacedout-logo.png" alt="PHASER"/>
+        <h1 class="title">stratigraphic matrix editing and analysis tool</h1>	
+        <hr>		
+      </section>
+
+      <h2 id="contents">Table of Contents</h2>
+      <ol>
+        <li><a href="#introduction">Introduction</a></li>        
+        <li>
+          <a href="#menu">Menu</a>
+          <ul>
+            <li><a href="#menu-file-new">File - New</a></li>
+            <li><a href="#menu-file-open">File - Open (JSON)</a></li>
+            <li><a href="#menu-file-save">File - Save (JSON)</a></li>
+            <li><a href="#menu-file-import-periodo">File - Import Perio.do collection</a></li>
+            <li><a href="#menu-file-import-csv">File - Import CSV</a></li>
+            <li><a href="#menu-file-export-csv">File - Export CSV</a></li>
+            <li><a href="#menu-file-export-visible-diagram">File - Export visible diagram (PNG)</a></li>
+            <li><a href="#menu-file-export-full-diagram">File - Export full diagram (PNG)</a></li>
+            <li><a href="#menu-view-zoom-in">View - Zoom in</a></li>
+            <li><a href="#menu-view-zoom-out">View - Zoom out</a></li>
+            <li><a href="#menu-view-zoom-fit">View - Zoom to fit</a></li>
+            <li><a href="#menu-view-refresh-diagram">View - Refresh diagram</a></li>
+            <li><a href="#menu-view-unlock-diagram">View - Unlock diagram</a></li>
+            <li><a href="#menu-view-redo-layout">View - Redo layout</a></li>
+            <li><a href="#menu-help">Help - Show help</a></li>
+          </ul>
+        </li>
+        <li><a href="#diagram">Matrix diagram</a></li>
+        <li>
+          <a href="#tabs">Tabs</a>
+          <ul>
+            <li><a href="#tab-phases">Phases</a></li>
+            <li><a href="#tab-groups">Groups</a></li>
+            <li><a href="#tab-subgroups">Sub-Groups</a></li>
+            <li><a href="#tab-contexts">Contexts</a></li>
+            <li><a href="#tab-datings">Datings</a></li>
+            <li><a href="#tab-periods">Periods</a></li>
+            <li><a href="#tab-stratigraphy">Stratigraphy</a></li>
+            <li><a href="#tab-validation">Validation</a></li>
+            <li><a href="#tab-temporal">Temporal</a></li>
+            <li><a href="#tab-metadata">Metadata</a></li>
+            <li><a href="#tab-search">Search (experimental)</a></li>
+            <li><a href="#tab-groupmatrix">Group Matrix (experimental)</a></li>
+          </ul>
+        </li>        
+      </ol>
+      <hr>
+
+      <h2 id="introduction">Introduction</h2>
       <p>
-        The PHASER tool was created as part of the <a href="https://stratigraphic.github.io/matrix/">MATRIX</a> project
+        The PHASER application was developed as part of the <a href="https://stratigraphic.github.io/matrix/">MATRIX</a> project. It is intended to aid in the editing and analysis of archaeological stratigraphic data. The application requires a modern web browser to function correctly.
       </p>
+      <small><a href="#main" class="float-end">[Back to top]</a></small>
+      <hr>
+
+      <h2 id="menu">Menu</h2>      
+      <h3 id="menu-file-new">File - New</h3>
+      <p>This will clear any current data from the diagram and tabs. There is a confirmation warning before any data is cleared.</p>
+      <small><a href="#main" class="float-end">[Back to top]</a></small>
+
+      <h3 id="menu-file-open">File - Open (JSON)</h3>
+      <p>Open an existing external JSON file containing stratigraphic matrix data compatible with the PHASER application. The JSON file is the main way to store the stratigraphic data, diagram layout and metadata, for data interchange and backup purposes. </p>
+      <small><a href="#main" class="float-end">[Back to top]</a></small>
+
+      <h3 id="menu-file-save">File - Save (JSON)</h3>
+      <p>Save all current matrix data to an external JSON file. NOTE: as this application runs within the browser it is governed by the browser settings. The default settings for saving to external files <em>may</em> be to save directly to a downloads folder with no intervening prompt. If this is the case you can change your browser settings to prompt where to save. On Chrome (as an example) this is under "settings - advanced - downloads". There is an option "ask where to save each file before downloading". Other browsers should have similar facilities.</p>
+      <small><a href="#main" class="float-end">[Back to top]</a></small>
+
+      <h3 id="menu-file-import-periodo">File - Import Perio.do collection</h3>
+      <p>Import a collection of named periods from the Perio.do dataset. The entire dataset is downloaded from the Perio.do site and then the application allows you to choose a specific collection to import into your dataset. It is possible to import more than one collection if necessary. Once imported the periods can be referenced by other elements within the application. Imported periods are included in the JSON file when your matrix data is saved, so do not need to be re-imported.</p>
+      <small><a href="#main" class="float-end">[Back to top]</a></small>
+
+      <h3 id="menu-file-import-csv">File - Import CSV</h3>
+      <p>Import data from a delimited text file. Delimited files are UTF-8 text files. Each row of the file represents a data record ending with a newline character, and a specific text character delimits the boundary between fields. The application supports several commonly used delimiter characters (tab, comma, semicolon, pipe, or space). A header row contains delimited field names. These required field names are case-sensitive (<var>siteCode</var> ≠ <var>SiteCode</var>), but the ordering of the fields does not affect the import. Data field values are all case-sensitive. The following tables detail the required fields for each delimited file.</p>
+      
+      <table class="table table-sm table-striped">
+        <caption>Delimited data import/export format - Phase records</caption>
+        <thead>
+          <th>Field name</th>
+          <th>Description</th>
+        </thead>
+        <tr>
+          <td>siteCode</td>
+          <td>Identifier of the site this phase falls within</td>          
+        </tr>  
+        <tr>
+          <td>phaseID</td>
+          <td>Unique (within the site) identifier for this phase</td>
+        </tr>   
+        <tr>
+          <td>minYear</td>
+          <td>Minimum year of the (entered) date range associated with this phase</td>
+        </tr> 
+        <tr>
+          <td>maxYear</td>
+          <td>Maximum year of the (entered) date range associated with this phase</td>
+        </tr>  
+        <tr>
+          <td>description</td>
+          <td>Textual description of the phase</td>
+        </tr> 
+        <tr>
+          <td>withinPeriod</td>
+          <td>Identifier of the period associated with this phase</td>
+        </tr>      
+      </table>
+
+      <table class="table table-sm table-striped">
+        <caption>Delimited data import/export format - Group records</caption>
+        <thead>
+          <th>Field name</th>
+          <th>Description</th>
+        </thead>
+        <tr>
+          <td>siteCode</td>
+          <td>Identifier of the site this phase falls within</td>          
+        </tr>  
+        <tr>
+          <td>groupID</td>
+          <td>Unique (within the site) identifier for this group</td>
+        </tr>  
+        <tr>
+          <td>groupType</td>
+          <td>Type of group e.g. <em>"hearth", "well", "trench"</em> etc.</td>
+        </tr> 
+        <tr>
+          <td>cud</td>
+          <td>Construction/use/disuse indicator. Possible values: "", "C", "U", "D", "CU", "UD", "CD", "CUD"</td>
+        </tr>
+        <tr>
+          <td>description</td>
+          <td>Textual description of the group</td>
+        </tr> 
+        <tr>
+          <td>withinPeriod</td>
+          <td>Identifier of the period associated with this group</td>
+        </tr>   
+        <tr>
+          <td>withinPhase</td>
+          <td>Identifier of the phase this group falls within</td>
+        </tr>    
+      </table>
+
+      
+      <small><a href="#main" class="float-end">[Back to top]</a></small>
+
+      <h3 id="menu-file-export-csv">File - Export CSV</h3>
+      <p>Export data to a delimited text file. Refer to tables above for fields that will be included</p>
+      <small><a href="#main" class="float-end">[Back to top]</a></small>
+
+      <h3 id="menu-file-export-visible-diagram">File - Export visible diagram (PNG)</h3>
+      <p>Save the currently visible portion of the diagram to a PNG (Portable Network Graphics) format image file. Saving the currently visible portion allows you to zoom in to an area of particular interest on a larger diagram and save an image of just that area.</p>
+      <small><a href="#main" class="float-end">[Back to top]</a></small>
+
+      <h3 id="menu-file-export-full-diagram">File - Export full diagram (PNG)</h3>
+      <p>Save the entire matrix diagram to a PNG (Portable Network Graphics) format image file.</p>
+      <small><a href="#main" class="float-end">[Back to top]</a></small>
+
+      <h3 id="menu-view-zoom-in">View - Zoom in</h3>
+      <p>Increase the scale of the diagram to 'zoom in' on a particular area. Note the same functionality can alternatively be achieved using the slider to the left side of the diagram (slide up to zoom in or click the + button at the top of the slider), or by using the mouse wheel if available.</p>
+      <small><a href="#main" class="float-end">[Back to top]</a></small>
+
+      <h3 id="menu-view-zoom-out">View - Zoom out</h3>
+      <p>Decrease the scale of the diagram to 'zoom out' to view a wider area. Note the same functionality can alternatively be achieved using the slider to the left side of the diagram (slide down to zoom out or click the - button at the bottom of the slider), or by using the mouse wheel if available.</p>
+      <small><a href="#main" class="float-end">[Back to top]</a></small>
+
+      <h3 id="menu-view-zoom-fit">View - Zoom to fit</h3>
+      <p>...</p>
+      <small><a href="#main" class="float-end">[Back to top]</a></small>
+
+      <h3 id="menu-view-refresh-diagram">View - Refresh diagram</h3>
+      <p>...</p>
+      <small><a href="#main" class="float-end">[Back to top]</a></small>
+
+      <h3 id="menu-view-unlock-diagram">View - Unlock diagram</h3>
+      <p>...</p>
+      <small><a href="#main" class="float-end">[Back to top]</a></small>
+
+      <h3 id="menu-view-redo-layout">View - Redo layout</h3>
+      <p>...</p>
+      <small><a href="#main" class="float-end">[Back to top]</a></small>
+
+      <h3 id="menu-help">Help - Show help</h3>
+      <p>...</p>
+      <small><a href="#main" class="float-end">[Back to top]</a></small>
+      <hr>
+
+      <h2 id="diagram">Matrix diagram</h2>
+      <p>...</p>
+      <small><a href="#main" class="float-end">[Back to top]</a></small>
+      <hr>
+
+      <h2 id="tabs">Tabs</h2>
+      <p>...</p>
+      <h3 id="tab-phases">Phases</h3>
+      <p>...</p>
+      <small><a href="#main" class="float-end">[Back to top]</a></small>
+
+      <h3 id="tab-groups">Groups</h3>
+      <p>...</p>
+      <small><a href="#main" class="float-end">[Back to top]</a></small>
+
+      <h3 id="tab-subgroups">Sub-Groups</h3>
+      <p>...</p>
+      <small><a href="#main" class="float-end">[Back to top]</a></small>
+
+      <h3 id="tab-contexts">Contexts</h3>
+      <p>...</p>
+      <small><a href="#main" class="float-end">[Back to top]</a></small>
+
+      <h3 id="tab-datings">Datings</h3>
+      <p>...</p>
+      <small><a href="#main" class="float-end">[Back to top]</a></small>
+
+      <h3 id="tab-periods">Periods</h3>
+      <p>...</p>
+      <small><a href="#main" class="float-end">[Back to top]</a></small>
+
+      <h3 id="tab-stratigraphy">Stratigraphy</h3>
+      <p>...</p>
+      <small><a href="#main" class="float-end">[Back to top]</a></small>
+
+      <h3 id="tab-validation">Validation</h3>
+      <p>...</p>
+      <small><a href="#main" class="float-end">[Back to top]</a></small>
+
+      <h3 id="tab-temporal">Temporal</h3>
+      <p>...</p>
+      <small><a href="#main" class="float-end">[Back to top]</a></small>
+
+      <h3 id="tab-metadata">Metadata</h3>
+      <p>General descriptive metadata about (and stored with) the current dataset. Fields contained within this section are optional. It is useful to record some supplementary metadata to keep track of the origins of the dataset, any revisions you may have made, and licensing and contact details if you are sharing the data with others.</p>
+      <small><a href="#main" class="float-end">[Back to top]</a></small>
+
+      <h3 id="tab-search">Search (experimental)</h3>
+      <p>...</p>
+      <small><a href="#main" class="float-end">[Back to top]</a></small>
+
+      <h3 id="tab-groupmatrix">Group Matrix (experimental)</h3>
+      <p>...</p>      
+      <small><a href="#main" class="float-end">[Back to top]</a></small> 
+      <hr>
+        
+      <section class="footer">
+        <small class="footer">PHASER - stratigraphic matrix editing and analysis tool</small>			
+      </section>
     </div>
   </body>
 </html>

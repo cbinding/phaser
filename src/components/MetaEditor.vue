@@ -71,7 +71,7 @@
 						v-model="license"/>
 				</b-form-group>
 
-				<b-form-group label="Version" label-for="version">	
+				<b-form-group label="Data version" label-for="version">	
 					<b-form-input 
 						size="sm"
 						class="shadow-sm" 
@@ -79,7 +79,8 @@
 						type="text"
 						name="version" 
 						v-model="version"/>
-				</b-form-group>				
+				</b-form-group>	
+				
 			</b-col>
 		</b-form-row>
 	</b-container>		

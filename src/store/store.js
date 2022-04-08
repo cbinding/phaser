@@ -3,7 +3,7 @@ import Vuex from "vuex"
 // import { createStore } from 'vuex'
 // import createPersistedState from "vuex-persistedstate"
 // import createPersistedState from "vuex-persist-indexeddb"
-import { NodeClass, EdgeClass, EdgeType, utf8_to_hex, clean } from "@/composables/PhaserCommon"
+import { NodeClass, EdgeClass, EdgeType, utf8_to_hex, clean, timestampISO } from "@/composables/PhaserCommon"
 import _merge from "lodash/merge"
 import _uniqueId from "lodash/uniqueId"
 
@@ -25,7 +25,7 @@ const state = {
         creator: "",    // e.g. "Ceri Binding, University of South Wales"
         contact: "",    // email e.g. "ceri.binding@southwales.ac.uk"
         license: "",    // URL e.g. "https://creativecommons.org/licenses/by/4.0/"
-        version: "",    // e.g. 1.2.3, 20210113 etc.        
+        version: "",    // e.g. 1.2.3, 20210113 etc. 
     },
 
     // Array slow for retrieving object by ID, vuex doesn't (currently) support Map() 
@@ -687,7 +687,7 @@ const actions = {
         await dispatch('clearAll', commit)
         
         // store any metadata present
-        let about = data.about || {}
+        let about = _merge(getters.about, data.about || {})
         commit('SET_ABOUT', about)
 
         // cytoscape format = { elements: { nodes:[], edges:[] } }

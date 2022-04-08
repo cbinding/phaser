@@ -265,8 +265,8 @@ a:hover {
 }
 
 /* 
-NOTE: syntax used previously /deep/ changed to ::deep
-the former worked but lint flagged it as an error 
+NOTE: syntax /deep/ changed to ::v-deep  
+former worked but lint flagged it as error 
 */
 ::v-deep .status-valid {
     background-color: #c3e6cb;    

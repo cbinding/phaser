@@ -235,28 +235,30 @@
 
 				<b-nav-item-dropdown text="Help">
 					
-					<!--<b-nav-item 
-						class="ml-2" 
+					<b-nav-item 
+						class="mx-2" 
 						:active="true"
 						target="_blank" 
 						rel="noopener noreferrer"  
 						href="help.html">
 						<b-icon-question-circle class="mr-2" />					
-						<span>Help...</span>
-					</b-nav-item>-->
+						<span>Show help...</span>
+					</b-nav-item>
+					<!--
 					<b-dropdown-item-button v-b-modal.modalAbout>
-						<!--<img src="phaser-spacedout-p.png" height="15" class="mr-2"/>-->
-						<b-icon-question-circle class="mr-2" />		
+						<img src="phaser-spacedout-p.png" height="15" class="mr-2"/>
 						<span>{{ `About ${ store.getters.appName }...` }}</span>
 						<HelpAbout />					
 					</b-dropdown-item-button>
+					-->
 				</b-nav-item-dropdown>
 			</b-navbar-nav>
 		</b-collapse>
 		<!--<b-navbar-brand href="#" id="brand" tag="h1" class="mb-0 primary">The Matrix</b-navbar-brand>-->
 		<b-navbar-brand href="#" v-b-modal.modalAbout>
 			<img src="phaser-spacedout-logo.png" width="94" height="25" alt="PHASER"/>
-			<span class="ml-2 small">v{{ store.getters.appVersion }}</span>			
+			<span class="ml-2 small">v{{ store.getters.appVersion }}</span>	
+			<HelpAbout />			
 		</b-navbar-brand>		
 	</b-navbar>	
 </template>
@@ -270,8 +272,9 @@ import HelpAbout from '@/components/HelpAbout'
 import NodeIcon from '@/components/NodeIcon'
 //import moment from 'moment'
 import EventBus from '@/composables/EventBus.js'
-import { NodeClass, EdgeClass, timestamp } from '@/composables/PhaserCommon'
+import { NodeClass, EdgeClass, timestamp, timestampISO } from '@/composables/PhaserCommon'
 import Papa from "papaparse"
+import _merge from "lodash/merge"
 
 //npm run seeimport TemporalRelationships from '@/components/TemporalRelationships'
 
@@ -339,8 +342,12 @@ export default {
 		}
 
 		const saveJSON = () => {
+			let supplementary = {
+				modified: new Date().toISOString(), 
+				appversion: `${store.getters.appName} v${store.getters.appVersion}`
+			}
 			const data = { 
-				about: store.getters.about,
+				about: _merge({}, store.getters.about, supplementary),
 				elements: {
 					nodes: store.getters.nodes,
 					edges: store.getters.edges

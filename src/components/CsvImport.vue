@@ -734,7 +734,7 @@ export default {
                 let targetID = clean(item.targetID)
                 let relationship = lower(item.stratRelationship)                
                 
-                if(sourceID !== "" && targetID !== "") {                    
+                if(sourceID !== "" && targetID !== "" && sourceID !== targetID) {                    
 
                     // SOURCE CONTEXT
                     // if it doesn't exist create new

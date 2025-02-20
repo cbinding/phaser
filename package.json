@@ -5,7 +5,7 @@
   "version": "1.7.0",
   "author": "Ceri Binding, University of South Wales",
   "contact": "ceri.binding@southwales.ac.uk",
-  "License": "CC-BY",
+  "License": "MIT",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",

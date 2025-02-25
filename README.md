@@ -1,24 +1,7 @@
 # phaser
 
-## Project setup
-```
-npm install
-```
+The PHASER application was developed as part of the MATRIX project, which investigates ways that digital data from archaeological excavations can be made more useful and re-usable for a range of users and audiences. The application is intended to aid in the editing and analysis of archaeological stratigraphic data.
 
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
+Deployed PHASER application is available from [https://stratigraphic.github.io/phaser-app/](https://stratigraphic.github.io/phaser-app/)
 
-### Compiles and minifies for production
-```
-npm run build
-```
-
-### Lints and fixes files
-```
-npm run lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+For further details about the MATRIX project see [https://stratigraphic.github.io/matrix/](https://stratigraphic.github.io/matrix/)
